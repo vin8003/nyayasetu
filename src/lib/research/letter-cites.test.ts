@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import type { LegalMemo, Precedent } from "./types.ts";
-import { citablePrecedentsFromMemo, filterLetterGrounds } from "./letter-cites.ts";
+import { citablePrecedentsFromMemo, filterLetterGrounds, scrubUnverifiedText } from "./letter-cites.ts";
 
 function caseRow(patch: Partial<Precedent> = {}): Precedent {
   return {
@@ -201,5 +201,28 @@ describe("filterLetterGrounds", () => {
       citable,
     );
     assert.deepEqual(kept, []);
+  });
+});
+
+describe("scrubUnverifiedText", () => {
+  it("does not leave a hanging preposition after stripping an unverified name from a verification clause", () => {
+    const out = scrubUnverifiedText(
+      "I verify this petition and rely on Invented Case (2020) 1 SCC 1.",
+      ["Invented Case", "(2020) 1 SCC 1"],
+    );
+    assert.match(out, /I verify this petition/);
+    assert.doesNotMatch(out, /Invented Case/);
+    assert.doesNotMatch(out, /\(2020\) 1 SCC 1/);
+    assert.doesNotMatch(out, /rely on\s*\./i);
+  });
+
+  it("does not leave a dangling 'and' after stripping an unverified URL from a notice demand", () => {
+    const out = scrubUnverifiedText(
+      "See also https://indiankanoon.org/doc/0/ and Invented Case.",
+      ["https://indiankanoon.org/doc/0/", "Invented Case"],
+    );
+    assert.doesNotMatch(out, /Invented Case/);
+    assert.doesNotMatch(out, /indiankanoon\.org\/doc\/0/);
+    assert.doesNotMatch(out, /\band\s*\./i);
   });
 });

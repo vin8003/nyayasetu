@@ -42,7 +42,15 @@ export function scrubUnverifiedText(text: string, banned: string[]): string {
     if (!label) continue;
     out = out.split(label).join("");
   }
-  return out.replace(/[ \t]{2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+  return out
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/\s+(on|of|for|at|to|in|by|from|with)\s*([.,;:]|$)/gi, "$2")
+    .replace(/\s+(and|or)\s*([.,;:]|$)/gi, "$2")
+    .replace(/\s+([.,;:])/g, "$1")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 export function filterLetterGrounds(grounds: LetterGround[], citable: Precedent[]): LetterGround[] {
