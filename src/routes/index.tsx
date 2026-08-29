@@ -56,6 +56,7 @@ function Home() {
   const [savedId, setSavedId] = useState<string | null>(null);
   const runSeq = useRef(0);
 
+  const userId = user?.id;
   const c = t(lang);
 
   useEffect(() => {
@@ -76,7 +77,7 @@ function Home() {
   }, []);
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       setHistory([]);
       return;
     }
@@ -85,7 +86,7 @@ function Home() {
       .catch((err) => {
         if (isUnauthorized(err)) void navigate({ to: "/login" });
       });
-  }, [user, navigate]);
+  }, [userId, navigate]);
 
   useEffect(() => {
     if (view !== "running" && view !== "drafting") return;
@@ -100,8 +101,8 @@ function Home() {
   }
 
   function requireAccount() {
-    if (isPending) return false;
     if (user) return true;
+    if (isPending) return false;
     try {
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ intake, lang }));
     } catch {
@@ -115,6 +116,17 @@ function Home() {
     if (!isUnauthorized(err)) return false;
     void navigate({ to: "/login" });
     return true;
+  }
+
+  async function openHistory() {
+    if (!requireAccount()) return;
+    abandonRun();
+    setView("history");
+    try {
+      setHistory(await listMemos());
+    } catch (err) {
+      bounceIfUnauthorized(err);
+    }
   }
 
   function abandonRun() {
@@ -289,8 +301,7 @@ function Home() {
               type="button"
               onClick={() => {
                 if (!requireAccount()) return;
-                abandonRun();
-                setView("history");
+                void openHistory();
               }}
               className="inline-flex h-10 items-center gap-1.5 rounded-md px-2.5 text-sm text-muted hover:text-fg"
               aria-label={c.history}
