@@ -4,7 +4,7 @@ import type { Intake, LegalMemo, LetterKind } from "./types.ts";
 export const LETTER_TIMEOUT_MS = 45_000;
 export const LETTER_MAX_OUTPUT_TOKENS = 4_000;
 
-export const LETTER_SYSTEM = `You are a senior Indian advocate drafting a letter for another advocate from an existing research memo.
+export const LETTER_SYSTEM = `You are a senior Indian advocate drafting a notice, reply, or court petition for another advocate from an existing research memo.
 
 Hard rules:
 - Do not search the web. Do not use tools. Use only the facts, issues, and verified authorities in the user message.
@@ -15,17 +15,18 @@ Hard rules:
 - Return ONLY a JSON object. The first character of your reply must be {. No markdown, no labels, no preamble.
 
 {
-  "heading": "short subject line",
-  "parties": "From / To, addresses if known from the facts",
-  "facts": "tight narrative of the facts used in the letter",
+  "heading": "short subject line or cause title",
+  "parties": "From / To, or Petitioner / Respondent as known from the facts",
+  "facts": "tight narrative of the facts used in the draft",
   "grounds": [{
     "heading": "one legal ground",
     "text": "how it applies, without new cases",
     "citation": "reporter cite of a listed verified authority, or empty",
     "url": "exact URL of that listed authority, or empty"
   }],
-  "closing": "notice: the demand. reply: covering para-wise denial / without-prejudice reply",
-  "timeOrStand": "notice: time to comply. reply: the stand taken",
+  "closing": "notice: the demand. reply: covering para-wise denial. petition: the prayer",
+  "timeOrStand": "notice: time to comply. reply: the stand taken. petition: interim relief, or empty",
+  "verification": "petition: short verification clause. notice/reply: empty",
   "risks": "one line on litigation risk"
 }`;
 
@@ -57,8 +58,10 @@ export function buildLetterUser(opts: { kind: LetterKind; intake: Intake; memo: 
       : "Output language: English.";
   const kindLine =
     kind === "notice"
-      ? "Kind: legal notice. Write a demand and a time to comply. Do not use a without-prejudice reply shape."
-      : "Kind: reply to notice. Write a without prejudice, para-wise reply and the stand taken. Do not write a demand or a time to comply.";
+      ? "Kind: legal notice. Write a demand and a time to comply. Do not use a without-prejudice reply shape or a court petition prayer."
+      : kind === "reply"
+        ? "Kind: reply to notice. Write a without prejudice, para-wise reply and the stand taken. Do not write a demand or a petition prayer."
+        : "Kind: court petition. Write a petition for filing: parties, facts, numbered grounds, prayer, optional interim relief, and a short verification clause. Do not write a legal notice or a without-prejudice reply.";
 
   return [
     langLine,

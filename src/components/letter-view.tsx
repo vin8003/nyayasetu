@@ -2,7 +2,7 @@ import { ArrowLeft, Copy, Printer, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import type { LegalLetter, OutputLang } from "@/lib/research/types";
 import { t } from "@/lib/research/copy";
-import { formatLegalLetter, formatLegalLetterHtml } from "@/lib/research/letter-format";
+import { formatLegalLetter, formatLegalLetterHtml, letterKicker } from "@/lib/research/letter-format";
 import { httpHref } from "@/lib/research/verify";
 import { Button } from "@/components/ui/button";
 
@@ -17,7 +17,7 @@ export function LetterView({
 }) {
   const c = t(lang);
   const doc = t(letter.lang);
-  const kicker = letter.kind === "notice" ? doc.letterNoticeKicker : doc.letterReplyKicker;
+  const kicker = letterKicker(letter.kind, doc);
 
   async function copyLetter() {
     await navigator.clipboard.writeText(formatLegalLetter(letter));
@@ -121,13 +121,28 @@ export function LetterView({
           {letter.closing ? (
             <div>
               {letter.kind === "notice" ? <h2 className="font-medium">{doc.letterDemand}</h2> : null}
-              <p className={`whitespace-pre-wrap ${letter.kind === "notice" ? "mt-2" : ""}`}>{letter.closing}</p>
+              {letter.kind === "petition" ? <h2 className="font-medium">{doc.letterPrayer}</h2> : null}
+              <p className={`whitespace-pre-wrap ${letter.kind === "notice" || letter.kind === "petition" ? "mt-2" : ""}`}>
+                {letter.closing}
+              </p>
             </div>
           ) : null}
           {letter.timeOrStand ? (
             <div>
-              <h2 className="font-medium">{letter.kind === "notice" ? doc.letterTime : doc.letterStand}</h2>
+              <h2 className="font-medium">
+                {letter.kind === "notice"
+                  ? doc.letterTime
+                  : letter.kind === "petition"
+                    ? doc.letterInterim
+                    : doc.letterStand}
+              </h2>
               <p className="mt-2 whitespace-pre-wrap">{letter.timeOrStand}</p>
+            </div>
+          ) : null}
+          {letter.kind === "petition" && letter.verification ? (
+            <div>
+              <h2 className="font-medium">{doc.letterVerification}</h2>
+              <p className="mt-2 whitespace-pre-wrap">{letter.verification}</p>
             </div>
           ) : null}
           {letter.risks ? (

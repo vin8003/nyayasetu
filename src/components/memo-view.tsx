@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { ArrowLeft, Copy, Printer, Bookmark, FileDown, Scale, MessageSquare } from "lucide-react";
+import { ArrowLeft, Copy, Printer, Bookmark, FileDown, Scale, MessageSquare, ScrollText } from "lucide-react";
 import { toast } from "sonner";
 import type { Binding, LegalMemo, LetterKind, OutputLang, Strength } from "@/lib/research/types";
 import { t } from "@/lib/research/copy";
@@ -145,6 +145,10 @@ export function MemoView({
           <Button variant="outline" size="sm" onClick={() => onDraft("reply")}>
             <MessageSquare className="size-3.5" />
             {c.draftReply}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => onDraft("petition")}>
+            <ScrollText className="size-3.5" />
+            {c.draftPetition}
           </Button>
           <Button variant="outline" size="sm" onClick={copyMemo}>
             <Copy className="size-3.5" />

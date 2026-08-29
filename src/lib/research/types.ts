@@ -108,7 +108,7 @@ export type HistoryItem = {
   memo: LegalMemo;
 };
 
-export const LETTER_KINDS = ["notice", "reply"] as const;
+export const LETTER_KINDS = ["notice", "reply", "petition"] as const;
 export type LetterKind = (typeof LETTER_KINDS)[number];
 
 export type LetterGround = {
@@ -127,6 +127,7 @@ export type LegalLetter = {
   grounds: LetterGround[];
   closing: string;
   timeOrStand: string;
+  verification: string;
   risks: string;
 };
 

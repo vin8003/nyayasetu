@@ -73,6 +73,7 @@ const draft: ParsedLetterDraft = {
   closing: "You are called upon to refrain from coercive process.",
   timeOrStand: "Fifteen days from receipt of this notice.",
   risks: "Interim protection may be conditional.",
+  verification: "",
 };
 
 describe("assembleLetter / formatLegalLetter", () => {
@@ -155,5 +156,105 @@ describe("assembleLetter / formatLegalLetter", () => {
     assert.match(html, /<!DOCTYPE html>/);
     assert.match(html, /498A/);
     assert.match(html, /indiankanoon/);
+  });
+
+  it("petition is a court pleading with prayer, interim relief, verification, and no notice/reply shape", () => {
+    const letter = assembleLetter({
+      kind: "petition",
+      lang: "en",
+      draft: {
+        ...draft,
+        heading: "Petition for anticipatory bail under BNSS 482",
+        parties: "Vivek Sharma, Petitioner\nState of Rajasthan, Respondent",
+        closing: "It is therefore prayed that this Hon'ble Court grant anticipatory bail.",
+        timeOrStand: "Ex parte interim protection from arrest pending disposal.",
+        verification: "I, Vivek Sharma, do hereby verify that the contents are true to my knowledge.",
+      },
+      memo,
+    });
+    const text = formatLegalLetter(letter);
+    assert.match(text, /Petition for anticipatory bail/);
+    assert.match(text, /Vivek Sharma, Petitioner/);
+    assert.match(text, /Prayer/i);
+    assert.match(text, /grant anticipatory bail/);
+    assert.match(text, /Interim relief/i);
+    assert.match(text, /Ex parte interim protection/);
+    assert.match(text, /Verification/i);
+    assert.match(text, /true to my knowledge/);
+    assert.match(text, /\(2014\) 8 SCC 273/);
+    assert.match(text, /https:\/\/indiankanoon\.org\/doc\/322621\//);
+    assert.match(text, /research assistance for advocates, not legal advice/i);
+    assert.doesNotMatch(text, /Without prejudice/i);
+    assert.doesNotMatch(text, /Time to comply/i);
+    assert.doesNotMatch(text, /Invented Case/);
+    assert.doesNotMatch(text, /fake ratio/);
+  });
+
+  it("strips unverified case names planted in a petition verification clause", () => {
+    const letter = assembleLetter({
+      kind: "petition",
+      lang: "en",
+      draft: {
+        ...draft,
+        heading: "Petition for anticipatory bail",
+        closing: "It is therefore prayed that anticipatory bail be granted.",
+        timeOrStand: "Interim protection from arrest.",
+        verification: "I verify this petition and rely on Invented Case (2020) 1 SCC 1.",
+      },
+      memo,
+    });
+    const text = formatLegalLetter(letter);
+    assert.doesNotMatch(text, /Invented Case/);
+    assert.doesNotMatch(text, /\(2020\) 1 SCC 1/);
+    assert.match(text, /I verify this petition/);
+    assert.match(text, /Verification/i);
+  });
+
+  it("drops a verification clause from notice and reply drafts", () => {
+    const notice = assembleLetter({
+      kind: "notice",
+      lang: "en",
+      draft: { ...draft, verification: "I, Vivek Sharma, do hereby verify these contents." },
+      memo,
+    });
+    assert.equal(notice.verification, "");
+    assert.doesNotMatch(formatLegalLetter(notice), /do hereby verify/);
+    assert.doesNotMatch(formatLegalLetter(notice), /Verification/i);
+
+    const reply = assembleLetter({
+      kind: "reply",
+      lang: "en",
+      draft: {
+        ...draft,
+        heading: "Reply to legal notice",
+        closing: "Each allegation is denied save what is expressly admitted.",
+        timeOrStand: "The noticee will contest any coercive process.",
+        verification: "I, Vivek Sharma, do hereby verify these contents.",
+      },
+      memo,
+    });
+    assert.equal(reply.verification, "");
+    assert.doesNotMatch(formatLegalLetter(reply), /do hereby verify/);
+  });
+
+  it("petition Hindi labels include prayer, interim relief, and verification", () => {
+    const letter = assembleLetter({
+      kind: "petition",
+      lang: "hi",
+      draft: {
+        ...draft,
+        heading: "अग्रिम ज़मानत याचिका",
+        closing: "अग्रिम ज़मानत दी जाए।",
+        timeOrStand: "अंतरिम सुरक्षा।",
+        verification: "मैं सत्यता की पुष्टि करता हूँ।",
+      },
+      memo,
+    });
+    const text = formatLegalLetter(letter);
+    assert.match(text, /प्रार्थना|याचिका/);
+    assert.match(text, /अंतरिम/);
+    assert.match(text, /सत्यापन/);
+    const hi = t("hi");
+    assert.match(text, new RegExp(hi.disclaimer.slice(0, 20)));
   });
 });

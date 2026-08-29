@@ -1,4 +1,4 @@
-import { t } from "./copy.ts";
+import { t, type Copy } from "./copy.ts";
 import { citablePrecedentsFromMemo, filterLetterGrounds, scrubUnverifiedText, unverifiedCiteLabels } from "./letter-cites.ts";
 import { asLetterGrounds, type ParsedLetterDraft } from "./letter-parse.ts";
 import type { LegalLetter, LegalMemo, LetterKind, OutputLang } from "./types.ts";
@@ -13,6 +13,26 @@ function escapeHtml(value: string): string {
 
 function compact(lines: string[]): string {
   return lines.filter((line, i, all) => !(line === "" && all[i - 1] === "")).join("\n").trim();
+}
+
+export function letterKicker(kind: LetterKind, c: Copy): string {
+  if (kind === "notice") return c.letterNoticeKicker;
+  if (kind === "reply") return c.letterReplyKicker;
+  return c.letterPetitionKicker;
+}
+
+function closingHeading(kind: LetterKind, c: Copy, has: boolean): string {
+  if (!has) return "";
+  if (kind === "notice") return c.letterDemand;
+  if (kind === "petition") return c.letterPrayer;
+  return "";
+}
+
+function followOnHeading(kind: LetterKind, c: Copy, has: boolean): string {
+  if (!has) return "";
+  if (kind === "notice") return c.letterTime;
+  if (kind === "petition") return c.letterInterim;
+  return c.letterStand;
 }
 
 export function assembleLetter(opts: {
@@ -38,13 +58,14 @@ export function assembleLetter(opts: {
     grounds,
     closing: scrub(opts.draft.closing),
     timeOrStand: scrub(opts.draft.timeOrStand),
+    verification: opts.kind === "petition" ? scrub(opts.draft.verification ?? "") : "",
     risks: scrub(opts.draft.risks),
   };
 }
 
 export function formatLegalLetter(letter: LegalLetter): string {
   const c = t(letter.lang);
-  const kicker = letter.kind === "notice" ? c.letterNoticeKicker : c.letterReplyKicker;
+  const kicker = letterKicker(letter.kind, c);
   const groundsHeading = letter.kind === "reply" ? c.letterParaReply : c.letterGrounds;
   const groundLines = letter.grounds.flatMap((ground, i) => {
     const block = [`${i + 1}. ${ground.heading}`.trim(), ground.text];
@@ -67,11 +88,14 @@ export function formatLegalLetter(letter: LegalLetter): string {
     groundsHeading,
     ...groundLines,
     "",
-    letter.kind === "notice" && letter.closing ? c.letterDemand : "",
+    closingHeading(letter.kind, c, Boolean(letter.closing)),
     letter.closing,
     "",
-    letter.timeOrStand ? (letter.kind === "notice" ? c.letterTime : c.letterStand) : "",
+    followOnHeading(letter.kind, c, Boolean(letter.timeOrStand)),
     letter.timeOrStand,
+    "",
+    letter.kind === "petition" && letter.verification ? c.letterVerification : "",
+    letter.kind === "petition" ? letter.verification : "",
     "",
     letter.risks ? c.risks : "",
     letter.risks,
