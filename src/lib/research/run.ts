@@ -1,51 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { courtById } from "./courts";
-import { intakeSchema, memoSchema } from "./schema";
+import { intakeSchema } from "./schema";
 import type { Intake, LegalMemo } from "./types";
-
-const LEGAL_DOMAINS = [
-  "indiankanoon.org",
-  "livelaw.in",
-  "casemine.com",
-  "judgments.ecourts.gov.in",
-  "sci.gov.in",
-] as const;
-
-const SYSTEM = `You are a senior Indian advocate writing a research memo for another advocate.
-
-Hard rules:
-- Indian law only. You MUST use web_search on Indian Kanoon, LiveLaw, CaseMine, eSCR (judgments.ecourts.gov.in) and sci.gov.in.
-- Never invent a citation, case name, year, or URL. If you cannot retrieve it, put it in unverified and set verified=false.
-- Prefer indiankanoon.org/doc/… links. Supreme Court first, then the chosen High Court.
-- This is research assistance, not legal advice. Say so once in fullMemo.
-- Do at most three searches, then write the JSON immediately.
-
-Return ONLY a JSON object. The first character of your reply must be {. No markdown, no labels, no preamble.
-{
-  "title": "short cause title",
-  "causeTitle": "Party v. Party (forum)",
-  "courtsConsulted": ["Supreme Court of India"],
-  "factsSummary": "tight facts in brief",
-  "issues": [{"issue": "...", "framing": "how the court would frame it"}],
-  "statutes": [{"name": "", "sections": "", "why": "", "url": ""}],
-  "doctrines": [{"name": "", "explanation": "", "leadingCase": ""}],
-  "precedents": [{
-    "title": "", "citation": "", "court": "", "year": "",
-    "ratio": "", "factsOverlap": "", "holding": "", "howToUse": "",
-    "url": "", "binding": "binding"|"persuasive"|"distinguishable", "verified": true
-  }],
-  "pointsForCourt": [{"point": "", "likelyOutcome": "", "strength": "strong"|"moderate"|"contested"}],
-  "argumentsFor": ["..."],
-  "argumentsAgainst": ["..."],
-  "counters": ["..."],
-  "strategy": "forum, pleadings, evidence, interim relief",
-  "risks": ["..."],
-  "fullMemo": "Complete written opinion in paragraphs, under 800 words. Headings as plain lines. Cite cases with URLs in parentheses.",
-  "sources": [{"title": "", "url": "", "publisher": "Indian Kanoon|LiveLaw|eSCR|SCI|CaseMine"}],
-  "unverified": []
-}
-4–6 precedents is enough.`;
+import { LEGAL_DOMAINS } from "./legal-domains.ts";
+import { parseResearchMemo } from "./parse-memo.ts";
+import {
+  RESEARCH_MAX_OUTPUT_TOKENS,
+  RESEARCH_SYSTEM,
+  RESEARCH_TIMEOUT_MS,
+} from "./prompt.ts";
+import { stampPrecedents } from "./verify.ts";
 
 type XaiOutputItem = {
   type?: string;
@@ -65,46 +30,6 @@ type XaiResponse = {
   citations?: string[];
   output_text?: string;
 };
-
-function extractJsonObject(text: string): unknown {
-  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const raw = (fenced?.[1] ?? text).trim();
-  const start = raw.indexOf("{");
-  const end = raw.lastIndexOf("}");
-  if (start < 0 || end <= start) throw new Error("PARSE");
-  const slice = raw.slice(start, end + 1).replace(/,\s*([}\]])/g, "$1");
-  return JSON.parse(slice) as unknown;
-}
-
-function tidyRawMemo(text: string): string {
-  return text
-    .replace(/```(?:json)?/gi, "")
-    .replace(/\*\*([^*]{2,40}):\*\*/g, "\n\n$1\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
-
-function labelValue(text: string, label: string): string {
-  const re = new RegExp(`\\*\\*${label}:\\*\\*\\s*([^*]+?)(?=\\s*\\*\\*|$)`, "i");
-  const m = text.match(re);
-  return (m?.[1] ?? "").trim();
-}
-
-function coerceMemo(text: string) {
-  try {
-    return memoSchema.parse(extractJsonObject(text));
-  } catch {
-    const titled = labelValue(text, "Title");
-    const cause = labelValue(text, "Cause Title");
-    const facts = labelValue(text, "Facts Summary");
-    return memoSchema.parse({
-      title: titled || "Legal research memo",
-      causeTitle: cause,
-      factsSummary: facts,
-      fullMemo: tidyRawMemo(text).slice(0, 18000),
-    });
-  }
-}
 
 function collectFromOutput(data: XaiResponse): { text: string; queries: string[]; urls: string[] } {
   const queries: string[] = [];
@@ -151,7 +76,7 @@ export const runResearch = createServerFn({ method: "POST" })
       ].join("\n");
 
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 70_000);
+      const timer = setTimeout(() => controller.abort(), RESEARCH_TIMEOUT_MS);
       let collected: { text: string; queries: string[]; urls: string[] };
       try {
         const res = await fetch("https://api.x.ai/v1/responses", {
@@ -163,7 +88,7 @@ export const runResearch = createServerFn({ method: "POST" })
           signal: controller.signal,
           body: JSON.stringify({
             model: "grok-4.20-0309-non-reasoning",
-            instructions: SYSTEM,
+            instructions: RESEARCH_SYSTEM,
             input: [{ role: "user", content: user }],
             tools: [
               {
@@ -172,7 +97,7 @@ export const runResearch = createServerFn({ method: "POST" })
               },
             ],
             temperature: 0.2,
-            max_output_tokens: 4000,
+            max_output_tokens: RESEARCH_MAX_OUTPUT_TOKENS,
             max_tool_calls: 3,
             text: { format: { type: "json_object" } },
           }),
@@ -190,13 +115,23 @@ export const runResearch = createServerFn({ method: "POST" })
       }
 
       if (!collected.text.trim()) return { ok: false, error: "PARSE" };
-      const parsed = coerceMemo(collected.text);
+      let parsed;
+      try {
+        parsed = parseResearchMemo(collected.text);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "";
+        if (message === "PARSE") return { ok: false, error: "PARSE" };
+        throw err;
+      }
+      const stamped = stampPrecedents(parsed.precedents, collected.urls, parsed.unverified);
       const memo: LegalMemo = {
         ...parsed,
+        precedents: stamped.precedents,
+        unverified: stamped.unverified,
         searchedQueries: collected.queries,
         citationUrls: collected.urls,
         title: parsed.title || "Legal research memo",
-        fullMemo: parsed.fullMemo || collected.text,
+        fullMemo: parsed.fullMemo,
       };
       return { ok: true, memo };
     } catch (err) {
