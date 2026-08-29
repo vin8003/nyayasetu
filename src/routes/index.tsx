@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Bookmark, Trash2 } from "lucide-react";
@@ -51,6 +51,7 @@ function Home() {
   const [elapsed, setElapsed] = useState(0);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [savedId, setSavedId] = useState<string | null>(null);
+  const runSeq = useRef(0);
 
   const c = t(lang);
 
@@ -113,6 +114,17 @@ function Home() {
     return true;
   }
 
+  function abandonRun() {
+    // Client wait only. The createServerFn / xAI fetch keeps running.
+    runSeq.current += 1;
+  }
+
+  function cancelRun() {
+    abandonRun();
+    setView("desk");
+    setError(null);
+  }
+
   async function persist(currentIntake: Intake, currentMemo: LegalMemo) {
     const item = await saveMemoRecord({ data: { intake: currentIntake, memo: currentMemo } });
     setSavedId(item.id);
@@ -122,6 +134,7 @@ function Home() {
 
   async function start(nextIntake: Intake = intake) {
     if (!requireAccount()) return;
+    const token = ++runSeq.current;
     let payload = nextIntake;
     setError(null);
 
@@ -137,6 +150,7 @@ function Home() {
           })),
         );
         const extracted = await extractUploads({ data: { files: uploaded } });
+        if (token !== runSeq.current) return;
         const merged = [payload.facts.trim(), extracted.combined.trim()]
           .filter(Boolean)
           .join("\n\n")
@@ -144,6 +158,7 @@ function Home() {
         payload = { ...payload, facts: merged };
         setIntake(payload);
       } catch (err) {
+        if (token !== runSeq.current) return;
         if (bounceIfUnauthorized(err)) return;
         setError(c.fileErr);
         setView("desk");
@@ -151,6 +166,7 @@ function Home() {
       }
     }
 
+    if (token !== runSeq.current) return;
     if (payload.facts.trim().length < 40) {
       setError(c.required);
       setView("desk");
@@ -162,6 +178,7 @@ function Home() {
     setSavedId(null);
     try {
       const result = await runResearch({ data: payload });
+      if (token !== runSeq.current) return;
       if (!result.ok) {
         const mapped =
           result.error === "AI_UNAVAILABLE"
@@ -175,14 +192,17 @@ function Home() {
         setView("desk");
         return;
       }
-      setMemo(result.memo);
-      setView("memo");
+      if (token !== runSeq.current) return;
       try {
         await persist(payload, result.memo);
       } catch (err) {
         if (bounceIfUnauthorized(err)) return;
       }
+      if (token !== runSeq.current) return;
+      setMemo(result.memo);
+      setView("memo");
     } catch (err) {
+      if (token !== runSeq.current) return;
       if (bounceIfUnauthorized(err)) return;
       setError(err instanceof Error ? err.message : c.parseErr);
       setView("desk");
@@ -225,6 +245,7 @@ function Home() {
             className="flex items-center gap-2.5"
             aria-label={c.app}
             onClick={() => {
+              abandonRun();
               setView("desk");
               setError(null);
             }}
@@ -237,6 +258,7 @@ function Home() {
               type="button"
               onClick={() => {
                 if (!requireAccount()) return;
+                abandonRun();
                 setView("history");
               }}
               className="inline-flex h-10 items-center gap-1.5 rounded-md px-2.5 text-sm text-muted hover:text-fg"
@@ -300,7 +322,9 @@ function Home() {
           </div>
         ) : null}
 
-        {view === "running" ? <ResearchStage lang={lang} elapsed={elapsed} /> : null}
+        {view === "running" ? (
+          <ResearchStage lang={lang} elapsed={elapsed} onCancel={cancelRun} />
+        ) : null}
 
         {view === "memo" && memo ? (
           <MemoView

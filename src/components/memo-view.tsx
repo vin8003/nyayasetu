@@ -1,8 +1,10 @@
-import { useMemo, useState } from "react";
-import { ArrowLeft, Copy, Printer, Bookmark } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
+import { ArrowLeft, Copy, Printer, Bookmark, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import type { Binding, LegalMemo, OutputLang, Strength } from "@/lib/research/types";
 import { t } from "@/lib/research/copy";
+import { formatMemoBrief, formatMemoBriefHtml } from "@/lib/research/brief";
+import { httpHref } from "@/lib/research/verify";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -54,6 +56,24 @@ function MemoBody({ text }: { text: string }) {
   );
 }
 
+function ExternalLink({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  const safe = httpHref(href);
+  if (!safe) return <span className={className}>{children}</span>;
+  return (
+    <a href={safe} target="_blank" rel="noreferrer" className={className}>
+      {children}
+    </a>
+  );
+}
+
 export function MemoView({
   lang,
   memo,
@@ -80,17 +100,24 @@ export function MemoView({
   };
 
   async function copyMemo() {
-    const payload = [
-      memo.title,
-      memo.causeTitle,
-      "",
-      memo.fullMemo,
-      "",
-      "Sources:",
-      ...memo.sources.map((s) => `- ${s.title} (${s.publisher}): ${s.url}`),
-    ].join("\n");
-    await navigator.clipboard.writeText(payload);
+    await navigator.clipboard.writeText(formatMemoBrief(memo, lang));
     toast.success(c.copied);
+  }
+
+  function downloadWord() {
+    const html = formatMemoBriefHtml(memo, lang);
+    const blob = new Blob([html], { type: "application/msword" });
+    const href = URL.createObjectURL(blob);
+    const slug = (memo.title || "nyayasetu-memo")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 60);
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = `${slug || "nyayasetu-memo"}.doc`;
+    a.click();
+    URL.revokeObjectURL(href);
   }
 
   return (
@@ -116,6 +143,10 @@ export function MemoView({
           <Button variant="outline" size="sm" onClick={() => window.print()}>
             <Printer className="size-3.5" />
             {c.print}
+          </Button>
+          <Button variant="outline" size="sm" onClick={downloadWord}>
+            <FileDown className="size-3.5" />
+            {c.wordBrief}
           </Button>
           <Button variant="paper" size="sm" onClick={onSave} disabled={saved}>
             <Bookmark className="size-3.5" />
@@ -146,7 +177,7 @@ export function MemoView({
       </div>
 
       {tab === "brief" ? (
-        <article className="print-paper rounded-xl bg-paper px-5 py-8 text-paper-ink shadow-[var(--shadow-paper)] sm:px-10 sm:py-12">
+        <article className="no-print print-paper rounded-xl bg-paper px-5 py-8 text-paper-ink shadow-[var(--shadow-paper)] sm:px-10 sm:py-12">
           <p className="mb-6 font-mono text-[11px] uppercase tracking-[0.18em] text-paper-muted">
             NyayaSetu · research memorandum
           </p>
@@ -165,7 +196,7 @@ export function MemoView({
       ) : null}
 
       {tab === "issues" ? (
-        <div className="stagger-in space-y-3">
+        <div className="no-print stagger-in space-y-3">
           <h2 className="font-display text-xl">{c.issues}</h2>
           {memo.issues.map((issue, i) => (
             <section key={i} className="rounded-xl bg-surface p-5 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
@@ -188,7 +219,7 @@ export function MemoView({
       ) : null}
 
       {tab === "cases" ? (
-        <div className="stagger-in space-y-3">
+        <div className="no-print stagger-in space-y-3">
           <h2 className="font-display text-xl">{c.precedents}</h2>
           {memo.precedents.length === 0 ? (
             <p className="text-sm text-muted">{c.unverified}</p>
@@ -224,14 +255,9 @@ export function MemoView({
                   ) : null}
                 </dl>
                 {p.url ? (
-                  <a
-                    href={p.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-4 inline-block text-sm text-accent hover:text-fg"
-                  >
+                  <ExternalLink href={p.url} className="mt-4 inline-block text-sm text-accent hover:text-fg">
                     {p.url.replace(/^https?:\/\//, "")}
-                  </a>
+                  </ExternalLink>
                 ) : null}
               </article>
             ))
@@ -240,7 +266,7 @@ export function MemoView({
       ) : null}
 
       {tab === "law" ? (
-        <div className="stagger-in grid gap-6 lg:grid-cols-2">
+        <div className="no-print stagger-in grid gap-6 lg:grid-cols-2">
           <section>
             <h2 className="mb-3 font-display text-xl">{c.statutes}</h2>
             <div className="space-y-3">
@@ -250,9 +276,9 @@ export function MemoView({
                   <p className="mt-1 font-mono text-xs text-accent">{s.sections}</p>
                   <p className="mt-2 text-sm text-muted">{s.why}</p>
                   {s.url ? (
-                    <a href={s.url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs text-accent">
+                    <ExternalLink href={s.url} className="mt-2 inline-block text-xs text-accent">
                       {s.url.replace(/^https?:\/\//, "")}
-                    </a>
+                    </ExternalLink>
                   ) : null}
                 </article>
               ))}
@@ -276,7 +302,7 @@ export function MemoView({
       ) : null}
 
       {tab === "args" ? (
-        <div className="stagger-in grid gap-6 lg:grid-cols-3">
+        <div className="no-print stagger-in grid gap-6 lg:grid-cols-3">
           <ArgCol title={c.forSide} items={memo.argumentsFor} />
           <ArgCol title={c.against} items={memo.argumentsAgainst} />
           <ArgCol title={c.counters} items={memo.counters} />
@@ -296,15 +322,15 @@ export function MemoView({
       ) : null}
 
       {tab === "sources" ? (
-        <div className="stagger-in space-y-6">
+        <div className="no-print stagger-in space-y-6">
           <section>
             <h2 className="mb-3 font-display text-xl">{c.tabSources}</h2>
             <ul className="space-y-2">
               {memo.sources.map((s, i) => (
                 <li key={i} className="rounded-lg bg-surface px-4 py-3 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
-                  <a href={s.url} target="_blank" rel="noreferrer" className="text-sm text-accent hover:text-fg">
+                  <ExternalLink href={s.url} className="text-sm text-accent hover:text-fg">
                     {s.title || s.url}
-                  </a>
+                  </ExternalLink>
                   <p className="mt-0.5 text-xs text-muted">
                     {s.publisher}
                     {s.url ? ` · ${s.url.replace(/^https?:\/\//, "")}` : ""}
@@ -315,9 +341,9 @@ export function MemoView({
                 .filter((u) => !memo.sources.some((s) => s.url === u))
                 .map((u) => (
                   <li key={u} className="rounded-lg bg-surface px-4 py-3 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
-                    <a href={u} target="_blank" rel="noreferrer" className="text-sm text-accent hover:text-fg">
+                    <ExternalLink href={u} className="text-sm text-accent hover:text-fg">
                       {u.replace(/^https?:\/\//, "")}
-                    </a>
+                    </ExternalLink>
                   </li>
                 ))}
             </ul>
@@ -336,6 +362,10 @@ export function MemoView({
           ) : null}
         </div>
       ) : null}
+
+      <article className="print-only print-paper rounded-xl bg-paper px-5 py-8 text-paper-ink">
+        <pre className="whitespace-pre-wrap font-display text-[17px] leading-[1.65]">{formatMemoBrief(memo, lang)}</pre>
+      </article>
 
       <p className="no-print text-xs leading-relaxed text-subtle">{c.disclaimer}</p>
     </div>

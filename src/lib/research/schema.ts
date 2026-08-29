@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PRACTICE_AREAS, SIDES, OUTPUT_LANGS } from "./types";
+import { PRACTICE_AREAS, SIDES, OUTPUT_LANGS } from "./types.ts";
 
 export const intakeSchema = z.object({
   facts: z.string().trim().min(40).max(20000),
