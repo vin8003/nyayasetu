@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { intakeSchema } from "./schema";
+import { intakeSchema, memoSchema } from "./schema";
 import type { Intake, LegalLetter, LegalMemo, LetterKind } from "./types";
 import { assembleLetter } from "./letter-format.ts";
 import { parseLetterDraft } from "./letter-parse.ts";
@@ -45,10 +45,15 @@ function asErrorMessage(error: XaiResponse["error"]): string | null {
   return error.message ?? null;
 }
 
+const letterMemoSchema = memoSchema.extend({
+  searchedQueries: z.array(z.string()).catch([]),
+  citationUrls: z.array(z.string()).catch([]),
+});
+
 const letterInputSchema = z.object({
   kind: z.enum(["notice", "reply"]),
   intake: intakeSchema,
-  memo: z.custom<LegalMemo>((value) => Boolean(value) && typeof value === "object"),
+  memo: letterMemoSchema,
 });
 
 export const draftLetter = createServerFn({ method: "POST" })

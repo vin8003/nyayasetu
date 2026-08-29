@@ -1,5 +1,5 @@
 import { t } from "./copy.ts";
-import { citablePrecedentsFromMemo, filterLetterGrounds } from "./letter-cites.ts";
+import { citablePrecedentsFromMemo, filterLetterGrounds, scrubUnverifiedText, unverifiedCiteLabels } from "./letter-cites.ts";
 import { asLetterGrounds, type ParsedLetterDraft } from "./letter-parse.ts";
 import type { LegalLetter, LegalMemo, LetterKind, OutputLang } from "./types.ts";
 
@@ -22,17 +22,23 @@ export function assembleLetter(opts: {
   memo: LegalMemo;
 }): LegalLetter {
   const citable = citablePrecedentsFromMemo(opts.memo);
-  const grounds = filterLetterGrounds(asLetterGrounds(opts.draft.grounds), citable);
+  const banned = unverifiedCiteLabels(opts.memo);
+  const scrub = (value: string) => scrubUnverifiedText(value, banned);
+  const grounds = filterLetterGrounds(asLetterGrounds(opts.draft.grounds), citable).map((ground) => ({
+    ...ground,
+    heading: scrub(ground.heading),
+    text: scrub(ground.text),
+  }));
   return {
     kind: opts.kind,
     lang: opts.lang,
-    heading: opts.draft.heading.trim(),
-    parties: opts.draft.parties.trim(),
-    facts: opts.draft.facts.trim(),
+    heading: scrub(opts.draft.heading),
+    parties: scrub(opts.draft.parties),
+    facts: scrub(opts.draft.facts),
     grounds,
-    closing: opts.draft.closing.trim(),
-    timeOrStand: opts.draft.timeOrStand.trim(),
-    risks: opts.draft.risks.trim(),
+    closing: scrub(opts.draft.closing),
+    timeOrStand: scrub(opts.draft.timeOrStand),
+    risks: scrub(opts.draft.risks),
   };
 }
 
@@ -40,15 +46,10 @@ export function formatLegalLetter(letter: LegalLetter): string {
   const c = t(letter.lang);
   const kicker = letter.kind === "notice" ? c.letterNoticeKicker : c.letterReplyKicker;
   const groundsHeading = letter.kind === "reply" ? c.letterParaReply : c.letterGrounds;
-  const closingHeading = letter.kind === "notice" ? c.letterDemand : "";
-  const standHeading = letter.kind === "notice" ? c.letterTime : c.letterStand;
   const groundLines = letter.grounds.flatMap((ground, i) => {
-    const block = [
-      `${i + 1}. ${ground.heading}`.trim(),
-      ground.text,
-      `${c.letterCitation}: ${ground.citation}`,
-      `${c.letterUrl}: ${ground.url}`,
-    ].filter(Boolean);
+    const block = [`${i + 1}. ${ground.heading}`.trim(), ground.text];
+    if (ground.citation) block.push(`${c.letterCitation}: ${ground.citation}`);
+    if (ground.url) block.push(`${c.letterUrl}: ${ground.url}`);
     return i === letter.grounds.length - 1 ? block : [...block, ""];
   });
 
@@ -66,13 +67,13 @@ export function formatLegalLetter(letter: LegalLetter): string {
     groundsHeading,
     ...groundLines,
     "",
-    closingHeading,
+    letter.kind === "notice" && letter.closing ? c.letterDemand : "",
     letter.closing,
     "",
-    standHeading,
+    letter.timeOrStand ? (letter.kind === "notice" ? c.letterTime : c.letterStand) : "",
     letter.timeOrStand,
     "",
-    c.risks,
+    letter.risks ? c.risks : "",
     letter.risks,
     "",
     c.disclaimer,

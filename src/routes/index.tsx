@@ -54,7 +54,9 @@ function Home() {
   const [elapsed, setElapsed] = useState(0);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [savedId, setSavedId] = useState<string | null>(null);
+  const [memoLang, setMemoLang] = useState<OutputLang>("en");
   const runSeq = useRef(0);
+  const draftLock = useRef(false);
 
   const userId = user?.id;
   const c = t(lang);
@@ -218,6 +220,7 @@ function Home() {
       }
       if (token !== runSeq.current) return;
       setMemo(result.memo);
+      setMemoLang(payload.lang);
       setLetter(null);
       setView("memo");
     } catch (err) {
@@ -231,11 +234,13 @@ function Home() {
   async function startDraft(kind: LetterKind) {
     if (!memo) return;
     if (!requireAccount()) return;
+    if (draftLock.current) return;
+    draftLock.current = true;
     const token = ++runSeq.current;
     setError(null);
     setView("drafting");
     try {
-      const result = await draftLetter({ data: { kind, intake, memo } });
+      const result = await draftLetter({ data: { kind, intake: { ...intake, lang: memoLang }, memo } });
       if (token !== runSeq.current) return;
       if (!result.ok) {
         toast.error(mapAiError(result.error, true));
@@ -249,6 +254,8 @@ function Home() {
       if (bounceIfUnauthorized(err)) return;
       toast.error(err instanceof Error ? err.message : c.letterParseErr);
       setView("memo");
+    } finally {
+      draftLock.current = false;
     }
   }
 
@@ -419,6 +426,7 @@ function Home() {
                       onClick={() => {
                         setIntake(item.intake);
                         setMemo(item.memo);
+                        setMemoLang(item.intake.lang);
                         setLetter(null);
                         setSavedId(item.id);
                         setView("memo");

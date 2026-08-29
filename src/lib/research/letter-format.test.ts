@@ -122,6 +122,25 @@ describe("assembleLetter / formatLegalLetter", () => {
     assert.doesNotMatch(text, /fake ratio/);
   });
 
+  it("strips unverified case names that the model planted in facts or the demand", () => {
+    const letter = assembleLetter({
+      kind: "notice",
+      lang: "en",
+      draft: {
+        ...draft,
+        facts: "Relying on Invented Case (2020) 1 SCC 1 the FIR is vague.",
+        closing: "See also https://indiankanoon.org/doc/0/ and Invented Case.",
+      },
+      memo,
+    });
+    const text = formatLegalLetter(letter);
+    assert.doesNotMatch(text, /Invented Case/);
+    assert.doesNotMatch(text, /\(2020\) 1 SCC 1/);
+    assert.doesNotMatch(text, /indiankanoon\.org\/doc\/0/);
+    assert.match(text, /FIR is vague/);
+    assert.match(text, /Arnesh Kumar|8 SCC 273/);
+  });
+
   it("uses Hindi labels and the Hindi disclaimer when the memo language is hi", () => {
     const letter = assembleLetter({ kind: "notice", lang: "hi", draft, memo });
     const text = formatLegalLetter(letter);

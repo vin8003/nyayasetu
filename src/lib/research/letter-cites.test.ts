@@ -170,6 +170,24 @@ describe("filterLetterGrounds", () => {
     assert.deepEqual(kept, []);
   });
 
+  it("keeps a ground that states the law without a case cite", () => {
+    const kept = filterLetterGrounds(
+      [
+        {
+          heading: "General allegations",
+          text: "Vague 498A pleadings do not justify mechanical arrest.",
+          citation: "",
+          url: "",
+        },
+      ],
+      citable,
+    );
+    assert.equal(kept.length, 1);
+    assert.equal(kept[0]?.url, "");
+    assert.equal(kept[0]?.citation, "");
+    assert.match(kept[0]?.text ?? "", /mechanical arrest/);
+  });
+
   it("drops javascript: ground URLs", () => {
     const kept = filterLetterGrounds(
       [

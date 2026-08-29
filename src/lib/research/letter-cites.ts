@@ -10,6 +10,41 @@ function citationKey(value: string): string {
   return value.replace(/\s+/g, " ").trim().toLowerCase();
 }
 
+export function unverifiedCiteLabels(memo: LegalMemo): string[] {
+  const citable = citablePrecedentsFromMemo(memo);
+  const allowed = new Set<string>();
+  for (const precedent of citable) {
+    for (const value of [precedent.title, precedent.citation, precedent.url]) {
+      const trimmed = value.trim();
+      if (trimmed.length >= 8) allowed.add(trimmed);
+    }
+  }
+  const labels: string[] = [];
+  const add = (value: string) => {
+    const trimmed = value.trim();
+    if (trimmed.length < 8 || allowed.has(trimmed) || labels.includes(trimmed)) return;
+    labels.push(trimmed);
+  };
+  for (const note of memo.unverified ?? []) add(note);
+  for (const precedent of memo.precedents ?? []) {
+    const normalized = normalizeCitationUrl(precedent.url);
+    if (normalized && citable.some((row) => normalizeCitationUrl(row.url) === normalized)) continue;
+    add(precedent.title);
+    add(precedent.citation);
+    add(precedent.url);
+  }
+  return labels.sort((a, b) => b.length - a.length);
+}
+
+export function scrubUnverifiedText(text: string, banned: string[]): string {
+  let out = text;
+  for (const label of banned) {
+    if (!label) continue;
+    out = out.split(label).join("");
+  }
+  return out.replace(/[ \t]{2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+}
+
 export function filterLetterGrounds(grounds: LetterGround[], citable: Precedent[]): LetterGround[] {
   const byUrl = new Map<string, Precedent>();
   const byCite = new Map<string, Precedent>();
@@ -23,6 +58,12 @@ export function filterLetterGrounds(grounds: LetterGround[], citable: Precedent[
   const kept: LetterGround[] = [];
   for (const ground of grounds) {
     const urlTrim = ground.url.trim();
+    const citeTrim = ground.citation.trim();
+    if (!urlTrim && !citeTrim) {
+      if (!ground.heading.trim() && !ground.text.trim()) continue;
+      kept.push({ heading: ground.heading.trim(), text: ground.text.trim(), citation: "", url: "" });
+      continue;
+    }
     let match: Precedent | undefined;
     if (urlTrim) {
       const href = httpHref(urlTrim);
@@ -31,7 +72,7 @@ export function filterLetterGrounds(grounds: LetterGround[], citable: Precedent[
       if (!normalized) continue;
       match = byUrl.get(normalized);
     } else {
-      match = byCite.get(citationKey(ground.citation));
+      match = byCite.get(citationKey(citeTrim));
     }
     if (!match) continue;
     const safe = httpHref(match.url);
