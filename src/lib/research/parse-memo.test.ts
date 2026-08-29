@@ -51,4 +51,12 @@ describe("parseResearchMemo", () => {
   it("throws PARSE on empty text", () => {
     assert.throws(() => parseResearchMemo("   "), { message: "PARSE" });
   });
+
+  it("throws PARSE on an empty JSON object", () => {
+    assert.throws(() => parseResearchMemo("{}"), { message: "PARSE" });
+  });
+
+  it("throws PARSE on a title-only object with no research body", () => {
+    assert.throws(() => parseResearchMemo('{"title":"partial"}'), { message: "PARSE" });
+  });
 });

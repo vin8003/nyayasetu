@@ -114,9 +114,13 @@ function Home() {
     return true;
   }
 
-  function cancelRun() {
+  function abandonRun() {
     // Client wait only. The createServerFn / xAI fetch keeps running.
     runSeq.current += 1;
+  }
+
+  function cancelRun() {
+    abandonRun();
     setView("desk");
     setError(null);
   }
@@ -241,6 +245,7 @@ function Home() {
             className="flex items-center gap-2.5"
             aria-label={c.app}
             onClick={() => {
+              abandonRun();
               setView("desk");
               setError(null);
             }}
@@ -253,6 +258,7 @@ function Home() {
               type="button"
               onClick={() => {
                 if (!requireAccount()) return;
+                abandonRun();
                 setView("history");
               }}
               className="inline-flex h-10 items-center gap-1.5 rounded-md px-2.5 text-sm text-muted hover:text-fg"

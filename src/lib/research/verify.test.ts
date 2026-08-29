@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import type { Precedent } from "./types.ts";
 import { LEGAL_DOMAINS } from "./legal-domains.ts";
-import { stampPrecedents } from "./verify.ts";
+import { httpHref, stampPrecedents } from "./verify.ts";
 
 function caseRow(patch: Partial<Precedent> = {}): Precedent {
   return {
@@ -59,6 +59,14 @@ describe("stampPrecedents", () => {
     assert.equal(a.precedents[0]?.verified, false);
     const b = stampPrecedents([caseRow({ url: "not a url", verified: true })], ["not a url"]);
     assert.equal(b.precedents[0]?.verified, false);
+  });
+
+  it("rejects javascript: URLs even when listed in citationUrls", () => {
+    const url = "javascript://indiankanoon.org/doc/322621/";
+    const { precedents } = stampPrecedents([caseRow({ url, verified: true })], [url]);
+    assert.equal(precedents[0]?.verified, false);
+    assert.equal(httpHref(url), null);
+    assert.equal(httpHref("https://indiankanoon.org/doc/322621/"), "https://indiankanoon.org/doc/322621/");
   });
 
   it("merges existing unverified notes without duplicates", () => {

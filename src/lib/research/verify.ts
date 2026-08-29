@@ -5,34 +5,42 @@ function withScheme(url: string): string {
   return /^[a-z][a-z0-9+.-]*:/i.test(url) ? url : `https://${url}`;
 }
 
-export function normalizeCitationUrl(url: string): string | null {
+function parseHttpUrl(url: string): URL | null {
   const trimmed = url.trim();
   if (!trimmed) return null;
   try {
     const parsed = new URL(withScheme(trimmed));
-    let host = parsed.hostname.toLowerCase();
-    if (host.startsWith("www.")) host = host.slice(4);
-    let path = parsed.pathname;
-    if (path.length > 1 && path.endsWith("/")) path = path.slice(0, -1);
-    parsed.hash = "";
-    parsed.hostname = host;
-    parsed.pathname = path;
-    return parsed.toString();
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+    return parsed;
   } catch {
     return null;
   }
 }
 
-export function hostAllowed(url: string, domains: readonly string[] = LEGAL_DOMAINS): boolean {
+export function httpHref(url: string): string | null {
   const trimmed = url.trim();
-  if (!trimmed) return false;
-  try {
-    let host = new URL(withScheme(trimmed)).hostname.toLowerCase();
-    if (host.startsWith("www.")) host = host.slice(4);
-    return domains.some((domain) => host === domain || host.endsWith(`.${domain}`));
-  } catch {
-    return false;
-  }
+  return parseHttpUrl(trimmed) ? trimmed : null;
+}
+
+export function normalizeCitationUrl(url: string): string | null {
+  const parsed = parseHttpUrl(url);
+  if (!parsed) return null;
+  let host = parsed.hostname.toLowerCase();
+  if (host.startsWith("www.")) host = host.slice(4);
+  let path = parsed.pathname;
+  if (path.length > 1 && path.endsWith("/")) path = path.slice(0, -1);
+  parsed.hash = "";
+  parsed.hostname = host;
+  parsed.pathname = path;
+  return parsed.toString();
+}
+
+export function hostAllowed(url: string, domains: readonly string[] = LEGAL_DOMAINS): boolean {
+  const parsed = parseHttpUrl(url);
+  if (!parsed) return false;
+  let host = parsed.hostname.toLowerCase();
+  if (host.startsWith("www.")) host = host.slice(4);
+  return domains.some((domain) => host === domain || host.endsWith(`.${domain}`));
 }
 
 export function stampPrecedents(

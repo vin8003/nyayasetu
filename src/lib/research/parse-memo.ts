@@ -20,6 +20,13 @@ function extractJsonObject(text: string): unknown {
   }
 }
 
+function isSubstantial(memo: ParsedMemo): boolean {
+  if (!memo.title.trim()) return false;
+  if (memo.issues.some((issue) => issue.issue.trim())) return true;
+  if (memo.precedents.some((precedent) => precedent.title.trim() || precedent.citation.trim())) return true;
+  return memo.fullMemo.trim().length >= 40;
+}
+
 export function parseResearchMemo(text: string): ParsedMemo {
   const raw = unwrapFence(text);
   if (!raw) throw new Error("PARSE");
@@ -29,9 +36,12 @@ export function parseResearchMemo(text: string): ParsedMemo {
   } catch {
     json = extractJsonObject(raw);
   }
+  let parsed: ParsedMemo;
   try {
-    return memoSchema.parse(json);
+    parsed = memoSchema.parse(json);
   } catch {
     throw new Error("PARSE");
   }
+  if (!isSubstantial(parsed)) throw new Error("PARSE");
+  return parsed;
 }

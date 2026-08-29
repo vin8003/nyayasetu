@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { ArrowLeft, Copy, Printer, Bookmark, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import type { Binding, LegalMemo, OutputLang, Strength } from "@/lib/research/types";
 import { t } from "@/lib/research/copy";
 import { formatMemoBrief, formatMemoBriefHtml } from "@/lib/research/brief";
+import { httpHref } from "@/lib/research/verify";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -52,6 +53,24 @@ function MemoBody({ text }: { text: string }) {
         );
       })}
     </div>
+  );
+}
+
+function ExternalLink({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  const safe = httpHref(href);
+  if (!safe) return <span className={className}>{children}</span>;
+  return (
+    <a href={safe} target="_blank" rel="noreferrer" className={className}>
+      {children}
+    </a>
   );
 }
 
@@ -236,14 +255,9 @@ export function MemoView({
                   ) : null}
                 </dl>
                 {p.url ? (
-                  <a
-                    href={p.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-4 inline-block text-sm text-accent hover:text-fg"
-                  >
+                  <ExternalLink href={p.url} className="mt-4 inline-block text-sm text-accent hover:text-fg">
                     {p.url.replace(/^https?:\/\//, "")}
-                  </a>
+                  </ExternalLink>
                 ) : null}
               </article>
             ))
@@ -262,9 +276,9 @@ export function MemoView({
                   <p className="mt-1 font-mono text-xs text-accent">{s.sections}</p>
                   <p className="mt-2 text-sm text-muted">{s.why}</p>
                   {s.url ? (
-                    <a href={s.url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs text-accent">
+                    <ExternalLink href={s.url} className="mt-2 inline-block text-xs text-accent">
                       {s.url.replace(/^https?:\/\//, "")}
-                    </a>
+                    </ExternalLink>
                   ) : null}
                 </article>
               ))}
@@ -314,9 +328,9 @@ export function MemoView({
             <ul className="space-y-2">
               {memo.sources.map((s, i) => (
                 <li key={i} className="rounded-lg bg-surface px-4 py-3 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
-                  <a href={s.url} target="_blank" rel="noreferrer" className="text-sm text-accent hover:text-fg">
+                  <ExternalLink href={s.url} className="text-sm text-accent hover:text-fg">
                     {s.title || s.url}
-                  </a>
+                  </ExternalLink>
                   <p className="mt-0.5 text-xs text-muted">
                     {s.publisher}
                     {s.url ? ` · ${s.url.replace(/^https?:\/\//, "")}` : ""}
@@ -327,9 +341,9 @@ export function MemoView({
                 .filter((u) => !memo.sources.some((s) => s.url === u))
                 .map((u) => (
                   <li key={u} className="rounded-lg bg-surface px-4 py-3 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
-                    <a href={u} target="_blank" rel="noreferrer" className="text-sm text-accent hover:text-fg">
+                    <ExternalLink href={u} className="text-sm text-accent hover:text-fg">
                       {u.replace(/^https?:\/\//, "")}
-                    </a>
+                    </ExternalLink>
                   </li>
                 ))}
             </ul>
@@ -350,9 +364,6 @@ export function MemoView({
       ) : null}
 
       <article className="print-only print-paper rounded-xl bg-paper px-5 py-8 text-paper-ink">
-        <p className="mb-6 font-mono text-[11px] uppercase tracking-[0.18em] text-paper-muted">
-          NyayaSetu · research memorandum
-        </p>
         <pre className="whitespace-pre-wrap font-display text-[17px] leading-[1.65]">{formatMemoBrief(memo, lang)}</pre>
       </article>
 
