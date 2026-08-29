@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { ArrowLeft, Copy, Printer, Bookmark, FileDown } from "lucide-react";
+import { ArrowLeft, Copy, Printer, Bookmark, FileDown, Scale, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
-import type { Binding, LegalMemo, OutputLang, Strength } from "@/lib/research/types";
+import type { Binding, LegalMemo, LetterKind, OutputLang, Strength } from "@/lib/research/types";
 import { t } from "@/lib/research/copy";
 import { formatMemoBrief, formatMemoBriefHtml } from "@/lib/research/brief";
 import { httpHref } from "@/lib/research/verify";
@@ -80,12 +80,14 @@ export function MemoView({
   saved = false,
   onBack,
   onSave,
+  onDraft,
 }: {
   lang: OutputLang;
   memo: LegalMemo;
   saved?: boolean;
   onBack: () => void;
   onSave: () => void;
+  onDraft: (kind: LetterKind) => void;
 }) {
   const c = t(lang);
   const [tab, setTab] = useState<Tab>("brief");
@@ -136,6 +138,14 @@ export function MemoView({
           {memo.causeTitle ? <p className="mt-1 text-sm text-muted">{memo.causeTitle}</p> : null}
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={() => onDraft("notice")}>
+            <Scale className="size-3.5" />
+            {c.draftNotice}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => onDraft("reply")}>
+            <MessageSquare className="size-3.5" />
+            {c.draftReply}
+          </Button>
           <Button variant="outline" size="sm" onClick={copyMemo}>
             <Copy className="size-3.5" />
             {c.copyMemo}
