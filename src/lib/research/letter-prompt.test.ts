@@ -106,4 +106,17 @@ describe("buildLetterUser", () => {
     assert.match(user, /Arnesh Kumar/);
     assert.doesNotMatch(user, /Invented Case/);
   });
+
+  it("asks for a reply shape when kind is reply, in the memo language", () => {
+    const user = buildLetterUser({
+      kind: "reply",
+      intake: { ...intake, lang: "hi" },
+      memo,
+    });
+    assert.match(user, /Hindi|हिंदी|हिन्दी/);
+    assert.match(user, /reply|जवाब|without prejudice/i);
+    assert.match(user, /time to comply/i);
+    assert.match(user, /verification/i);
+    assert.doesNotMatch(user, /Invented Case/);
+  });
 });

@@ -56,16 +56,18 @@ export function buildLetterUser(opts: { kind: LetterKind; intake: Intake; memo: 
     intake.lang === "hi"
       ? "Output language: Hindi (keep case names, citations and statutes in English)."
       : "Output language: English.";
-  const kindLine =
-    kind === "notice"
-      ? "Kind: legal notice. Write a demand and a time to comply. Do not use a without-prejudice reply shape or a court petition prayer."
-      : kind === "reply"
-        ? "Kind: reply to notice. Write a without prejudice, para-wise reply and the stand taken. Do not write a demand or a petition prayer."
-        : "Kind: court petition. Write a petition for filing: parties, facts, numbered grounds, prayer, optional interim relief, and a short verification clause. Do not write a legal notice or a without-prejudice reply.";
+  const kindLine: Record<LetterKind, string> = {
+    notice:
+      "Kind: legal notice. Write a demand and a time to comply. Do not use a without-prejudice reply shape, a court petition prayer, or a verification clause.",
+    reply:
+      "Kind: reply to notice. Write a without prejudice, para-wise reply and the stand taken. Do not write a demand, a time to comply, a petition prayer, or a verification clause.",
+    petition:
+      "Kind: court petition. Write a petition for filing: parties, facts, numbered grounds, prayer, optional interim relief, and a short verification clause. Do not write a legal notice or a without-prejudice reply.",
+  };
 
   return [
     langLine,
-    kindLine,
+    kindLine[kind],
     `Forum / side: ${intake.side}. Practice area: ${intake.area}.`,
     "",
     `Legal question:\n${intake.query.trim() || "(none)"}`,

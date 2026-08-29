@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import type { LegalMemo, Precedent } from "./types.ts";
-import { assembleLetter, formatLegalLetter, formatLegalLetterHtml } from "./letter-format.ts";
+import { assembleLetter, formatLegalLetter, formatLegalLetterHtml, letterChrome } from "./letter-format.ts";
 import type { ParsedLetterDraft } from "./letter-parse.ts";
 import { t } from "./copy.ts";
 
@@ -251,10 +251,31 @@ describe("assembleLetter / formatLegalLetter", () => {
       memo,
     });
     const text = formatLegalLetter(letter);
-    assert.match(text, /प्रार्थना|याचिका/);
-    assert.match(text, /अंतरिम/);
-    assert.match(text, /सत्यापन/);
     const hi = t("hi");
+    const chrome = letterChrome("petition", hi);
+    assert.equal(chrome.closingHeading, hi.letterPrayer);
+    assert.equal(chrome.followOnHeading, hi.letterInterim);
+    assert.equal(chrome.verificationHeading, hi.letterVerification);
+    assert.match(text, new RegExp(hi.letterPrayer));
+    assert.match(text, new RegExp(hi.letterInterim));
+    assert.match(text, new RegExp(hi.letterVerification));
     assert.match(text, new RegExp(hi.disclaimer.slice(0, 20)));
+  });
+
+  it("maps every letter kind to its own headings so copy and screen stay aligned", () => {
+    const en = t("en");
+    const notice = letterChrome("notice", en);
+    const reply = letterChrome("reply", en);
+    const petition = letterChrome("petition", en);
+    assert.equal(notice.closingHeading, en.letterDemand);
+    assert.equal(notice.followOnHeading, en.letterTime);
+    assert.equal(notice.verificationHeading, "");
+    assert.equal(reply.withoutPrejudice, true);
+    assert.equal(reply.groundsHeading, en.letterParaReply);
+    assert.equal(reply.closingHeading, "");
+    assert.equal(reply.followOnHeading, en.letterStand);
+    assert.equal(petition.closingHeading, en.letterPrayer);
+    assert.equal(petition.followOnHeading, en.letterInterim);
+    assert.equal(petition.verificationHeading, en.letterVerification);
   });
 });
