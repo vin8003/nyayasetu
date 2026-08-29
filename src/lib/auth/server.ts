@@ -103,27 +103,60 @@ const LOCAL_DEV_ORIGINS: string[] = [
   "http://127.0.0.1:8080",
   "http://[::1]:8080",
 ];
-const baseURL = explicitBaseURL ?? {
-  // Include loopback hosts so dynamic baseURL resolves for local email/password
-  // (not only the preview wildcard).
-  allowedHosts: [...previewAllowedHosts, "localhost", "127.0.0.1", "[::1]"],
-  // `auto` → trust both http:// and https:// expansions of allowedHosts
-  // (preview is https; local dev is http).
+const LOCAL_DEV_HOSTS: string[] = ["localhost", "127.0.0.1", "[::1]"];
+
+function parseHostList(raw: string | undefined): string[] {
+  if (!raw) return [];
+  return raw
+    .split(/[\s,]+/)
+    .map((s) => s.trim().replace(/^https?:\/\//i, "").replace(/\/+$/, ""))
+    .filter(Boolean);
+}
+
+function originsForHost(host: string): string[] {
+  if (host.startsWith("http://") || host.startsWith("https://")) return [host];
+  return [`https://${host}`, `http://${host}`];
+}
+
+// Custom production hosts CNAMEd onto this deploy. A *static* BETTER_AUTH_URL
+// (the grok.me URL the broker registered) would force Google/X to callback on
+// grok.me, so the __Host- session cookie never appears on the visitor's domain.
+const extraPublicHosts: string[] = [
+  ...parseHostList("nyayasetu.ordereasy.win"),
+  ...parseHostList(env("AUTH_ALLOWED_HOSTS")),
+];
+
+let explicitHost: string | undefined;
+if (explicitBaseURL) {
+  try {
+    explicitHost = new URL(explicitBaseURL).host;
+  } catch {
+    explicitHost = undefined;
+  }
+}
+
+const allowedHosts: string[] = [
+  ...previewAllowedHosts,
+  ...LOCAL_DEV_HOSTS,
+  ...(explicitHost ? [explicitHost] : []),
+  ...extraPublicHosts,
+];
+
+const baseURL = {
+  allowedHosts,
   protocol: "auto" as const,
-  fallback: "http://localhost:8080",
+  fallback: explicitBaseURL ?? "http://localhost:8080",
 };
 
 // Origins Better Auth accepts on credentialed POSTs (sign-up/sign-in, etc.).
 // Missing entries here surface as FORBIDDEN "Invalid origin".
-const trustedOrigins: string[] = explicitBaseURL
-  ? [explicitBaseURL, ...LOCAL_DEV_ORIGINS]
-  : [
-      // Host wildcards (matched against Origin's host)
-      ...previewAllowedHosts,
-      // Full-origin wildcards (matched against Origin)
-      ...previewAllowedHosts.flatMap((host) => [`https://${host}`, `http://${host}`]),
-      ...LOCAL_DEV_ORIGINS,
-    ];
+const trustedOrigins: string[] = [
+  ...(explicitBaseURL ? [explicitBaseURL] : []),
+  ...previewAllowedHosts,
+  ...previewAllowedHosts.flatMap((host) => originsForHost(host)),
+  ...LOCAL_DEV_ORIGINS,
+  ...extraPublicHosts.flatMap((host) => originsForHost(host)),
+];
 
 const databaseUrl = env("DATABASE_URL");
 
