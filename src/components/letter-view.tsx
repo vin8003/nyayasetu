@@ -16,7 +16,8 @@ export function LetterView({
   onBack: () => void;
 }) {
   const c = t(lang);
-  const kicker = letter.kind === "notice" ? c.letterNoticeKicker : c.letterReplyKicker;
+  const doc = t(letter.lang);
+  const kicker = letter.kind === "notice" ? doc.letterNoticeKicker : doc.letterReplyKicker;
 
   async function copyLetter() {
     await navigator.clipboard.writeText(formatLegalLetter(letter));
@@ -54,7 +55,7 @@ export function LetterView({
           <h1 className="font-display text-2xl font-medium tracking-tight sm:text-3xl">
             {letter.heading || kicker}
           </h1>
-          {letter.kind === "reply" ? <p className="mt-1 text-sm text-muted">{c.withoutPrejudice}</p> : null}
+          {letter.kind === "reply" ? <p className="mt-1 text-sm text-muted">{doc.withoutPrejudice}</p> : null}
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => void copyLetter()}>
@@ -77,19 +78,19 @@ export function LetterView({
           NyayaSetu · {kicker}
         </p>
         {letter.kind === "reply" ? (
-          <p className="mb-6 text-sm italic text-paper-muted">{c.withoutPrejudice}</p>
+          <p className="mb-6 text-sm italic text-paper-muted">{doc.withoutPrejudice}</p>
         ) : null}
         <section className="space-y-6 font-display text-[17px] leading-[1.65]">
           <div>
-            <h2 className="font-medium">{c.letterParties}</h2>
+            <h2 className="font-medium">{doc.letterParties}</h2>
             <p className="mt-2 whitespace-pre-wrap">{letter.parties}</p>
           </div>
           <div>
-            <h2 className="font-medium">{c.letterFacts}</h2>
+            <h2 className="font-medium">{doc.letterFacts}</h2>
             <p className="mt-2 whitespace-pre-wrap">{letter.facts}</p>
           </div>
           <div>
-            <h2 className="font-medium">{letter.kind === "reply" ? c.letterParaReply : c.letterGrounds}</h2>
+            <h2 className="font-medium">{letter.kind === "reply" ? doc.letterParaReply : doc.letterGrounds}</h2>
             <ol className="mt-3 space-y-4">
               {letter.grounds.map((ground, i) => {
                 const href = httpHref(ground.url);
@@ -100,7 +101,7 @@ export function LetterView({
                     </p>
                     {ground.text ? <p className="mt-1 whitespace-pre-wrap">{ground.text}</p> : null}
                     <p className="mt-2 font-mono text-xs text-paper-muted">
-                      {c.letterCitation}: {ground.citation}
+                      {doc.letterCitation}: {ground.citation}
                     </p>
                     {href ? (
                       <a
@@ -109,7 +110,7 @@ export function LetterView({
                         rel="noreferrer"
                         className="mt-1 inline-block font-mono text-xs text-accent hover:text-paper-ink"
                       >
-                        {c.letterUrl}: {href}
+                        {doc.letterUrl}: {href}
                       </a>
                     ) : null}
                   </li>
@@ -119,19 +120,19 @@ export function LetterView({
           </div>
           {letter.closing ? (
             <div>
-              {letter.kind === "notice" ? <h2 className="font-medium">{c.letterDemand}</h2> : null}
+              {letter.kind === "notice" ? <h2 className="font-medium">{doc.letterDemand}</h2> : null}
               <p className={`whitespace-pre-wrap ${letter.kind === "notice" ? "mt-2" : ""}`}>{letter.closing}</p>
             </div>
           ) : null}
           {letter.timeOrStand ? (
             <div>
-              <h2 className="font-medium">{letter.kind === "notice" ? c.letterTime : c.letterStand}</h2>
+              <h2 className="font-medium">{letter.kind === "notice" ? doc.letterTime : doc.letterStand}</h2>
               <p className="mt-2 whitespace-pre-wrap">{letter.timeOrStand}</p>
             </div>
           ) : null}
           {letter.risks ? (
             <div>
-              <h2 className="font-medium">{c.risks}</h2>
+              <h2 className="font-medium">{doc.risks}</h2>
               <p className="mt-2 whitespace-pre-wrap">{letter.risks}</p>
             </div>
           ) : null}
@@ -142,7 +143,7 @@ export function LetterView({
         <pre className="whitespace-pre-wrap font-display text-[17px] leading-[1.65]">{formatLegalLetter(letter)}</pre>
       </article>
 
-      <p className="no-print text-xs leading-relaxed text-subtle">{c.disclaimer}</p>
+      <p className="no-print text-xs leading-relaxed text-subtle">{doc.disclaimer}</p>
     </div>
   );
 }
