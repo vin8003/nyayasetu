@@ -1,0 +1,17 @@
+{
+  "name": "NyayaSetu",
+  "install": "npm ci",
+  "terminals": [
+    {
+      "name": "dev",
+      "command": "npm run dev",
+      "description": "Vite dev server for NyayaSetu on http://localhost:8080. Uses the embedded PGlite database fallback, so no external database or secrets are required for local development. Set DATABASE_URL for a real Postgres/Neon backend and XAI_API_KEY to enable the AI research feature."
+    }
+  ],
+  "ports": [
+    {
+      "name": "web",
+      "port": 8080
+    }
+  ]
+}
