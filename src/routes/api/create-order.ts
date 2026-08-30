@@ -1,21 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { requireUserId, UnauthorizedError } from "@/lib/auth/verify.server";
-import { assertSameSiteRequest, CrossSiteRequestError } from "@/lib/auth/isolation.server";
-import {
-  CHAMBER_AMOUNT_PAISE,
-  CHAMBER_CURRENCY,
-  RazorpayHttpError,
-  createOrder,
-  parseOrderAmount,
-  paymentsLive,
-} from "@/lib/billing/razorpay.server";
-import { PLAN_ID } from "@/lib/billing/plan";
 
 function json(body: unknown, status = 200): Response {
   return Response.json(body, { status });
 }
 
 async function handleCreateOrder(request: Request): Promise<Response> {
+  const { requireUserId, UnauthorizedError } = await import("@/lib/auth/verify.server");
+  const { assertSameSiteRequest, CrossSiteRequestError } = await import("@/lib/auth/isolation.server");
+  const {
+    CHAMBER_AMOUNT_PAISE,
+    CHAMBER_CURRENCY,
+    RazorpayHttpError,
+    createOrder,
+    parseOrderAmount,
+  } = await import("@/lib/billing/razorpay.server");
+  const { paymentsLive } = await import("@/lib/billing/live");
+  const { PLAN_ID } = await import("@/lib/billing/plan");
+
   try {
     assertSameSiteRequest();
     const userId = await requireUserId();

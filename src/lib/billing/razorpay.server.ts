@@ -5,9 +5,11 @@ import {
   PLAN_PRICE_INR,
   parseOrderAmount,
 } from "./plan";
+import { paymentsLive } from "./live";
 import { verifyOrderCheckoutSignature, verifyWebhookSignature } from "./signatures";
 import type { CheckoutSession } from "./types";
 
+export { paymentsLive } from "./live";
 export type { CheckoutSession } from "./types";
 export { CHAMBER_AMOUNT_PAISE, CHAMBER_CURRENCY, parseOrderAmount } from "./plan";
 
@@ -43,11 +45,6 @@ export class RazorpayHttpError extends Error {
 
 function env(name: string): string {
   return (process.env[name] ?? "").trim();
-}
-
-/** Standard Checkout is live when Key Id + Key Secret are set. Webhook is optional. */
-export function paymentsLive(): boolean {
-  return Boolean(env("RAZORPAY_KEY_ID") && env("RAZORPAY_KEY_SECRET"));
 }
 
 /**

@@ -11,6 +11,7 @@ import {
   type BillingSnapshot,
   type EntitlementRow,
 } from "./plan";
+import { paymentsLive } from "./live";
 import type { SubscribeResult } from "./types";
 
 export type { SubscribeResult } from "./types";
@@ -77,7 +78,6 @@ async function accountOf(userId: string): Promise<{ name: string; email: string 
 }
 
 async function markSnapshot(snap: BillingSnapshot): Promise<BillingSnapshot> {
-  const { paymentsLive } = await import("./razorpay.server");
   return { ...snap, paymentsLive: paymentsLive() };
 }
 
@@ -262,7 +262,7 @@ export const confirmCheckout = createServerFn({ method: "POST" })
 export const cancelSubscription = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .handler(async ({ context }): Promise<BillingSnapshot> => {
-    const { paymentsLive, cancelRemoteSubscription } = await import("./razorpay.server");
+    const { cancelRemoteSubscription } = await import("./razorpay.server");
     const row = await fetchRow(context.userId);
     if (paymentsLive() && row?.razorpay_subscription_id?.startsWith("sub_")) {
       await cancelRemoteSubscription(row.razorpay_subscription_id);

@@ -1,14 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { requireUserId, UnauthorizedError } from "@/lib/auth/verify.server";
-import { assertSameSiteRequest, CrossSiteRequestError } from "@/lib/auth/isolation.server";
-import { RazorpayHttpError } from "@/lib/billing/razorpay.server";
-import { grantVerifiedOrder } from "@/lib/billing/store";
 
 function json(body: unknown, status = 200): Response {
   return Response.json(body, { status });
 }
 
 async function handleVerify(request: Request): Promise<Response> {
+  const { requireUserId, UnauthorizedError } = await import("@/lib/auth/verify.server");
+  const { assertSameSiteRequest, CrossSiteRequestError } = await import("@/lib/auth/isolation.server");
+  const { RazorpayHttpError } = await import("@/lib/billing/razorpay.server");
+  const { grantVerifiedOrder } = await import("@/lib/billing/store");
+
   try {
     assertSameSiteRequest();
     const userId = await requireUserId();
