@@ -27,7 +27,7 @@ export const Route = createFileRoute("/story")({
   component: StoryPage,
 });
 
-export function StoryPage() {
+function StoryPage() {
   const [lang, setLang] = useState<OutputLang>("en");
   const c = storyCopy[lang];
 
@@ -64,25 +64,25 @@ export function StoryPage() {
       </header>
 
       <main className="px-4 py-10 sm:py-16">
-        <article className="print-paper mx-auto max-w-3xl rounded-xl bg-paper px-5 py-10 text-paper-ink shadow-paper sm:px-12 sm:py-14">
+        <article className="print-paper mx-auto max-w-3xl rounded-xl bg-paper px-6 py-12 text-paper-ink shadow-paper sm:px-16 sm:py-16">
           <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-accent">{c.kicker}</p>
-          <h1 className="mt-4 font-display text-4xl font-medium leading-[1.12] tracking-tight sm:text-5xl">{c.title}</h1>
-          <p className="mt-5 max-w-[36rem] text-lg leading-relaxed text-paper-muted sm:text-xl">{c.dek}</p>
-          <p className="mt-6 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-paper-muted">
+          <h1 className="mt-5 font-display text-4xl font-medium leading-[1.12] tracking-tight sm:text-[2.75rem]">{c.title}</h1>
+          <p className="mt-6 max-w-[38rem] text-lg leading-relaxed text-paper-muted sm:text-[1.2rem]">{c.dek}</p>
+          <p className="mt-8 flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-paper-line pb-8 text-sm text-paper-muted">
             <span className="font-medium text-paper-ink">{c.byline}</span>
             <span aria-hidden>·</span>
             <time dateTime="2026-08-30">{c.dateline}</time>
           </p>
 
-          <div className="mt-10 space-y-5 text-[1.05rem] leading-[1.75] sm:text-[1.125rem]">
+          <div className="mt-12 space-y-5 text-[1.05rem] leading-[1.8] sm:text-[1.125rem]">
             <p className={lang === "en" ? "story-drop" : undefined}>{c.p1}</p>
             <p>{c.p2}</p>
             <p>{c.p3}</p>
             <p>{c.p4}</p>
           </div>
 
-          <blockquote className="my-12 border-l-2 border-accent/70 pl-5 font-display text-2xl font-medium leading-snug italic tracking-tight sm:text-[1.65rem]">
-            {c.pull}
+          <blockquote className="my-12 border-l-[3px] border-accent pl-6 font-display text-2xl font-medium leading-snug tracking-tight text-paper-ink sm:text-[1.7rem]">
+            <span className="italic">{c.pull}</span>
           </blockquote>
 
           <h2 className="font-display text-2xl font-medium tracking-tight">{c.verifiedH}</h2>
