@@ -120,7 +120,7 @@ export function IntakeForm({
             minLength={files.length === 0 ? 40 : undefined}
             value={intake.facts}
             onChange={(e) => set({ facts: e.target.value })}
-            placeholder={c.factsHint}
+            placeholder={c.factsPlaceholder}
             disabled={busy}
           />
           <Hint>{c.factsHint}</Hint>

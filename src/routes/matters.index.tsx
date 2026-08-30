@@ -122,7 +122,7 @@ export function MattersIndexPage() {
 					})]
 				}),
 				sampleOn ? jsxs("div", {
-					className: "mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-elevated px-4 py-3 shadow-hairline",
+					className: "panel panel-split stack-tight",
 					children: [
 						jsxs("div", {
 							children: [
@@ -160,7 +160,7 @@ export function MattersIndexPage() {
 						})
 					]
 				}) : jsxs("div", {
-					className: "mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-elevated px-4 py-3 shadow-hairline",
+					className: "panel panel-split stack-tight",
 					children: [
 						jsxs("div", {
 							children: [
