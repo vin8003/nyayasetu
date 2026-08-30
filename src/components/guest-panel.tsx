@@ -16,7 +16,10 @@ export function GuestPanel({ lang }: { lang: OutputLang }) {
           <a href="/login">{c.signIn}</a>
         </Button>
         <Button asChild variant="outline">
-          <Link to="/research">{c.research}</Link>
+          <Link to="/research" search={{ matter: undefined }}>{c.research}</Link>
+        </Button>
+        <Button asChild variant="ghost">
+          <Link to="/story">{c.readStory}</Link>
         </Button>
       </div>
       <p className="mt-10 text-xs leading-relaxed text-subtle">{c.trustNote}</p>

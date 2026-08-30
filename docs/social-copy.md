@@ -1,6 +1,8 @@
 # Social copy — desk to chamber
 
-Ready to paste. Counts are characters including spaces and newlines. X limit is 280 per post. Article: [from-desk-to-chamber.md](from-desk-to-chamber.md).
+Ready to paste. Counts are characters including spaces and newlines. X limit is 280 per post.
+
+**Published article (share this URL after deploy):** `/story`
 
 Do not claim written statement, live card payments, or eCourts filing. Those are not on `main`.
 

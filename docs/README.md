@@ -13,7 +13,7 @@ CiteBench is a practice assistant for Indian advocates. These pages describe **w
 | [billing.md](billing.md) | Product, engineers | Trial clock and the ₹500 chamber |
 | [data-model.md](data-model.md) | Engineers | SQL tables and JSON fields |
 | [local-development.md](local-development.md) | Engineers | Env vars, auth modes, tests |
-| [from-desk-to-chamber.md](from-desk-to-chamber.md) | Anyone | What shipped in the first day |
+| [from-desk-to-chamber.md](from-desk-to-chamber.md) | Anyone | Points to the live **/story** article |
 | [social-copy.md](social-copy.md) | Founder | X posts, thread, WhatsApp status |
 
 ## Out of this tree (not shipped)
