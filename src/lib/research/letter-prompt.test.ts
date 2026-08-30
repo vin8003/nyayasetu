@@ -98,6 +98,15 @@ describe("buildLetterUser", () => {
     assert.match(user, /English/);
   });
 
+  it("asks for a petition shape when kind is petition, without a notice demand", () => {
+    const user = buildLetterUser({ kind: "petition", intake, memo });
+    assert.match(user, /petition|याचिका/i);
+    assert.match(user, /prayer|verification|interim/i);
+    assert.doesNotMatch(user, /time to comply/i);
+    assert.match(user, /Arnesh Kumar/);
+    assert.doesNotMatch(user, /Invented Case/);
+  });
+
   it("asks for a reply shape when kind is reply, in the memo language", () => {
     const user = buildLetterUser({
       kind: "reply",
@@ -106,5 +115,8 @@ describe("buildLetterUser", () => {
     });
     assert.match(user, /Hindi|हिंदी|हिन्दी/);
     assert.match(user, /reply|जवाब|without prejudice/i);
+    assert.match(user, /time to comply/i);
+    assert.match(user, /verification/i);
+    assert.doesNotMatch(user, /Invented Case/);
   });
 });

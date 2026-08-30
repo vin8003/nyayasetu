@@ -19,6 +19,7 @@ export const letterDraftSchema = z.object({
     .catch([]),
   closing: str(4000),
   timeOrStand: str(2000),
+  verification: str(2000),
   risks: str(2000),
 });
 

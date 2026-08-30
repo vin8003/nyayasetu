@@ -1,4 +1,4 @@
-import { t } from "./copy.ts";
+import { t, type Copy } from "./copy.ts";
 import { citablePrecedentsFromMemo, filterLetterGrounds, scrubUnverifiedText, unverifiedCiteLabels } from "./letter-cites.ts";
 import { asLetterGrounds, type ParsedLetterDraft } from "./letter-parse.ts";
 import type { LegalLetter, LegalMemo, LetterKind, OutputLang } from "./types.ts";
@@ -13,6 +13,49 @@ function escapeHtml(value: string): string {
 
 function compact(lines: string[]): string {
   return lines.filter((line, i, all) => !(line === "" && all[i - 1] === "")).join("\n").trim();
+}
+
+export type LetterChrome = {
+  kicker: string;
+  withoutPrejudice: boolean;
+  groundsHeading: string;
+  closingHeading: string;
+  followOnHeading: string;
+  verificationHeading: string;
+};
+
+export function letterChrome(kind: LetterKind, c: Copy): LetterChrome {
+  const byKind: Record<LetterKind, LetterChrome> = {
+    notice: {
+      kicker: c.letterNoticeKicker,
+      withoutPrejudice: false,
+      groundsHeading: c.letterGrounds,
+      closingHeading: c.letterDemand,
+      followOnHeading: c.letterTime,
+      verificationHeading: "",
+    },
+    reply: {
+      kicker: c.letterReplyKicker,
+      withoutPrejudice: true,
+      groundsHeading: c.letterParaReply,
+      closingHeading: "",
+      followOnHeading: c.letterStand,
+      verificationHeading: "",
+    },
+    petition: {
+      kicker: c.letterPetitionKicker,
+      withoutPrejudice: false,
+      groundsHeading: c.letterGrounds,
+      closingHeading: c.letterPrayer,
+      followOnHeading: c.letterInterim,
+      verificationHeading: c.letterVerification,
+    },
+  };
+  return byKind[kind];
+}
+
+export function letterKicker(kind: LetterKind, c: Copy): string {
+  return letterChrome(kind, c).kicker;
 }
 
 export function assembleLetter(opts: {
@@ -38,14 +81,14 @@ export function assembleLetter(opts: {
     grounds,
     closing: scrub(opts.draft.closing),
     timeOrStand: scrub(opts.draft.timeOrStand),
+    verification: opts.kind === "petition" ? scrub(opts.draft.verification ?? "") : "",
     risks: scrub(opts.draft.risks),
   };
 }
 
 export function formatLegalLetter(letter: LegalLetter): string {
   const c = t(letter.lang);
-  const kicker = letter.kind === "notice" ? c.letterNoticeKicker : c.letterReplyKicker;
-  const groundsHeading = letter.kind === "reply" ? c.letterParaReply : c.letterGrounds;
+  const chrome = letterChrome(letter.kind, c);
   const groundLines = letter.grounds.flatMap((ground, i) => {
     const block = [`${i + 1}. ${ground.heading}`.trim(), ground.text];
     if (ground.citation) block.push(`${c.letterCitation}: ${ground.citation}`);
@@ -54,9 +97,9 @@ export function formatLegalLetter(letter: LegalLetter): string {
   });
 
   return compact([
-    `NyayaSetu · ${kicker}`,
+    `NyayaSetu · ${chrome.kicker}`,
     letter.heading,
-    letter.kind === "reply" ? c.withoutPrejudice : "",
+    chrome.withoutPrejudice ? c.withoutPrejudice : "",
     "",
     c.letterParties,
     letter.parties,
@@ -64,14 +107,17 @@ export function formatLegalLetter(letter: LegalLetter): string {
     c.letterFacts,
     letter.facts,
     "",
-    groundsHeading,
+    chrome.groundsHeading,
     ...groundLines,
     "",
-    letter.kind === "notice" && letter.closing ? c.letterDemand : "",
+    letter.closing ? chrome.closingHeading : "",
     letter.closing,
     "",
-    letter.timeOrStand ? (letter.kind === "notice" ? c.letterTime : c.letterStand) : "",
+    letter.timeOrStand ? chrome.followOnHeading : "",
     letter.timeOrStand,
+    "",
+    letter.verification && chrome.verificationHeading ? chrome.verificationHeading : "",
+    letter.verification && chrome.verificationHeading ? letter.verification : "",
     "",
     letter.risks ? c.risks : "",
     letter.risks,

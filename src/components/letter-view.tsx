@@ -2,7 +2,7 @@ import { ArrowLeft, Copy, Printer, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import type { LegalLetter, OutputLang } from "@/lib/research/types";
 import { t } from "@/lib/research/copy";
-import { formatLegalLetter, formatLegalLetterHtml } from "@/lib/research/letter-format";
+import { formatLegalLetter, formatLegalLetterHtml, letterChrome } from "@/lib/research/letter-format";
 import { httpHref } from "@/lib/research/verify";
 import { Button } from "@/components/ui/button";
 
@@ -17,7 +17,8 @@ export function LetterView({
 }) {
   const c = t(lang);
   const doc = t(letter.lang);
-  const kicker = letter.kind === "notice" ? doc.letterNoticeKicker : doc.letterReplyKicker;
+  const chrome = letterChrome(letter.kind, doc);
+  const kicker = chrome.kicker;
 
   async function copyLetter() {
     await navigator.clipboard.writeText(formatLegalLetter(letter));
@@ -55,7 +56,7 @@ export function LetterView({
           <h1 className="font-display text-2xl font-medium tracking-tight sm:text-3xl">
             {letter.heading || kicker}
           </h1>
-          {letter.kind === "reply" ? <p className="mt-1 text-sm text-muted">{doc.withoutPrejudice}</p> : null}
+          {chrome.withoutPrejudice ? <p className="mt-1 text-sm text-muted">{doc.withoutPrejudice}</p> : null}
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => void copyLetter()}>
@@ -77,7 +78,7 @@ export function LetterView({
         <p className="mb-6 font-mono text-[11px] uppercase tracking-[0.18em] text-paper-muted">
           NyayaSetu · {kicker}
         </p>
-        {letter.kind === "reply" ? (
+        {chrome.withoutPrejudice ? (
           <p className="mb-6 text-sm italic text-paper-muted">{doc.withoutPrejudice}</p>
         ) : null}
         <section className="space-y-6 font-display text-[17px] leading-[1.65]">
@@ -90,7 +91,7 @@ export function LetterView({
             <p className="mt-2 whitespace-pre-wrap">{letter.facts}</p>
           </div>
           <div>
-            <h2 className="font-medium">{letter.kind === "reply" ? doc.letterParaReply : doc.letterGrounds}</h2>
+            <h2 className="font-medium">{chrome.groundsHeading}</h2>
             <ol className="mt-3 space-y-4">
               {letter.grounds.map((ground, i) => {
                 const href = httpHref(ground.url);
@@ -120,14 +121,22 @@ export function LetterView({
           </div>
           {letter.closing ? (
             <div>
-              {letter.kind === "notice" ? <h2 className="font-medium">{doc.letterDemand}</h2> : null}
-              <p className={`whitespace-pre-wrap ${letter.kind === "notice" ? "mt-2" : ""}`}>{letter.closing}</p>
+              {chrome.closingHeading ? <h2 className="font-medium">{chrome.closingHeading}</h2> : null}
+              <p className={`whitespace-pre-wrap ${chrome.closingHeading ? "mt-2" : ""}`}>
+                {letter.closing}
+              </p>
             </div>
           ) : null}
           {letter.timeOrStand ? (
             <div>
-              <h2 className="font-medium">{letter.kind === "notice" ? doc.letterTime : doc.letterStand}</h2>
+              <h2 className="font-medium">{chrome.followOnHeading}</h2>
               <p className="mt-2 whitespace-pre-wrap">{letter.timeOrStand}</p>
+            </div>
+          ) : null}
+          {letter.verification && chrome.verificationHeading ? (
+            <div>
+              <h2 className="font-medium">{chrome.verificationHeading}</h2>
+              <p className="mt-2 whitespace-pre-wrap">{letter.verification}</p>
             </div>
           ) : null}
           {letter.risks ? (

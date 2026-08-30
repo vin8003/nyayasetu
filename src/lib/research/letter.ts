@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { intakeSchema, memoSchema } from "./schema";
-import type { Intake, LegalLetter, LegalMemo, LetterKind } from "./types";
+import { LETTER_KINDS, type Intake, type LegalLetter, type LegalMemo, type LetterKind } from "./types";
 import { assembleLetter } from "./letter-format.ts";
 import { parseLetterDraft } from "./letter-parse.ts";
 import {
@@ -51,7 +51,7 @@ const letterMemoSchema = memoSchema.extend({
 });
 
 const letterInputSchema = z.object({
-  kind: z.enum(["notice", "reply"]),
+  kind: z.enum(LETTER_KINDS),
   intake: intakeSchema,
   memo: letterMemoSchema,
 });

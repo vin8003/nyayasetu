@@ -23,6 +23,18 @@ describe("parseLetterDraft", () => {
     assert.equal(draft.heading, "Legal notice regarding 498A FIR");
     assert.equal(draft.grounds[0]?.citation, "(2014) 8 SCC 273");
     assert.match(draft.closing, /coercive process/);
+    assert.equal(draft.verification, "");
+  });
+
+  it("captures a petition verification clause when present", () => {
+    const draft = parseLetterDraft(
+      valid.replace(
+        '"risks": "Interim protection may be conditional."',
+        `"verification": "I, Vivek Sharma, do hereby verify that the contents are true to my knowledge.",
+  "risks": "Interim protection may be conditional."`,
+      ),
+    );
+    assert.match(draft.verification, /true to my knowledge/);
   });
 
   it("parses fenced JSON", () => {
