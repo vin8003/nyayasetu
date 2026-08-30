@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { b } from "@/lib/billing/copy";
 import { cancelSubscription, getEntitlement, startSubscription } from "@/lib/billing/store";
+import { writeEntitlementCache } from "@/lib/billing/cache";
 import type { BillingSnapshot } from "@/lib/billing/plan";
 import { useChamberLang } from "@/lib/practice/use-lang";
 
@@ -32,7 +33,10 @@ export function BillingPage() {
   useEffect(() => {
     if (!user) return;
     getEntitlement()
-      .then(setSnap)
+      .then((next) => {
+        writeEntitlementCache(next);
+        setSnap(next);
+      })
       .catch((err) => {
         if (/unauthorized/i.test(String(err))) navigate({ to: "/login" });
       });
@@ -41,7 +45,9 @@ export function BillingPage() {
   async function subscribe() {
     setBusy(true);
     try {
-      setSnap(await startSubscription());
+      const next = await startSubscription();
+      writeEntitlementCache(next);
+      setSnap(next);
       toast.success(c.subscribed);
     } catch (err) {
       if (/unauthorized/i.test(String(err))) navigate({ to: "/login" });
@@ -54,7 +60,9 @@ export function BillingPage() {
     if (!window.confirm(c.cancelPlan)) return;
     setBusy(true);
     try {
-      setSnap(await cancelSubscription());
+      const next = await cancelSubscription();
+      writeEntitlementCache(next);
+      setSnap(next);
       toast.success(c.cancelled);
     } catch (err) {
       if (/unauthorized/i.test(String(err))) navigate({ to: "/login" });

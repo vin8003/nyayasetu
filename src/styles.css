@@ -3,7 +3,7 @@
 @theme {
   --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Newsreader", "Iowan Old Style", Georgia, "Times New Roman", serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   --color-bg: #0c1014;
   --color-surface: #151a21;
@@ -76,6 +76,11 @@
   ::selection {
     background: color-mix(in oklab, var(--color-accent) 40%, transparent);
     color: var(--color-fg);
+  }
+
+  .content-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 280px;
   }
 }
 

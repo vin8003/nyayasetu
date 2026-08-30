@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { gateAi } from "@/lib/billing/store";
-import { looksLikeSample } from "./sample";
+import { looksLikeSample } from "./sample-ids";
 import { loadMatterBundle } from "./store";
 import { stageDef } from "./workflow";
 import { extractResearchQuestion } from "./intake-from-matter";

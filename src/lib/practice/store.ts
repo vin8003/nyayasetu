@@ -1,12 +1,12 @@
 // @ts-nocheck
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getSql } from "@/lib/db";
+import { dbSource, getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { PROCEEDINGS } from "./types";
 import { defaultStage, proceedingDef } from "./workflow";
 import { addDaysISO, newId, parseParties, todayISO } from "./ids";
-import { isSampleMatter } from "./sample";
+import { SAMPLE_CASE_NUMBERS, SAMPLE_TITLES } from "./sample-ids";
 import type { Deadline, Hearing, Matter, MatterDocument, MatterOrder, Task, TimelineEvent } from "./types";
 
 export const proceedingZ = z.enum(PROCEEDINGS);
@@ -51,6 +51,23 @@ async function addEvent(sql, userId, matterId, kind, title, detail, origin, refI
     values (${newId("ev")}, ${userId}, ${matterId}, ${happenedOn}, ${kind}, ${title}, ${detail}, ${origin}, ${refId})
   `;
 }
+/** Neon can run these together; PGLite is single-threaded so we stay serial there. */
+async function together(jobs) {
+	if (dbSource === "neon") return Promise.all(jobs.map((job) => job()));
+	const out = [];
+	for (const job of jobs) out.push(await job());
+	return out;
+}
+function sampleMatterFilter(sql, userId) {
+	return sql`
+      select id, client_id, title, case_number from matters
+      where user_id = ${userId}
+        and (
+          title = ${SAMPLE_TITLES[0]} or title = ${SAMPLE_TITLES[1]} or title = ${SAMPLE_TITLES[2]}
+          or case_number = ${SAMPLE_CASE_NUMBERS[0]} or case_number = ${SAMPLE_CASE_NUMBERS[1]} or case_number = ${SAMPLE_CASE_NUMBERS[2]}
+        )
+    `;
+}
 export const listMatters = createServerFn({ method: "GET" }).middleware([authMiddleware]).handler(async ({ context }) => {
 	return (await (await getSql())`
       select m.*, coalesce(c.name, '') as client_name
@@ -70,35 +87,37 @@ export async function loadMatterBundle(userId, id) {
     `;
 	if (!matters[0]) return null;
 	const matter = mapMatter(matters[0]);
-	const hearings = await sql`
+	const [hearings, documents, orders, tasks, deadlines, timeline] = await together([
+		() => sql`
       select h.*, m.title as matter_title, m.court_name
       from hearings h join matters m on m.id = h.matter_id
       where h.matter_id = ${id} and h.user_id = ${userId}
       order by h.listed_on desc
-    `;
-	const documents = await sql`
+    `,
+		() => sql`
       select * from matter_documents where matter_id = ${id} and user_id = ${userId} order by created_at desc
-    `;
-	const orders = await sql`
+    `,
+		() => sql`
       select * from matter_orders where matter_id = ${id} and user_id = ${userId} order by created_at desc
-    `;
-	const tasks = await sql`
+    `,
+		() => sql`
       select t.*, coalesce(m.title, '') as matter_title
       from tasks t left join matters m on m.id = t.matter_id
       where t.matter_id = ${id} and t.user_id = ${userId}
       order by t.status asc, coalesce(t.due_on, '9999-12-31') asc
-    `;
-	const deadlines = await sql`
+    `,
+		() => sql`
       select d.*, coalesce(m.title, '') as matter_title
       from deadlines d left join matters m on m.id = d.matter_id
       where d.matter_id = ${id} and d.user_id = ${userId}
       order by d.due_on asc
-    `;
-	const timeline = await sql`
+    `,
+		() => sql`
       select * from timeline_events where matter_id = ${id} and user_id = ${userId}
       order by happened_on desc, created_at desc
       limit 80
-    `;
+    `,
+	]);
 	return {
 		matter,
 		hearings: hearings.map(mapHearing),
@@ -194,43 +213,51 @@ export function mapEvent(row) {
 }
 export const getTodayBoard = createServerFn({ method: "GET" }).middleware([authMiddleware]).handler(async ({ context }) => {
 	const sql = await getSql();
-	await deleteOrphanPractice(sql, context.userId);
 	const today = todayISO();
-	const hearingsToday = await sql`
+	const [
+		hearingsToday,
+		hearingsUpcoming,
+		deadlines,
+		openTasks,
+		unconfirmedOrders,
+		staleMatters,
+		sampleRow,
+	] = await together([
+		() => sql`
       select h.*, m.title as matter_title, m.court_name
       from hearings h join matters m on m.id = h.matter_id
       where h.user_id = ${context.userId} and h.listed_on = ${today}
       order by h.listed_at asc, m.title asc
-    `;
-	const hearingsUpcoming = await sql`
+    `,
+		() => sql`
       select h.*, m.title as matter_title, m.court_name
       from hearings h join matters m on m.id = h.matter_id
       where h.user_id = ${context.userId} and h.listed_on > ${today}
       order by h.listed_on asc, h.listed_at asc
       limit 12
-    `;
-	const deadlines = await sql`
+    `,
+		() => sql`
       select d.*, coalesce(m.title, '') as matter_title
       from deadlines d join matters m on m.id = d.matter_id
       where d.user_id = ${context.userId} and d.status = 'open'
       order by d.due_on asc
       limit 20
-    `;
-	const openTasks = await sql`
+    `,
+		() => sql`
       select t.*, coalesce(m.title, '') as matter_title
       from tasks t join matters m on m.id = t.matter_id
       where t.user_id = ${context.userId} and t.status = 'open'
       order by coalesce(t.due_on, '9999-12-31') asc
       limit 20
-    `;
-	const unconfirmedOrders = await sql`
+    `,
+		() => sql`
       select o.*, m.title as matter_title
       from matter_orders o join matters m on m.id = o.matter_id
       where o.user_id = ${context.userId} and o.confirmed = false
       order by o.created_at desc
       limit 10
-    `;
-	const staleMatters = await sql`
+    `,
+		() => sql`
       select m.*, coalesce(c.name, '') as client_name
       from matters m
       left join clients c on c.id = m.client_id
@@ -239,11 +266,17 @@ export const getTodayBoard = createServerFn({ method: "GET" }).middleware([authM
         and (m.next_hearing_on is null or m.next_hearing_on < ${today})
       order by m.updated_at desc
       limit 10
-    `;
-	const sampleRow = (await sql`
-      select id, title, case_number from matters
+    `,
+		() => sql`
+      select id from matters
       where user_id = ${context.userId}
-    `).filter((r) => isSampleMatter({ title: r.title, caseNumber: r.case_number }));
+        and (
+          title = ${SAMPLE_TITLES[0]} or title = ${SAMPLE_TITLES[1]} or title = ${SAMPLE_TITLES[2]}
+          or case_number = ${SAMPLE_CASE_NUMBERS[0]} or case_number = ${SAMPLE_CASE_NUMBERS[1]} or case_number = ${SAMPLE_CASE_NUMBERS[2]}
+        )
+      limit 1
+    `,
+	]);
 	return {
 		hearingsToday: hearingsToday.map(mapHearing),
 		hearingsUpcoming: hearingsUpcoming.map(mapHearing),
@@ -264,11 +297,13 @@ export const getTodayBoard = createServerFn({ method: "GET" }).middleware([authM
 export const listHearingsRange = createServerFn({ method: "GET" }).middleware([authMiddleware]).handler(async ({ context }) => {
 	const sql = await getSql();
 	const from = addDaysISO(todayISO(), -14);
+	const until = addDaysISO(todayISO(), 60);
 	return (await sql`
       select h.*, m.title as matter_title, m.court_name
       from hearings h join matters m on m.id = h.matter_id
-      where h.user_id = ${context.userId} and h.listed_on >= ${from}
+      where h.user_id = ${context.userId} and h.listed_on >= ${from} and h.listed_on <= ${until}
       order by h.listed_on asc, h.listed_at asc
+      limit 80
     `).map(mapHearing);
 });
 export const draftSchema = z.object({
@@ -528,13 +563,19 @@ export const listUnconfirmedOrders = createServerFn({ method: "GET" }).middlewar
 	}));
 });
 async function findSampleMatters(sql, userId) {
-	const rows = await sql`select id, client_id, title, case_number from matters where user_id = ${userId}`;
-	return rows.filter((r) => isSampleMatter({ title: r.title, caseNumber: r.case_number }));
+	return sampleMatterFilter(sql, userId);
 }
 
 async function countRealMatters(sql, userId) {
-	const rows = await sql`select title, case_number from matters where user_id = ${userId}`;
-	return rows.filter((r) => !isSampleMatter({ title: r.title, caseNumber: r.case_number })).length;
+	const rows = await sql`
+      select count(*)::int as n from matters
+      where user_id = ${userId}
+        and not (
+          title = ${SAMPLE_TITLES[0]} or title = ${SAMPLE_TITLES[1]} or title = ${SAMPLE_TITLES[2]}
+          or case_number = ${SAMPLE_CASE_NUMBERS[0]} or case_number = ${SAMPLE_CASE_NUMBERS[1]} or case_number = ${SAMPLE_CASE_NUMBERS[2]}
+        )
+    `;
+	return Number(rows[0]?.n ?? 0);
 }
 
 async function deleteOrphanPractice(sql, userId) {

@@ -3,13 +3,14 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { b } from "@/lib/billing/copy";
 import { getEntitlement } from "@/lib/billing/store";
+import { readEntitlementCache, writeEntitlementCache } from "@/lib/billing/cache";
 import type { BillingSnapshot } from "@/lib/billing/plan";
 import type { OutputLang } from "@/lib/research/types";
 
 export function BillingBanner({ lang }: { lang: OutputLang }) {
   const { user } = useCurrentUserState();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [snap, setSnap] = useState<BillingSnapshot | null>(null);
+  const [snap, setSnap] = useState<BillingSnapshot | null>(() => readEntitlementCache());
   const c = b(lang);
 
   useEffect(() => {
@@ -18,7 +19,10 @@ export function BillingBanner({ lang }: { lang: OutputLang }) {
       return;
     }
     getEntitlement()
-      .then(setSnap)
+      .then((next) => {
+        writeEntitlementCache(next);
+        setSnap(next);
+      })
       .catch(() => setSnap(null));
   }, [user?.id]);
 

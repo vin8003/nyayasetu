@@ -8,7 +8,7 @@ CiteBench is a TanStack Start (Vite + React) app. The browser talks to **server 
 |---|---|
 | UI | React 19, TanStack Router / Start, Tailwind 4 |
 | Auth | Better Auth at `/api/auth/*`; Google & X via a Grok auth broker; local username/password enabled |
-| Data | Postgres (`DATABASE_URL` / Neon) or in-process **PGLite** when that URL is unset |
+| Data | Postgres (`DATABASE_URL` / Neon) or in-process **PGLite** when that URL is unset. Neon queries for Today and a matter file run in parallel. |
 | Schema | `migrations/*.sql`, applied at PGLite boot, on Neon first `getSql()`, and `npm run db:migrate` |
 | Models | xAI Responses / Chat Completions (`XAI_API_KEY`) |
 | Tests | Node test runner (`node --experimental-strip-types --test`) |

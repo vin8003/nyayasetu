@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { gateAi } from "@/lib/billing/store";
-import { looksLikeSample } from "./sample";
+import { looksLikeSample } from "./sample-ids";
 import { loadMatterBundle, saveAiDraftDocument } from "./store";
 import { pullJson } from "./hearing-brief";
 import {
@@ -123,8 +123,8 @@ export const draftForWork = createServerFn({ method: "POST" })
     if (!bundle) return { ok: false as const, error: "NOT_FOUND" };
     const item: WorkItem | undefined =
       data.itemKind === "task"
-        ? bundle.tasks.find((row) => row.id === data.itemId)
-        : bundle.deadlines.find((row) => row.id === data.itemId);
+        ? bundle.tasks.find((row: { id: string }) => row.id === data.itemId)
+        : bundle.deadlines.find((row: { id: string }) => row.id === data.itemId);
     if (!item) return { ok: false as const, error: "NOT_FOUND" };
     const classified = classifyTaskDraft(item.title, item.sourceQuote);
     if (!classified.draftable) {

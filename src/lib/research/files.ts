@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { gateAi } from "@/lib/billing/store";
-import { looksLikeSample } from "@/lib/practice/sample";
+import { looksLikeSample } from "@/lib/practice/sample-ids";
 import { z } from "zod";
 
 const uploadSchema = z.object({

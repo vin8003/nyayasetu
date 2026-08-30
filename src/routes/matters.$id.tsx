@@ -31,10 +31,10 @@ import { draftForWork } from "@/lib/practice/task-draft";
 import { listMemos } from "@/lib/research/store";
 import { statutesFromMemos } from "@/lib/practice/statute-map";
 import { intakeFromMatter } from "@/lib/practice/intake-from-matter";
-import { isSampleTitle } from "@/lib/practice/sample";
+import { isSampleTitle } from "@/lib/practice/sample-ids";
 import { DRAFT_KEY } from "@/lib/research/draft";
 import { extractUploads } from "@/lib/research/files";
-import { fileToBase64 } from "@/components/research-desk";
+import { fileToBase64 } from "@/lib/read-file";
 import { writeInboxDraft } from "@/lib/practice/inbox-draft";
 
 export const Route = createFileRoute("/matters/$id")({ component: MatterDetailPage });

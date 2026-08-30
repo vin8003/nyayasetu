@@ -16,7 +16,7 @@ import { addHearing, addTask, confirmOrder, discardOrder, listMatters, listUncon
 import type { Matter, MatterOrder, OrderExtract } from "@/lib/practice/types";
 import { useChamberLang } from "@/lib/practice/use-lang";
 import { extractUploads } from "@/lib/research/files";
-import { fileToBase64 } from "@/components/research-desk";
+import { fileToBase64 } from "@/lib/read-file";
 
 export const Route = createFileRoute("/inbox")({
 	validateSearch: (search: Record<string, unknown>): { matter?: string } => ({

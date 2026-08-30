@@ -38,7 +38,7 @@ export function AppShell({
 
   return (
     <div className="min-h-dvh bg-bg text-fg">
-      <header className="no-print sticky top-0 z-20 border-b border-border/80 bg-bg/85 backdrop-blur-md">
+      <header className="no-print sticky top-0 z-20 border-b border-border/80 bg-bg md:bg-bg/90 md:backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4">
           <Link to="/" className="flex items-center gap-2.5" aria-label={c.app}>
             <CiteMark className="size-7" />
@@ -81,7 +81,7 @@ export function AppShell({
       </header>
       <BillingBanner lang={lang} />
       <main className="mx-auto w-full max-w-6xl px-4 py-8 pb-24 sm:py-10 md:pb-12">{children}</main>
-      <nav className="no-print fixed inset-x-0 bottom-0 z-20 border-t border-border/80 bg-bg/95 backdrop-blur-md md:hidden">
+      <nav className="no-print fixed inset-x-0 bottom-0 z-20 border-t border-border/80 bg-bg md:hidden">
         <div className="mx-auto grid max-w-6xl grid-cols-5">
           {NAV.map((item) => {
             const Icon = item.icon;

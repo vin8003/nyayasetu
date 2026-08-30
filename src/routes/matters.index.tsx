@@ -11,7 +11,7 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { p } from "@/lib/practice/copy";
 import { defaultStage, proceedingDef, stageDef } from "@/lib/practice/workflow";
 import { clearSampleChamber, listMatters, saveMatter, seedSampleChamber } from "@/lib/practice/store";
-import { isSampleTitle } from "@/lib/practice/sample";
+import { isSampleTitle } from "@/lib/practice/sample-ids";
 import { PROCEEDINGS, OUR_SIDES, type Matter } from "@/lib/practice/types";
 import { useChamberLang } from "@/lib/practice/use-lang";
 import { intakeFromMatter } from "@/lib/practice/intake-from-matter";

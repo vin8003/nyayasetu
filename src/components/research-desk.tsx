@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { attachDraftToMatter, getMatterBundle } from "@/lib/practice/store";
 import { intakeFromMatter } from "@/lib/practice/intake-from-matter";
 import { formatLegalLetter } from "@/lib/research/letter-format";
+import { fileToBase64 } from "@/lib/read-file";
 
 function readDraftIntake(lang) {
 	if (typeof window === "undefined") return emptyIntake(lang);
@@ -41,18 +42,6 @@ function readDraftIntake(lang) {
 export function isUnauthorized(err) {
 	const message = err instanceof Error ? err.message : String(err ?? "");
 	return /unauthorized/i.test(message);
-}
-export function fileToBase64(file) {
-	return new Promise((resolve, reject) => {
-		const reader = new FileReader();
-		reader.onload = () => {
-			const s = String(reader.result ?? "");
-			const i = s.indexOf(",");
-			resolve(i >= 0 ? s.slice(i + 1) : s);
-		};
-		reader.onerror = () => reject(reader.error ?? new Error("read failed"));
-		reader.readAsDataURL(file);
-	});
 }
 export function ResearchDesk({ lang, matterId, memoId }) {
 	const navigate = useNavigate();
