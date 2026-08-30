@@ -4,7 +4,7 @@ import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { ClientToaster } from "@/components/client-toaster";
 import appCss from "../styles.css?url";
 
-const APP_NAME = "NyayaSetu";
+const APP_NAME = "CiteBench";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -15,7 +15,7 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "NyayaSetu — case-law research desk for Indian advocates. Search Supreme Court, High Courts, Indian Kanoon, LiveLaw and eSCR against your facts.",
+          "CiteBench — the lawyer's practice assistant. Court diary, matters, orders and Indian case-law research.",
       },
       { name: "theme-color", content: "#0c1014" },
     ],

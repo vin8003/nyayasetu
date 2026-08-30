@@ -1,6 +1,6 @@
 {
-  "title": "NyayaSetu",
-  "description": "Indian case-law research desk",
+  "title": "CiteBench",
   "type": "website",
-  "card": "custom"
+  "card": "custom",
+  "description": "The lawyer's practice assistant"
 }

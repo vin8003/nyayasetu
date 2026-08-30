@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
+import { gateAi } from "@/lib/billing/store";
+import { looksLikeSample } from "@/lib/practice/sample";
 import { z } from "zod";
 
 const uploadSchema = z.object({
@@ -12,6 +14,7 @@ const uploadSchema = z.object({
       }),
     )
     .max(3),
+  facts: z.string().max(20000).optional(),
 });
 
 function decodeBase64(b64: string): Uint8Array {
@@ -82,7 +85,9 @@ async function pdfText(bytes: Uint8Array): Promise<string> {
 export const extractUploads = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator((input: unknown) => uploadSchema.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const gated = await gateAi(context.userId, { demo: looksLikeSample({ facts: data.facts }) });
+    if (!gated.ok) return gated;
     const parts: { name: string; text: string }[] = [];
     for (const file of data.files) {
       try {

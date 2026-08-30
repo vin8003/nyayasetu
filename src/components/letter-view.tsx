@@ -29,14 +29,14 @@ export function LetterView({
     const html = formatLegalLetterHtml(letter);
     const blob = new Blob([html], { type: "application/msword" });
     const href = URL.createObjectURL(blob);
-    const slug = (letter.heading || "nyayasetu-letter")
+    const slug = (letter.heading || "citebench-letter")
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "")
       .slice(0, 60);
     const a = document.createElement("a");
     a.href = href;
-    a.download = `${slug || "nyayasetu-letter"}.doc`;
+    a.download = `${slug || "citebench-letter"}.doc`;
     a.click();
     URL.revokeObjectURL(href);
   }
@@ -76,7 +76,7 @@ export function LetterView({
 
       <article className="no-print print-paper rounded-xl bg-paper px-5 py-8 text-paper-ink shadow-[var(--shadow-paper)] sm:px-10 sm:py-12">
         <p className="mb-6 font-mono text-[11px] uppercase tracking-[0.18em] text-paper-muted">
-          NyayaSetu · {kicker}
+          CiteBench · {kicker}
         </p>
         {chrome.withoutPrejudice ? (
           <p className="mb-6 text-sm italic text-paper-muted">{doc.withoutPrejudice}</p>

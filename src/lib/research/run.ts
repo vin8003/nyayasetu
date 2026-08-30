@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
+import { gateAi } from "@/lib/billing/store";
+import { looksLikeSample } from "@/lib/practice/sample";
 import { courtById } from "./courts";
 import { intakeSchema } from "./schema";
 import type { Intake, LegalMemo } from "./types";
@@ -59,8 +61,10 @@ function asErrorMessage(error: XaiResponse["error"]): string | null {
 export const runResearch = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator((input: Intake) => intakeSchema.parse(input))
-  .handler(async ({ data }): Promise<{ ok: true; memo: LegalMemo } | { ok: false; error: string }> => {
+  .handler(async ({ data, context }): Promise<{ ok: true; memo: LegalMemo } | { ok: false; error: string }> => {
     try {
+      const gated = await gateAi(context.userId, { demo: looksLikeSample({ facts: data.facts }) });
+      if (!gated.ok) return gated;
       const apiKey = process.env.XAI_API_KEY;
       if (!apiKey) return { ok: false, error: "AI_UNAVAILABLE" };
 

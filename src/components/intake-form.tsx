@@ -2,7 +2,7 @@ import { Scale, Landmark, BookOpen, Search, Paperclip, X } from "lucide-react";
 import { COURTS } from "@/lib/research/courts";
 import { PRACTICE_AREAS, type Intake, type OutputLang } from "@/lib/research/types";
 import { t } from "@/lib/research/copy";
-import { SAMPLES } from "@/lib/research/samples";
+import { SAMPLES, type SampleBrief } from "@/lib/research/samples";
 import { Button } from "@/components/ui/button";
 import { Field, Hint, Input, Label, Select, Textarea } from "@/components/ui/field";
 import { Segmented } from "@/components/segmented";
@@ -21,6 +21,58 @@ export type PendingFile = {
   size: number;
   file: File;
 };
+
+function applySampleToDesk(next: Intake, onSample: (next: Intake) => void) {
+  onSample(next);
+  window.setTimeout(() => {
+    const el = document.getElementById("facts");
+    if (!(el instanceof HTMLTextAreaElement)) return;
+    el.setCustomValidity("");
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    try {
+      el.focus({ preventScroll: true });
+    } catch {
+      el.focus();
+    }
+  }, 50);
+}
+
+function SampleButtons({
+  lang,
+  busy,
+  compact,
+  onPick,
+}: {
+  lang: OutputLang;
+  busy: boolean;
+  compact?: boolean;
+  onPick: (sample: SampleBrief) => void;
+}) {
+  const c = t(lang);
+  return (
+    <section>
+      <h2 className="mb-3 text-sm font-medium text-muted">{c.samples}</h2>
+      <div className="flex flex-col gap-2">
+        {SAMPLES.map((sample) => (
+          <button
+            key={sample.id}
+            type="button"
+            disabled={busy}
+            onClick={() => onPick(sample)}
+            className="min-h-11 touch-manipulation rounded-lg bg-surface px-4 py-3 text-left shadow-[0_0_0_1px_rgb(255_255_255/0.08)] transition-[box-shadow,background-color] duration-150 active:bg-elevated lg:hover:shadow-[0_0_0_1px_rgb(255_255_255/0.14)] disabled:opacity-50"
+          >
+            <div className="text-sm font-medium text-fg">{lang === "hi" ? sample.titleHi : sample.titleEn}</div>
+            {compact ? null : (
+              <p className="mt-1 text-xs leading-relaxed text-muted">
+                {lang === "hi" ? sample.blurbHi : sample.blurbEn}
+              </p>
+            )}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export function IntakeForm({
   intake,
@@ -46,6 +98,10 @@ export function IntakeForm({
   const c = t(lang);
   const set = (patch: Partial<Intake>) => onChange({ ...intake, ...patch });
 
+  function pickSample(sample: SampleBrief) {
+    applySampleToDesk({ ...sample.intake, lang: intake.lang }, onSample);
+  }
+
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] lg:gap-10">
       <form
@@ -69,6 +125,10 @@ export function IntakeForm({
           />
           <Hint>{c.factsHint}</Hint>
         </Field>
+
+        <div className="lg:hidden">
+          <SampleButtons lang={lang} busy={busy} compact onPick={pickSample} />
+        </div>
 
         <Field>
           <span className="block text-sm font-medium tracking-tight text-fg/90">{c.files}</span>
@@ -205,7 +265,7 @@ export function IntakeForm({
           </p>
         ) : null}
 
-        <Button type="submit" size="lg" disabled={busy} className="w-full sm:w-auto sm:self-start">
+        <Button type="submit" size="lg" disabled={busy} className="w-full touch-manipulation sm:w-auto sm:self-start">
           <Search className="size-4" />
           {busy ? c.researching : c.research}
         </Button>
@@ -226,27 +286,9 @@ export function IntakeForm({
           </ol>
         </section>
 
-        <section>
-          <h2 className="mb-3 text-sm font-medium text-muted">{c.samples}</h2>
-          <div className="flex flex-col gap-2">
-            {SAMPLES.map((sample) => (
-              <button
-                key={sample.id}
-                type="button"
-                disabled={busy}
-                onClick={() => onSample({ ...sample.intake, lang: intake.lang })}
-                className="rounded-lg bg-surface px-4 py-3 text-left shadow-[0_0_0_1px_rgb(255_255_255/0.08)] transition-[box-shadow,background-color] duration-150 hover:shadow-[0_0_0_1px_rgb(255_255_255/0.14)] disabled:opacity-50"
-              >
-                <div className="text-sm font-medium text-fg">
-                  {lang === "hi" ? sample.titleHi : sample.titleEn}
-                </div>
-                <p className="mt-1 text-xs leading-relaxed text-muted">
-                  {lang === "hi" ? sample.blurbHi : sample.blurbEn}
-                </p>
-              </button>
-            ))}
-          </div>
-        </section>
+        <div className="hidden lg:block">
+          <SampleButtons lang={lang} busy={busy} onPick={pickSample} />
+        </div>
 
         <section>
           <h2 className="mb-3 text-sm font-medium text-muted">{c.sourcesLabel}</h2>

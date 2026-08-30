@@ -157,7 +157,7 @@
   animation: shimmer 1.8s linear infinite;
 }
 
-.setu-select {
+.cite-select {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'><path d='M2.5 4.5L6 8L9.5 4.5' stroke='%238e8a82' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/></svg>"),
     linear-gradient(var(--color-elevated), var(--color-elevated));
   background-repeat: no-repeat, no-repeat;

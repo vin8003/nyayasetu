@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { signOut } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { b } from "@/lib/billing/copy";
 import type { OutputLang } from "@/lib/research/types";
 import { t } from "@/lib/research/copy";
 
@@ -24,6 +26,9 @@ export function AuthChip({ lang }: { lang: OutputLang }) {
   return (
     <div className="flex items-center gap-2">
       <span className="max-w-[7.5rem] truncate text-xs text-muted">{label}</span>
+      <Link to="/billing" className="hidden h-10 items-center px-2 text-xs text-muted hover:text-fg sm:inline-flex">
+        {b(lang).plan}
+      </Link>
       <button
         type="button"
         disabled={signingOut}

@@ -12,7 +12,7 @@ function escapeHtml(value: string): string {
 export function formatMemoBrief(memo: LegalMemo, lang: OutputLang): string {
   const c = t(lang);
   const lines: string[] = [
-    "NyayaSetu · research memorandum",
+    "CiteBench · research memorandum",
     memo.title,
     memo.causeTitle,
     "",
@@ -44,7 +44,7 @@ export function formatMemoBrief(memo: LegalMemo, lang: OutputLang): string {
 
 export function formatMemoBriefHtml(memo: LegalMemo, lang: OutputLang): string {
   const body = escapeHtml(formatMemoBrief(memo, lang)).replaceAll("\n", "<br>\n");
-  const title = escapeHtml(memo.title || "NyayaSetu memo");
+  const title = escapeHtml(memo.title || "CiteBench memo");
   return `<!DOCTYPE html>
 <html>
 <head>

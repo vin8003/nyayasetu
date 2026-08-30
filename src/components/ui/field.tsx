@@ -45,7 +45,7 @@ export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTex
 
 export function Select({ className, children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <select className={cn(control, "setu-select h-11 px-3.5 pr-10 text-sm appearance-none", className)} {...props}>
+    <select className={cn(control, "cite-select h-11 px-3.5 pr-10 text-sm appearance-none", className)} {...props}>
       {children}
     </select>
   );

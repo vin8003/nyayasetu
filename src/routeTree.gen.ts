@@ -10,7 +10,14 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BillingRouteImport } from './routes/billing'
+import { Route as DiaryRouteImport } from './routes/diary'
+import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MattersRouteImport } from './routes/matters'
+import { Route as ResearchRouteImport } from './routes/research'
+import { Route as MattersIndexRouteImport } from './routes/matters.index'
+import { Route as MattersIdRouteImport } from './routes/matters.$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const IndexRoute = IndexRouteImport.update({
@@ -18,10 +25,45 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BillingRoute = BillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiaryRoute = DiaryRouteImport.update({
+  id: '/diary',
+  path: '/diary',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InboxRoute = InboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
+} as any)
+const MattersRoute = MattersRouteImport.update({
+  id: '/matters',
+  path: '/matters',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResearchRoute = ResearchRouteImport.update({
+  id: '/research',
+  path: '/research',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MattersIndexRoute = MattersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MattersRoute,
+} as any)
+const MattersIdRoute = MattersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => MattersRoute,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
@@ -31,31 +73,86 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/billing': typeof BillingRoute
+  '/diary': typeof DiaryRoute
+  '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
+  '/matters': typeof MattersRouteWithChildren
+  '/research': typeof ResearchRoute
+  '/matters/$id': typeof MattersIdRoute
+  '/matters/': typeof MattersIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/billing': typeof BillingRoute
+  '/diary': typeof DiaryRoute
+  '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
+  '/research': typeof ResearchRoute
+  '/matters/$id': typeof MattersIdRoute
+  '/matters': typeof MattersIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/billing': typeof BillingRoute
+  '/diary': typeof DiaryRoute
+  '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
+  '/matters': typeof MattersRouteWithChildren
+  '/research': typeof ResearchRoute
+  '/matters/$id': typeof MattersIdRoute
+  '/matters/': typeof MattersIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/api/auth/$'
+  fullPaths:
+    | '/'
+    | '/billing'
+    | '/diary'
+    | '/inbox'
+    | '/login'
+    | '/matters'
+    | '/research'
+    | '/matters/$id'
+    | '/matters/'
+    | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/api/auth/$'
-  id: '__root__' | '/' | '/login' | '/api/auth/$'
+  to:
+    | '/'
+    | '/billing'
+    | '/diary'
+    | '/inbox'
+    | '/login'
+    | '/research'
+    | '/matters/$id'
+    | '/matters'
+    | '/api/auth/$'
+  id:
+    | '__root__'
+    | '/'
+    | '/billing'
+    | '/diary'
+    | '/inbox'
+    | '/login'
+    | '/matters'
+    | '/research'
+    | '/matters/$id'
+    | '/matters/'
+    | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BillingRoute: typeof BillingRoute
+  DiaryRoute: typeof DiaryRoute
+  InboxRoute: typeof InboxRoute
   LoginRoute: typeof LoginRoute
+  MattersRoute: typeof MattersRouteWithChildren
+  ResearchRoute: typeof ResearchRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -68,12 +165,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/billing': {
+      id: '/billing'
+      path: '/billing'
+      fullPath: '/billing'
+      preLoaderRoute: typeof BillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/diary': {
+      id: '/diary'
+      path: '/diary'
+      fullPath: '/diary'
+      preLoaderRoute: typeof DiaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inbox': {
+      id: '/inbox'
+      path: '/inbox'
+      fullPath: '/inbox'
+      preLoaderRoute: typeof InboxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/matters': {
+      id: '/matters'
+      path: '/matters'
+      fullPath: '/matters'
+      preLoaderRoute: typeof MattersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/research': {
+      id: '/research'
+      path: '/research'
+      fullPath: '/research'
+      preLoaderRoute: typeof ResearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/matters/': {
+      id: '/matters/'
+      path: '/'
+      fullPath: '/matters/'
+      preLoaderRoute: typeof MattersIndexRouteImport
+      parentRoute: typeof MattersRoute
+    }
+    '/matters/$id': {
+      id: '/matters/$id'
+      path: '/$id'
+      fullPath: '/matters/$id'
+      preLoaderRoute: typeof MattersIdRouteImport
+      parentRoute: typeof MattersRoute
     }
     '/api/auth/$': {
       id: '/api/auth/$'
@@ -85,9 +231,27 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface MattersRouteChildren {
+  MattersIdRoute: typeof MattersIdRoute
+  MattersIndexRoute: typeof MattersIndexRoute
+}
+
+const MattersRouteChildren: MattersRouteChildren = {
+  MattersIdRoute: MattersIdRoute,
+  MattersIndexRoute: MattersIndexRoute,
+}
+
+const MattersRouteWithChildren =
+  MattersRoute._addFileChildren(MattersRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BillingRoute: BillingRoute,
+  DiaryRoute: DiaryRoute,
+  InboxRoute: InboxRoute,
   LoginRoute: LoginRoute,
+  MattersRoute: MattersRouteWithChildren,
+  ResearchRoute: ResearchRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport

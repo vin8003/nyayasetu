@@ -97,7 +97,7 @@ export function formatLegalLetter(letter: LegalLetter): string {
   });
 
   return compact([
-    `NyayaSetu · ${chrome.kicker}`,
+    `CiteBench · ${chrome.kicker}`,
     letter.heading,
     chrome.withoutPrejudice ? c.withoutPrejudice : "",
     "",
@@ -128,7 +128,7 @@ export function formatLegalLetter(letter: LegalLetter): string {
 
 export function formatLegalLetterHtml(letter: LegalLetter): string {
   const body = escapeHtml(formatLegalLetter(letter)).replaceAll("\n", "<br>\n");
-  const title = escapeHtml(letter.heading || "NyayaSetu letter");
+  const title = escapeHtml(letter.heading || "CiteBench letter");
   return `<!DOCTYPE html>
 <html>
 <head>

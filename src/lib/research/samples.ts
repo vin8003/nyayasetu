@@ -14,48 +14,72 @@ export const SAMPLES: SampleBrief[] = [
     id: "498a-bail",
     titleHi: "498A — अग्रिम ज़मानत",
     titleEn: "498A — anticipatory bail",
-    blurbHi: "ससुराल वालों पर क्रूरता का केस, कोई चोट नहीं, समझौते की बात।",
-    blurbEn: "Cruelty FIR against in-laws, no injury, talk of settlement.",
+    blurbHi: "सामान्य 498A FIR, कोई चोट नहीं, बच्चा 2 वर्ष, पुलिस नोटिस आ चुका है।",
+    blurbEn: "General 498A FIR, no injury, two-year-old child, police notice already served.",
     intake: {
       area: "criminal",
       courtId: "rajasthan",
       side: "petitioner",
-      lang: "hi",
+      lang: "en",
       query:
-        "क्या पति और ससुराल वालों को CrPC 438 / BNSS 482 के तहत अग्रिम ज़मानत मिल सकती है जब FIR में सामान्य आरोप हों और कोई मेडिकल इंजरी न हो?",
-      facts: `याचिकाकर्ता विवेक शर्मा, उम्र 34, जोधपुर निवासी, की शादी 12 मार्च 2022 को प्रिया शर्मा से हुई। दिसंबर 2024 से पत्नी मायके में हैं। 3 जनवरी 2026 को जोधपुर में IPC 498A, 323, 406 / BNS समकक्ष धाराओं में FIR दर्ज हुई — आरोप दहेज की माँग (₹5 लाख और कार) तथा गाली-गलौज के हैं। मेडिकल रिपोर्ट में कोई चोट नहीं। कोई विशिष्ट तारीख या गवाह का ब्योरा FIR में नहीं। दंपत्ति के एक बच्चा (2 वर्ष) है। पति बैंक में क्लर्क है, कोई पूर्व आपराधिक इतिहास नहीं। परिवार ने मध्यस्थता की पेशकश की है। पुलिस ने पूछताछ के लिए नोटिस भेजा है। याचिकाकर्ता अग्रिम ज़मानत चाहते हैं।`,
+        "Whether anticipatory bail under BNSS 482 (erstwhile CrPC 438) lies for the husband and in-laws in a 498A / 323 / 406 FIR that recites only general dowry demands, names no specific date of cruelty, and is unsupported by a medical injury report — and which Supreme Court and Rajasthan High Court authorities (Arnesh Kumar; Satender Kumar Antil; Kahkashan Kausar; recent BNSS transition cases) govern conditions, notice under BNSS 35, and the risk of arrest.",
+      facts: `Petitioner Vivek Sharma, 34, clerk in a nationalised bank at Jodhpur, married Priya Sharma on 12 March 2022 at Jodhpur according to Hindu rites. One daughter, aged 2 years 4 months, is with the wife at her parental home in Pal village since December 2024. There is no prior criminal history. Passport is current; he has not sought to travel.
+
+On 3 January 2026 PS Sadar, Jodhpur City registered FIR 14/2026 for IPC 498A, 323, 406 / corresponding BNS provisions, on a complaint by Priya. The FIR alleges a demand of ₹5 lakh and a car at the time of marriage and "taunts and abuse" thereafter. It does not specify a date, place, or independent witness of any assault. The medical examination of the complainant the same evening records no external injury. Stridhan list attached to the FIR is a photocopy of wedding-gift photographs; no recovery has been attempted.
+
+On 8 January 2026 the IO issued a notice to Vivek, his father (retired teacher, 67), and his mother (62, homemaker) to join investigation. They attended on 10 January, denied the demand, and produced bank statements showing household expenditure in Priya's name through 2024. The IO has not recorded their arrest. Neighbours (two affidavits) say the couple lived together without police complaint until Priya left in December 2024 after a dispute about living separately from the parents.
+
+The wife's natal family has, through a common relative, indicated they would consider mediation at the DLSAs / crime-against-women cell if the petitioners undertake not to press a counter-complaint. Vivek is willing to maintain the child and to deposit a reasonable amount as a bail condition. He seeks anticipatory bail for himself and his parents before the Sessions Court, Jodhpur, with a direction to the IO not to arrest pending the investigation, relying on Arnesh Kumar v. State of Bihar on 498A arrests and on the BNSS 35 notice already complied with.
+
+Documents on the brief: FIR 14/2026, medical report (NAD), notice dated 8 Jan 2026 and attendance memo, marriage card, child's birth certificate, six months' salary slips, two neighbour affidavits, draft undertaking as to residence and maintenance.`,
     },
   },
   {
     id: "adverse-possession",
     titleHi: "प्रतिकूल कब्ज़ा — भूमि",
     titleEn: "Adverse possession — land",
-    blurbHi: "25 साल से काबिज प्लॉट, अब रिकॉर्ड मालिक बेदख़ली चाहता है।",
-    blurbEn: "In possession 25 years; record owner now wants eviction.",
+    blurbHi: "1999 से खुला कब्ज़ा, बिजली-गृहकर रामलाल के नाम; 2025 में बेदख़ली का वाद।",
+    blurbEn: "Open possession since 1999; electricity and tax in possessor's name; eviction suit in 2025.",
     intake: {
       area: "property",
       courtId: "rajasthan",
       side: "respondent",
-      lang: "hi",
+      lang: "en",
       query:
-        "क्या 25 वर्षों के खुले और निरंतर कब्ज़े से प्रतिकूल कब्ज़े का स्वत्व बनता है, और रिकॉर्ड मालिक का बेदख़ली वाद कितना मज़बूत है?",
-      facts: `प्रतिवादी रामलाल, सरदारशहर (चuru), राजस्थान, 1999 से एक 120 वर्ग गज आवासीय प्लॉट पर काबिज हैं। प्लॉट का जमाबंदी अभी भी वादी सुरेश अग्रवाल के नाम है। रामलाल ने 2001 में कच्चा मकान बनाया, 2010 में पक्का किया, बिजली कनेक्शन 2004 से उनके नाम, गृहकर रसीदें 2006 से उनके पास हैं। पड़ोसी शपथपत्र कहते हैं कि वादी 20 साल से गाँव नहीं आए। वादी का दावा है कि उन्होंने 2003 में मौखिक अनुमति से रखा था, किराया कभी तय नहीं हुआ। 2025 में वादी ने सिविल जज के यहाँ कब्ज़ा वापसी और निषेधाज्ञा का वाद दायर किया। प्रतिवादी प्रतिकूल कब्ज़े और परिसीमा का बचाव करना चाहते हैं।`,
+        "Whether 25 years of open, continuous and hostile possession of a 120 sq. yard residential plot at Sardarshahar, with electricity (2004) and house-tax (2006) in the possessor's name, perfects title by adverse possession against the recorded owner, and whether the 2025 suit for possession is barred by limitation (Article 65, Limitation Act, 1963) — considering Karnataka Board of Wakf v. Govt. of India, Ravinder Kaur Grewal, and the requirement to plead animus possidendi as a sword and a shield.",
+      facts: `Defendant Ramlal, 71, cultivator-turned-resident of Ward 8, Sardarshahar, Churu district, Rajasthan, has occupied a 120 square yard abadi plot (khasra 214/2, old abadi) continuously since the summer of 1999. The current jamabandi still stands in the name of the plaintiff Suresh Agarwal s/o late Bhanwar Lal, a resident of Jaipur since about 2001.
+
+In 1999 Ramlal levelled the plot, which was then a kachha depression used for dumping. In 2001 he raised a two-room kachha dwelling; in 2010 he converted it to pucca with a tin-shade kitchen. Electricity connection no. RJ-CHU-04-214088 was released in his name in March 2004 and has been billed and paid without default. House-tax receipts of the municipality from 2006–07 onwards are in his name. Two adjoining neighbours (affidavits already drafted) state that Suresh has not been seen on the plot in twenty years and that the locality has always treated it as Ramlal's house. Ramlal's name appears on the voter list at this address from 2005.
+
+The plaintiff filed a suit in 2025 before the Civil Judge, Sardarshahar, for possession, mandatory injunction and mesne profits, pleading that in 2003 he had given "oral permission" to Ramlal to watch the plot, that no rent was fixed because it was a family arrangement (they are not related), and that a legal notice of February 2025 determined the permission. No writing, no rent receipt, no earlier notice. The suit was filed more than 12 years after Ramlal's pucca construction (2010) and more than 20 years after the electricity connection.
+
+Ramlal's defence, to be filed as a written statement: (i) adverse possession from 1999, open, continuous, hostile, with animus; (ii) limitation under Article 65 — the plaintiff's title, if any, was extinguished; (iii) the "oral licence" story is an afterthought to save limitation; (iv) estoppel from standing by while a pucca house and civic connections were created. He does not admit the plaintiff's title even as a historical fact beyond the jamabandi entry.
+
+Documents: jamabandi extract, electricity bills 2004–2025, house-tax file, 2010 construction photographs, neighbour affidavits, voter-list extracts, the 2025 plaint and notice, and a site plan. No sale deed in either name is on file; the plaintiff's claim rests on inheritance from Bhanwar Lal, whose own acquisition is not pleaded with a date.`,
     },
   },
   {
     id: "service-termination",
     titleHi: "सेवा समाप्ति — नैसर्गिक न्याय",
     titleEn: "Service termination — natural justice",
-    blurbHi: "सरकारी शिक्षक को बिना जाँच बर्खास्त किया गया।",
-    blurbEn: "Government teacher dismissed without an inquiry.",
+    blurbHi: "नियमित RPSC शिक्षक, बिना चार्जशीट/जांच 'loss of confidence' पर बर्खास्त।",
+    blurbEn: "Regular RPSC teacher dismissed for 'loss of confidence' with no charge-sheet or inquiry.",
     intake: {
       area: "service",
-      courtId: "sc",
+      courtId: "rajasthan",
       side: "petitioner",
       lang: "en",
       query:
-        "Is termination of a government teacher without inquiry or show-cause violative of natural justice and Articles 14/311? What is the proper writ remedy?",
-      facts: `The petitioner, Meera Choudhary, was appointed as a government upper-primary teacher in Rajasthan in 2014 on a regular sanctioned post after RPSC selection. On 18 November 2025 the District Education Officer issued a one-page order terminating her services citing “loss of confidence” and an anonymous complaint of irregular attendance, without a charge-sheet, without a show-cause notice, and without a departmental enquiry. She was not given the complaint. Past ACRs are “Good” or “Very Good”. She has two minor children and is the sole earning member. She wants reinstatement with back wages through a writ petition, and asks whether the civil court or the Central/State Administrative Tribunal is the correct forum, and which Supreme Court authorities on audi alteram partem and Article 311 govern.`,
+        "Whether a one-page order of the District Education Officer terminating a regularly selected government upper-primary teacher for 'loss of confidence' on an anonymous attendance complaint, without a charge-sheet, show-cause or departmental enquiry, violates Articles 14 and 311 and the Rajasthan Civil Services (Classification, Control and Appeal) Rules, and whether the proper remedy is a writ at the Jaipur Bench or the Rajasthan Civil Services Appellate Tribunal — with authorities on audi alteram partem, stigmatic termination, and reinstatement with back wages.",
+      facts: `Petitioner Meera Choudhary, 41, was appointed as a Senior Teacher (Upper Primary, Science) in the Education Department, Government of Rajasthan, in August 2014 against a sanctioned post after RPSC selection (advertisement 2012, merit list 2013). Posting: Government Upper Primary School, Sikar district. She is the sole earning member; two children in school. ACRs 2018–2024 are "Good" or "Very Good". No prior penalty.
+
+On 18 November 2025 the District Education Officer, Sikar, issued a one-page order terminating her services with immediate effect, citing "loss of confidence" and an anonymous written complaint of irregular attendance in July–August 2025. She was not given a copy of the complaint. No charge-sheet under the CCA Rules, no show-cause, no statement of allegations, no enquiry officer, no opportunity of hearing. The attendance register for those months, which she later inspected through an RTI, shows her present on all working days except three days of sanctioned casual leave (orders on file). Biometric is not installed at the school.
+
+She submitted a representation to the Director, Elementary Education on 25 November 2025; it is unanswered. A colleague who signed the same attendance register is willing to affirm. The school continues to function with a guest teacher against her post.
+
+She wants: (a) quashing of the 18 November order; (b) reinstatement with continuity and back wages; (c) a declaration that a stigmatic termination dressed as "loss of confidence" cannot bypass Article 311(2) and the CCA Rules for a member of the state service. She is ready to file at the Jaipur Bench of the Rajasthan High Court and needs a maintainability paragraph vis-à-vis the Rajasthan Civil Services Appellate Tribunal (whether the Tribunal's jurisdiction over "civil servants" makes the writ premature, or whether a void order without enquiry is still amenable to certiorari).
+
+Documents: appointment order 2014, RPSC selection extract, ACRs, the 18 Nov 2025 termination, representation 25 Nov, RTI attendance extract, casual-leave sanctions, draft writ prayers.`,
     },
   },
 ];

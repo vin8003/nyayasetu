@@ -1,6 +1,6 @@
 import type { HistoryItem, Intake, LegalMemo } from "./types";
 
-const KEY = "nyayasetu.history.v1";
+const KEY = "citebench.history.v1";
 const LIMIT = 24;
 
 function canUseStorage() {

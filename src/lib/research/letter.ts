@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { authMiddleware } from "@/lib/auth/middleware";
+import { gateAi } from "@/lib/billing/store";
+import { looksLikeSample } from "@/lib/practice/sample";
 import { intakeSchema, memoSchema } from "./schema";
 import { LETTER_KINDS, type Intake, type LegalLetter, type LegalMemo, type LetterKind } from "./types";
 import { assembleLetter } from "./letter-format.ts";
@@ -59,8 +61,10 @@ const letterInputSchema = z.object({
 export const draftLetter = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator((input: { kind: LetterKind; intake: Intake; memo: LegalMemo }) => letterInputSchema.parse(input))
-  .handler(async ({ data }): Promise<{ ok: true; letter: LegalLetter } | { ok: false; error: string }> => {
+  .handler(async ({ data, context }): Promise<{ ok: true; letter: LegalLetter } | { ok: false; error: string }> => {
     try {
+      const gated = await gateAi(context.userId, { demo: looksLikeSample({ facts: data.intake.facts }) });
+      if (!gated.ok) return gated;
       const apiKey = process.env.XAI_API_KEY;
       if (!apiKey) return { ok: false, error: "AI_UNAVAILABLE" };
 

@@ -3,7 +3,7 @@ import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { GROK_PROVIDERS, authClient, authEnabled, signIn } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { chambersAuth } from "@/lib/seed-user";
-import { SetuMark } from "@/components/setu-mark";
+import { CiteMark } from "@/components/cite-mark";
 import { Button } from "@/components/ui/button";
 import { Field, Hint, Input, Label } from "@/components/ui/field";
 
@@ -95,8 +95,8 @@ function Login() {
       <div className="w-full max-w-sm">
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <SetuMark className="size-8" />
-            <span className="font-display text-xl tracking-tight">{hi ? "न्याय सेतु" : "NyayaSetu"}</span>
+            <CiteMark className="size-8" />
+            <span className="font-display text-xl tracking-tight">CiteBench</span>
           </div>
           <div className="flex rounded-md bg-elevated p-0.5 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
             {(["hi", "en"] as const).map((code) => (
@@ -122,6 +122,9 @@ function Login() {
           {hi
             ? "केस हिस्ट्री आपके अकाउंट पर सुरक्षित रहेगी — Google, X या ईमेल, हर लॉगिन का अपना रिकॉर्ड।"
             : "Case history is saved on the account you sign in with — Google, X, or email each keep their own memos."}
+        </p>
+        <p className="mt-2 text-sm text-muted">
+          {hi ? "30 दिन आज़माइश। कार्ड नहीं चाहिए।" : "30-day trial. No card required."}
         </p>
         <form className="mt-8 flex flex-col gap-4" onSubmit={onSubmit}>
           <Field>
