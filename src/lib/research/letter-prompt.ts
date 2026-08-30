@@ -1,4 +1,5 @@
 import { citablePrecedentsFromMemo } from "./letter-cites.ts";
+import { courtById } from "./courts.ts";
 import type { Intake, LegalMemo, LetterKind } from "./types.ts";
 
 export const LETTER_TIMEOUT_MS = 45_000;
@@ -65,16 +66,24 @@ export function buildLetterUser(opts: { kind: LetterKind; intake: Intake; memo: 
       "Kind: court petition. Write a petition for filing: parties, facts, numbered grounds, prayer, optional interim relief, and a short verification clause. Do not write a legal notice or a without-prejudice reply.",
   };
 
+  const court = courtById(intake.courtId);
+  const statuteLines =
+    memo.statutes
+      .map((row) => `- ${row.name} ${row.sections}: ${row.why}`.trim())
+      .join("\n") || "(none)";
+
   return [
     langLine,
     kindLine[kind],
-    `Forum / side: ${intake.side}. Practice area: ${intake.area}.`,
+    `Forum: ${court.name} / ${court.nameHi} (${court.kind}). Side: ${intake.side}. Practice area: ${intake.area}.`,
+    `Cause title: ${memo.causeTitle.trim() || "(none)"}`,
     "",
     `Legal question:\n${intake.query.trim() || "(none)"}`,
     "",
     `Intake facts:\n${intake.facts.trim()}`,
     "",
     `Memo title: ${memo.title}`,
+    `Statutes from the memo (names and sections only; not extra cases):\n${statuteLines}`,
     `Facts summary:\n${memo.factsSummary || ""}`,
     `Issues:\n${memo.issues.map((issue) => `- ${issue.issue}`).join("\n") || "(none)"}`,
     `Submissions for the side:\n${memo.argumentsFor.map((item) => `- ${item}`).join("\n") || "(none)"}`,

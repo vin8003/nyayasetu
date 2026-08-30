@@ -119,4 +119,23 @@ describe("buildLetterUser", () => {
     assert.match(user, /verification/i);
     assert.doesNotMatch(user, /Invented Case/);
   });
+
+  it("includes forum, cause title, and memo statutes in the user message", () => {
+    const user = buildLetterUser({
+      kind: "petition",
+      intake,
+      memo: {
+        ...memo,
+        causeTitle: "Vivek v. State (Rajasthan HC)",
+        statutes: [
+          { name: "BNSS", sections: "482", why: "Anticipatory bail.", url: "" },
+        ],
+      },
+    });
+    assert.match(user, /Rajasthan High Court/);
+    assert.match(user, /Vivek v\. State \(Rajasthan HC\)/);
+    assert.match(user, /BNSS/);
+    assert.match(user, /482/);
+    assert.doesNotMatch(user, /web_search/);
+  });
 });
