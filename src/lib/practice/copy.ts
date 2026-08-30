@@ -154,6 +154,11 @@ export const appCopy = {
 		kindEvidence: "साक्ष्य",
 		kindNotice: "सूचना",
 		kindOther: "अन्य",
+		editFile: "फ़ाइल संपादित करें",
+		saveEntry: "सेव करें",
+		savingEntry: "सेव हो रहा है…",
+		savedEntry: "सेव हो गया।",
+		emptyNotes: "नोट अभी नहीं। लिखकर सेव करें।",
 	},
 	en: {
 		app: "CiteBench",
@@ -306,6 +311,11 @@ export const appCopy = {
 		kindEvidence: "Evidence",
 		kindNotice: "Notice",
 		kindOther: "Other",
+		editFile: "Edit file",
+		saveEntry: "Save",
+		savingEntry: "Saving…",
+		savedEntry: "Saved.",
+		emptyNotes: "No notes yet. Write and save.",
 	}
 };
 export function p(lang: OutputLang) {

@@ -38,13 +38,13 @@ A date-ordered list of hearings. Each row links to `/matters/$id`. Empty copy: n
 
 **Record** is the case file:
 
-- Caption, stage checklist (from the proceeding workflow), typical documents and deadlines
+- Caption, stage checklist (from the proceeding workflow), typical documents and deadlines. **Edit file** to change particulars, parties, status and notes.
 - What the lawyer does vs what the court does at this stage
 - What AI **may** help with vs what a **human must decide**
-- Hearings (add listing, outcome, next date)
-- Documents and pasted orders — paste or upload PDF / photo / text on the file. **Read as order** sends a paper to Inbox.
-- Tasks and deadlines, each tagged with an **origin** (court / AI / lawyer / statute / system). Open items that need a filing get **Draft this** — written statement, affidavit, application, petition, or a court note — saved on the papers. Appearance / gather work is left for the lawyer.
-- Timeline
+- Hearings (add listing, outcome, next date) — open a listing to correct date, purpose or what the court said
+- Documents and pasted orders — paste or upload PDF / photo / text on the file. Open a paper or order to edit it. **Read as order** sends a paper to Inbox.
+- Tasks and deadlines, each tagged with an **origin** (court / AI / lawyer / statute / system). Open an item to change the title or due date. Open items that need a filing get **Draft this** — written statement, affidavit, application, petition, or a court note — saved on the papers. Appearance / gather work is left for the lawyer.
+- Timeline — open an event to correct the date or note
 - **Hearing brief** (AI, gated) — a structured note from the file, not a new search
 - **Research from this matter** — opens `/research?matter=<id>` with facts and issues prefilled from the file. Saved memos and their statutes show on the record.
 - Copy / Word on papers and AI drafts.

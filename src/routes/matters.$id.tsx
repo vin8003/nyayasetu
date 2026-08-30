@@ -12,6 +12,7 @@ import {
   DocumentBody,
   EventBody,
   HearingBody,
+  MatterFileBody,
   MatterSheet,
   MemoFileBody,
   OrderBody,
@@ -21,7 +22,7 @@ import {
   matterRowClass,
 } from "@/components/matter-record";
 import { p } from "@/lib/practice/copy";
-import { addHearing, addTask, clearSampleChamber, getMatterBundle, recordHearing, savePastedDocument, setMatterStage, setTaskStatus } from "@/lib/practice/store";
+import { addHearing, addTask, clearSampleChamber, getMatterBundle, recordHearing, savePastedDocument, setMatterStage, setTaskStatus, updateDocument, updateEvent, updateHearing, updateMatter, updateOrder, updateWorkItem } from "@/lib/practice/store";
 import { proceedingDef } from "@/lib/practice/workflow";
 import { findInBundle, lastOrderId, nextHearingId, relatedIdForEvent } from "@/lib/practice/record-links";
 import { useChamberLang } from "@/lib/practice/use-lang";
@@ -81,7 +82,7 @@ export function MatterDetailPage() {
   }, [id]);
 
   function isExtraRecord(recordId) {
-    return typeof recordId === "string" && (recordId.startsWith("memo:") || recordId.startsWith("stat:"));
+    return typeof recordId === "string" && (recordId.startsWith("memo:") || recordId.startsWith("stat:") || recordId === "file");
   }
 
   function applyHash(hash) {
@@ -260,11 +261,37 @@ export function MatterDetailPage() {
       setDraftingId("");
     }
   }
+  async function persist(run) {
+    try {
+      const result = await run();
+      if (result && result.ok === false) {
+        toast.error(c.parseErr);
+        return;
+      }
+      toast.success(c.savedEntry);
+      await reload();
+    } catch (err) {
+      if (/unauthorized/i.test(String(err))) navigate({ to: "/login" });
+      else toast.error(c.parseErr);
+    }
+  }
   const sheetBase = sheetContent(bundle, located, lang, c, {
     draftingId,
     workDrafts,
     onDraftWork,
     onMarkDone: (itemId) => void setTaskStatus({ data: { id: itemId, status: "done" } }).then(reload),
+    navigate,
+    onSaveMatter: (patch) =>
+      persist(() =>
+        updateMatter({
+          data: { id: bundle.matter.id, ...patch },
+        }),
+      ),
+    onSaveHearing: (id, patch) => persist(() => updateHearing({ data: { id, ...patch } })),
+    onSaveDocument: (id, patch) => persist(() => updateDocument({ data: { id, ...patch } })),
+    onSaveOrder: (id, patch) => persist(() => updateOrder({ data: { id, ...patch } })),
+    onSaveWork: (kind, id, patch) => persist(() => updateWorkItem({ data: { id, kind, ...patch } })),
+    onSaveEvent: (id, patch) => persist(() => updateEvent({ data: { id, ...patch } })),
   });
   const statutes = statutesFromMemos(fileMemos);
   const sheet = extraSheet(sheetBase, openId, fileMemos, statutes, lang, c, navigate);
@@ -343,6 +370,9 @@ export function MatterDetailPage() {
               </Button>
             )
           ) : null}
+          <Button variant="outline" onClick={() => openRecord("file")}>
+            {c.editFile}
+          </Button>
           <Button variant="outline" onClick={() => void onBrief()} disabled={briefing}>
             {briefing ? c.briefing : c.prepareBrief}
           </Button>
@@ -414,14 +444,14 @@ export function MatterDetailPage() {
             </section>
           ) : null}
 
-          {matter.notes?.trim() ? (
-            <section className="scroll-mt-20">
-              <h2 className="font-display text-2xl">{c.notes}</h2>
-              <RecordButton id="notes" active={openId === "notes"} onOpen={openRecord} className="mt-3">
-                <div className="line-clamp-5 whitespace-pre-wrap text-sm leading-relaxed text-muted">{matter.notes}</div>
-              </RecordButton>
-            </section>
-          ) : null}
+          <section className="scroll-mt-20">
+            <h2 className="font-display text-2xl">{c.notes}</h2>
+            <RecordButton id="notes" active={openId === "notes"} onOpen={openRecord} className="mt-3">
+              <div className="line-clamp-5 whitespace-pre-wrap text-sm leading-relaxed text-muted">
+                {matter.notes?.trim() ? matter.notes : c.emptyNotes}
+              </div>
+            </RecordButton>
+          </section>
 
           <section id="research-file" className="scroll-mt-20">
             <h2 className="font-display text-2xl">{c.researchOnFile}</h2>
@@ -792,10 +822,26 @@ export function MatterDetailPage() {
 }
 
 function sheetContent(bundle, located, lang, c, work = {}) {
-  const { draftingId = "", workDrafts = {}, onDraftWork, onMarkDone } = work;
+  const {
+    draftingId = "",
+    workDrafts = {},
+    onDraftWork,
+    onMarkDone,
+    navigate,
+    onSaveMatter,
+    onSaveHearing,
+    onSaveDocument,
+    onSaveOrder,
+    onSaveWork,
+    onSaveEvent,
+  } = work;
   if (!located) return null;
-  if (located.kind === "notes") {
-    return { title: c.notes, kicker: bundle.matter.title, body: <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">{bundle.matter.notes}</pre> };
+  if (located.kind === "notes" || located.kind === "file") {
+    return {
+      title: c.editFile,
+      kicker: bundle.matter.title,
+      body: <MatterFileBody matter={bundle.matter} lang={lang} onSave={onSaveMatter} />,
+    };
   }
   if (located.kind === "hearing") {
     const h = bundle.hearings.find((x) => x.id === located.id);
@@ -804,7 +850,13 @@ function sheetContent(bundle, located, lang, c, work = {}) {
     return {
       title: h.purpose || c.diary,
       kicker: `${h.listedOn} ${h.listedAt || ""}`,
-      body: <HearingBody h={h} lang={lang} />,
+      body: (
+        <HearingBody
+          h={h}
+          lang={lang}
+          onSave={(patch) => onSaveHearing?.(h.id, patch)}
+        />
+      ),
       linkedId: linkedOrder?.id,
       linkedLabel: linkedOrder ? c.orders : null,
     };
@@ -820,9 +872,10 @@ function sheetContent(bundle, located, lang, c, work = {}) {
         <DocumentBody
           d={d}
           lang={lang}
+          onSave={(patch) => onSaveDocument?.(d.id, patch)}
           onReadOrder={() => {
             writeInboxDraft({ matterId: bundle.matter.id, body: d.text, title: d.title });
-            navigate({ to: "/inbox", search: { matter: bundle.matter.id } });
+            navigate?.({ to: "/inbox", search: { matter: bundle.matter.id } });
           }}
         />
       ),
@@ -836,7 +889,7 @@ function sheetContent(bundle, located, lang, c, work = {}) {
     return {
       title: c.orders,
       kicker: o.orderDate || "",
-      body: <OrderBody o={o} lang={lang} />,
+      body: <OrderBody o={o} lang={lang} onSave={(patch) => onSaveOrder?.(o.id, patch)} />,
       linkedId: o.documentId,
       linkedLabel: o.documentId ? c.documents : null,
     };
@@ -855,6 +908,7 @@ function sheetContent(bundle, located, lang, c, work = {}) {
           draftText={workDrafts[t.id] || ""}
           onDraft={() => onDraftWork?.("task", t.id)}
           onMarkDone={() => onMarkDone?.(t.id)}
+          onSave={(patch) => onSaveWork?.("task", t.id, patch)}
         />
       ),
     };
@@ -873,6 +927,7 @@ function sheetContent(bundle, located, lang, c, work = {}) {
           draftText={workDrafts[d.id] || ""}
           onDraft={() => onDraftWork?.("deadline", d.id)}
           onMarkDone={() => onMarkDone?.(d.id)}
+          onSave={(patch) => onSaveWork?.("deadline", d.id, patch)}
         />
       ),
     };
@@ -884,7 +939,7 @@ function sheetContent(bundle, located, lang, c, work = {}) {
     return {
       title: e.title,
       kicker: c.timeline,
-      body: <EventBody e={e} lang={lang} />,
+      body: <EventBody e={e} lang={lang} onSave={(patch) => onSaveEvent?.(e.id, patch)} />,
       linkedId: related && related !== e.id ? related : null,
       linkedLabel: related && related !== e.id ? c.openLinked : null,
     };

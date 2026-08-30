@@ -457,6 +457,157 @@ export const setTaskStatus = createServerFn({ method: "POST" }).middleware([auth
 	await sql`update deadlines set status = ${data.status} where id = ${data.id} and user_id = ${context.userId}`;
 	return { ok: true };
 });
+export const updateMatter = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => z.object({
+	id: z.string().min(1),
+	title: z.string().trim().min(2).max(240),
+	clientName: z.string().trim().max(180).optional(),
+	courtName: z.string().trim().max(180),
+	caseNumber: z.string().trim().max(80),
+	cnr: z.string().trim().max(80),
+	caseType: z.string().trim().max(80),
+	jurisdiction: z.string().trim().max(80),
+	ourSide: z.string().min(1).max(40),
+	partiesText: z.string().max(2000),
+	notes: z.string().max(12000),
+	status: z.enum(["active", "stayed", "dormant", "closed"])
+}).parse(input)).handler(async ({ context, data }) => {
+	const sql = await getSql();
+	const rows = await sql`select id, client_id from matters where id = ${data.id} and user_id = ${context.userId}`;
+	if (!rows[0]) return { ok: false };
+	let clientId = rows[0].client_id;
+	if (data.clientName?.trim()) {
+		if (clientId) await sql`update clients set name = ${data.clientName.trim()} where id = ${clientId} and user_id = ${context.userId}`;
+		else {
+			clientId = newId("cl");
+			await sql`insert into clients (id, user_id, name) values (${clientId}, ${context.userId}, ${data.clientName.trim()})`;
+		}
+	}
+	const parties = parseParties(data.partiesText);
+	await sql`
+      update matters set
+        title = ${data.title},
+        court_name = ${data.courtName},
+        case_number = ${data.caseNumber},
+        cnr = ${data.cnr},
+        case_type = ${data.caseType},
+        jurisdiction = ${data.jurisdiction},
+        our_side = ${data.ourSide},
+        parties_json = ${JSON.stringify(parties)},
+        notes = ${data.notes},
+        status = ${data.status},
+        client_id = ${clientId},
+        updated_at = now()
+      where id = ${data.id} and user_id = ${context.userId}
+    `;
+	await addEvent(sql, context.userId, data.id, "note", "File particulars updated", data.title, "lawyer");
+	return { ok: true };
+});
+export const updateHearing = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => z.object({
+	id: z.string().min(1),
+	listedOn: z.string().min(8).max(12),
+	listedAt: z.string().max(40).optional(),
+	purpose: z.string().max(240).optional(),
+	courtRoom: z.string().max(80).optional(),
+	bench: z.string().max(80).optional(),
+	outcome: z.string().max(2000).optional(),
+	notes: z.string().max(4000).optional(),
+	nextDate: z.string().max(12).optional()
+}).parse(input)).handler(async ({ context, data }) => {
+	const sql = await getSql();
+	const rows = await sql`select id, matter_id from hearings where id = ${data.id} and user_id = ${context.userId}`;
+	if (!rows[0]) return { ok: false };
+	const next = data.nextDate?.trim() || null;
+	await sql`
+      update hearings set
+        listed_on = ${data.listedOn},
+        listed_at = ${data.listedAt ?? ""},
+        purpose = ${data.purpose ?? ""},
+        court_room = ${data.courtRoom ?? ""},
+        bench = ${data.bench ?? ""},
+        outcome = ${data.outcome ?? ""},
+        notes = ${data.notes ?? ""},
+        next_date = ${next}
+      where id = ${data.id} and user_id = ${context.userId}
+    `;
+	const upcoming = await sql`
+      select listed_on from hearings
+      where matter_id = ${rows[0].matter_id} and user_id = ${context.userId} and listed_on >= ${todayISO()}
+      order by listed_on asc
+      limit 1
+    `;
+	await touchMatter(sql, context.userId, rows[0].matter_id, { nextHearingOn: upcoming[0]?.listed_on ?? null });
+	await addEvent(sql, context.userId, rows[0].matter_id, "hearing", "Hearing updated", data.purpose ?? "", "lawyer", data.id, data.listedOn);
+	return { ok: true };
+});
+export const updateDocument = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => z.object({
+	id: z.string().min(1),
+	title: z.string().trim().min(1).max(240),
+	body: z.string().max(40000),
+	kind: z.string().max(40).optional()
+}).parse(input)).handler(async ({ context, data }) => {
+	const sql = await getSql();
+	const rows = await sql`select id, matter_id from matter_documents where id = ${data.id} and user_id = ${context.userId}`;
+	if (!rows[0]) return { ok: false };
+	await sql`
+      update matter_documents set title = ${data.title}, body = ${data.body}, kind = ${data.kind ?? "other"}
+      where id = ${data.id} and user_id = ${context.userId}
+    `;
+	await addEvent(sql, context.userId, rows[0].matter_id, "document", "Paper updated", data.title, "lawyer", data.id);
+	return { ok: true };
+});
+export const updateOrder = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => z.object({
+	id: z.string().min(1),
+	orderDate: z.string().max(12).optional(),
+	body: z.string().max(40000)
+}).parse(input)).handler(async ({ context, data }) => {
+	const sql = await getSql();
+	const rows = await sql`select id, matter_id from matter_orders where id = ${data.id} and user_id = ${context.userId}`;
+	if (!rows[0]) return { ok: false };
+	const orderDate = data.orderDate?.trim() || null;
+	await sql`
+      update matter_orders set body = ${data.body}, order_date = ${orderDate}
+      where id = ${data.id} and user_id = ${context.userId}
+    `;
+	if (orderDate) await touchMatter(sql, context.userId, rows[0].matter_id, { lastOrderOn: orderDate });
+	await addEvent(sql, context.userId, rows[0].matter_id, "order", "Order text updated", "", "lawyer", data.id);
+	return { ok: true };
+});
+export const updateWorkItem = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => z.object({
+	id: z.string().min(1),
+	kind: z.enum(["task", "deadline"]),
+	title: z.string().trim().min(2).max(240),
+	dueOn: z.string().max(12).optional()
+}).parse(input)).handler(async ({ context, data }) => {
+	const sql = await getSql();
+	const due = data.dueOn?.trim() || null;
+	if (data.kind === "task") {
+		const rows = await sql`select id, matter_id from tasks where id = ${data.id} and user_id = ${context.userId}`;
+		if (!rows[0]) return { ok: false };
+		await sql`update tasks set title = ${data.title}, due_on = ${due} where id = ${data.id} and user_id = ${context.userId}`;
+		if (rows[0].matter_id) await addEvent(sql, context.userId, rows[0].matter_id, "task", "Task updated", data.title, "lawyer", data.id);
+		return { ok: true };
+	}
+	const rows = await sql`select id, matter_id from deadlines where id = ${data.id} and user_id = ${context.userId}`;
+	if (!rows[0]) return { ok: false };
+	await sql`update deadlines set title = ${data.title}, due_on = ${due ?? todayISO()} where id = ${data.id} and user_id = ${context.userId}`;
+	if (rows[0].matter_id) await addEvent(sql, context.userId, rows[0].matter_id, "deadline", "Deadline updated", data.title, "lawyer", data.id);
+	return { ok: true };
+});
+export const updateEvent = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => z.object({
+	id: z.string().min(1),
+	happenedOn: z.string().min(8).max(12),
+	title: z.string().trim().min(1).max(240),
+	detail: z.string().max(4000)
+}).parse(input)).handler(async ({ context, data }) => {
+	const sql = await getSql();
+	const rows = await sql`select id from timeline_events where id = ${data.id} and user_id = ${context.userId}`;
+	if (!rows[0]) return { ok: false };
+	await sql`
+      update timeline_events set happened_on = ${data.happenedOn}, title = ${data.title}, detail = ${data.detail}
+      where id = ${data.id} and user_id = ${context.userId}
+    `;
+	return { ok: true };
+});
 export const savePastedDocument = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => z.object({
 	matterId: z.string().min(1),
 	title: z.string().trim().min(1).max(240),

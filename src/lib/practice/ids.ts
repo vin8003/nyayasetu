@@ -26,3 +26,6 @@ export function parseParties(text) {
 		};
 	});
 }
+export function formatParties(parties) {
+	return (parties ?? []).map((p) => `${p.role}, ${p.name}`.trim()).filter((line) => line && line !== ",").join("\n");
+}

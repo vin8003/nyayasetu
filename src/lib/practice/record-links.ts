@@ -1,12 +1,13 @@
 import type { MatterBundle, TimelineEvent } from "./types.ts";
 
-export type RecordKind = "hearing" | "document" | "order" | "task" | "deadline" | "event" | "notes";
+export type RecordKind = "hearing" | "document" | "order" | "task" | "deadline" | "event" | "notes" | "file";
 
 export type LocatedRecord = { kind: RecordKind; id: string };
 
 export function findInBundle(bundle: MatterBundle, id: string | null | undefined): LocatedRecord | null {
   if (!id) return null;
   if (id === "notes") return { kind: "notes", id: "notes" };
+  if (id === "file") return { kind: "file", id: "file" };
   if (id === "hearings" || id === "documents" || id === "orders" || id === "tasks" || id === "deadlines" || id === "timeline") {
     return null;
   }
@@ -69,5 +70,6 @@ export function sectionFor(kind: RecordKind | string): string {
   if (kind === "deadline") return "deadlines";
   if (kind === "event") return "timeline";
   if (kind === "notes") return "notes";
+  if (kind === "file") return "file";
   return kind;
 }

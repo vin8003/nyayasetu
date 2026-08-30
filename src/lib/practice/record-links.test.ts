@@ -63,5 +63,7 @@ describe("matter record links", () => {
     assert.ok(noticeEvent?.refId);
     assert.equal(relatedIdForEvent(noticeEvent!, bundle), notice!.id);
     assert.equal(findInBundle(bundle, nextHearingId(bundle)!)?.kind, "hearing");
+    assert.equal(findInBundle(bundle, "file")?.kind, "file");
+    assert.equal(findInBundle(bundle, "notes")?.kind, "notes");
   });
 });
