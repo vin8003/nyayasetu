@@ -134,7 +134,7 @@ export function MattersIndexPage() {
 							]
 						}),
 						jsxs("div", {
-							className: "flex flex-wrap gap-2",
+							className: "panel-actions",
 							children: confirmExit ? [
 								jsx(Button, {
 									type: "button",
@@ -168,11 +168,14 @@ export function MattersIndexPage() {
 								jsx("p", { className: "row-meta", children: c.sampleHint })
 							]
 						}),
-						jsx(Button, {
-							type: "button",
-							disabled: busy,
-							onClick: () => void loadSample(),
-							children: c.loadSample
+						jsx("div", {
+							className: "panel-actions",
+							children: jsx(Button, {
+								type: "button",
+								disabled: busy,
+								onClick: () => void loadSample(),
+								children: c.loadSample
+							})
 						})
 					]
 				}),

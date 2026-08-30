@@ -117,7 +117,7 @@ export function TodayPage() {
                 <div className="text-sm font-medium">{c.sampleBanner}</div>
                 <p className="meta mt-1">{confirmExit ? c.clearSampleConfirm : c.clearSampleHint}</p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="panel-actions">
                 {confirmExit ? (
                   <>
                     <Button variant="outline" onClick={() => setConfirmExit(false)} disabled={busy} type="button">
@@ -155,9 +155,11 @@ export function TodayPage() {
                 <div className="text-sm font-medium">{c.loadSample}</div>
                 <p className="meta mt-1">{c.sampleHint}</p>
               </div>
-              <Button onClick={() => void loadSample()} disabled={busy} type="button">
-                {c.loadSample}
-              </Button>
+              <div className="panel-actions">
+                <Button onClick={() => void loadSample()} disabled={busy} type="button">
+                  {c.loadSample}
+                </Button>
+              </div>
             </div>
           )}
 

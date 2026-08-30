@@ -59,7 +59,7 @@ export function AppShell({
             ))}
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="topbar-actions">
             <LangToggle lang={lang} onLang={onLang} ariaLabel={c.langLabel} />
             <AuthChip lang={lang} />
           </div>
