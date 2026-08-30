@@ -106,11 +106,9 @@ export const getEntitlement = createServerFn({ method: "GET" })
 
 async function grantPreview(userId: string): Promise<BillingSnapshot> {
   const sql = await getSql();
-  const row = await ensureTrial(userId);
-  const now = new Date();
-  const trialEnd = new Date(row.trial_ends_at);
-  const from = trialEnd.getTime() > now.getTime() ? trialEnd : now;
-  const periodEnd = addDays(from, TRIAL_DAYS).toISOString();
+  await ensureTrial(userId);
+  // One month from now — do not stack on leftover trial, or the card reads as two months.
+  const periodEnd = addDays(new Date(), TRIAL_DAYS).toISOString();
   await sql`
     update entitlements
     set status = 'active',

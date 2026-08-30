@@ -44,7 +44,7 @@ What the Subscribe button does depends on keys, not on a feature flag:
 
 | Where | Keys | What happens |
 |---|---|---|
-| Live preview (no Postgres URL) | absent | Records membership on the account. **Does not charge.** |
+| Live preview (no Postgres URL) | absent | Records one month from now. **Does not charge.** Does not stack on leftover trial. |
 | Public chamber (Postgres URL, no Razorpay keys) | absent | Refuses. Copy: payments are not connected yet. |
 | Public chamber | `RAZORPAY_KEY_ID` + `RAZORPAY_KEY_SECRET` + `RAZORPAY_WEBHOOK_SECRET` | Opens Razorpay Checkout. Chamber turns **on only after** a verified payment (Checkout signature and/or webhook). |
 

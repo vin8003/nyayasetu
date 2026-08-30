@@ -119,18 +119,21 @@ export function BillingPage() {
             </div>
             <p className="mt-4 text-xs text-paper-muted">{c.gst}</p>
             <dl className="mt-7 grid gap-4 border-t border-paper-line pt-6 text-sm sm:grid-cols-2">
-              <div>
-                <dt className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-paper-muted">{c.trialOn}</dt>
-                <dd className="mt-1.5 tabular-nums">
-                  {snap.trialStarted
-                    ? `${formatDay(snap.trialEndsAt)}${snap.status === "trial" ? ` · ${snap.daysLeft} ${c.trialDays}` : ""}`
-                    : c.trialIdle}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-paper-muted">{c.accessUntil}</dt>
-                <dd className="mt-1.5 tabular-nums">{formatDay(snap.periodEnd)}</dd>
-              </div>
+              {snap.status === "trial" ? (
+                <div>
+                  <dt className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-paper-muted">{c.trialOn}</dt>
+                  <dd className="mt-1.5 tabular-nums">
+                    {snap.trialStarted
+                      ? `${formatDay(snap.trialEndsAt)} · ${snap.daysLeft} ${c.trialDays}`
+                      : c.trialIdle}
+                  </dd>
+                </div>
+              ) : (
+                <div>
+                  <dt className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-paper-muted">{c.accessUntil}</dt>
+                  <dd className="mt-1.5 tabular-nums">{formatDay(snap.periodEnd)}</dd>
+                </div>
+              )}
             </dl>
             <h2 className="mt-8 font-display text-lg font-medium">{c.includes}</h2>
             <ul className="mt-3 space-y-2.5 text-sm">
