@@ -1,10 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { p } from "@/lib/practice/copy";
+import { storyCopy } from "@/lib/story/copy";
 import type { OutputLang } from "@/lib/research/types";
 
 export function GuestPanel({ lang }: { lang: OutputLang }) {
   const c = p(lang);
+  const story = storyCopy[lang];
   return (
     <div className="stagger-in max-w-xl">
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent">{c.kicker}</p>
@@ -18,10 +20,17 @@ export function GuestPanel({ lang }: { lang: OutputLang }) {
         <Button asChild variant="outline">
           <Link to="/research" search={{ matter: undefined }}>{c.research}</Link>
         </Button>
-        <Button asChild variant="ghost">
-          <Link to="/story">{c.readStory}</Link>
-        </Button>
       </div>
+      <Link
+        to="/story"
+        search={{ lang: lang === "hi" ? "hi" : undefined }}
+        className="mt-12 block rounded-xl bg-paper px-6 py-6 text-paper-ink shadow-paper transition-[transform,box-shadow] duration-150 hover:-translate-y-0.5"
+      >
+        <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-accent">{story.kicker}</p>
+        <h2 className="mt-2 font-display text-2xl font-medium tracking-tight">{story.title}</h2>
+        <p className="mt-2 text-sm leading-relaxed text-paper-muted">{story.dek}</p>
+        <span className="mt-4 inline-block text-sm font-medium">{c.readStory} →</span>
+      </Link>
       <p className="mt-10 text-xs leading-relaxed text-subtle">{c.trustNote}</p>
     </div>
   );

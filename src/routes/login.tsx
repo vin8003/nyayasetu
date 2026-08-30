@@ -127,7 +127,11 @@ function Login() {
           {hi ? "30 दिन आज़माइश। कार्ड नहीं चाहिए।" : "30-day trial. No card required."}
         </p>
         <p className="mt-3">
-          <Link to="/story" className="text-sm text-accent hover:text-fg">
+          <Link
+            to="/story"
+            search={{ lang: hi ? "hi" : undefined }}
+            className="text-sm text-accent hover:text-fg"
+          >
             {hi ? "शोध डेस्क से चैंबर तक — पहले दिन की कहानी" : "From a research desk to a chamber — the first-day story"}
           </Link>
         </p>

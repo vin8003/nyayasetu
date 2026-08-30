@@ -3,8 +3,9 @@
 Ready to paste. Counts are characters including spaces and newlines. X limit is 280 per post.
 
 **Published article:** [https://citebench.ordereasy.win/story](https://citebench.ordereasy.win/story)
+Hindi: [https://citebench.ordereasy.win/story?lang=hi](https://citebench.ordereasy.win/story?lang=hi)
 
-Do not claim live card payments or eCourts filing. Research-desk letters (notice, reply, petition, written statement) are a first cut on screen. **Draft this** from a task *is* saved on the papers — still check before you file.
+Do not claim live card payments or eCourts filing. Court drafts (notice, reply, petition, written statement) are a first cut on screen — not stored with the matter.
 
 ---
 
