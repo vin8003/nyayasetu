@@ -165,6 +165,12 @@
   background-size: 12px 12px, auto;
 }
 
+html:has(.story-page),
+body:has(.story-page) {
+  background: var(--color-paper);
+  color: var(--color-paper-ink);
+}
+
 .story-page {
   min-height: 100dvh;
   background: var(--color-paper);
@@ -429,6 +435,7 @@
 
 .story-beats p {
   margin-top: 0.25rem;
+  font-family: var(--font-display);
   font-size: 0.95rem;
   line-height: 1.55;
   color: var(--color-paper-muted);
@@ -561,6 +568,7 @@
 .story-page[lang="hi"] .story-section h2,
 .story-page[lang="hi"] .story-lead,
 .story-page[lang="hi"] .story-beat-title,
+.story-page[lang="hi"] .story-beats p,
 .story-page[lang="hi"] .story-pair dd,
 .story-page[lang="hi"] .story-not li,
 .story-page[lang="hi"] .story-sign {
