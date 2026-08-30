@@ -15,14 +15,16 @@ After you sign in you get a chamber with five surfaces:
 | Surface | Route | What you do there |
 |---|---|---|
 | **Today** | `/` | Hearings today, upcoming listings, deadlines, open tasks (Draft this when it is a filing), unconfirmed orders, stale matters |
-| **Diary** | `/diary` | Chronological list of listings, linked to the matter |
-| **Matters** | `/matters` | Client files: parties, stage, hearings, documents, timeline, hearing brief |
+| **Diary** | `/diary` | Listings in today / upcoming / earlier. A row opens that listing on the file |
+| **Matters** | `/matters` | Client files: parties, stage, hearings, papers, timeline, hearing brief. A row is a sheet with Back |
 | **Research** | `/research` | Facts in → Indian case-law memo → follow-up Q&A → notice / reply / petition / written statement |
 | **Inbox** | `/inbox` | Paste an order; the model extracts directions; **you** confirm before the chamber updates |
 
+On a phone the five surfaces are a tab bar. Opening a listing, paper or task does not hide **Back** under the header. Closing it leaves the diary (or Today) where you were.
+
 A **sample chamber** (three demo matters) is free and does **not** start the 30-day trial. The clock starts when you run AI on **your** matter.
 
-The first-day story is public at **`/story`** (no login).
+The first-day story is public at **`/story`** (no login). Hindi: `/story?lang=hi`.
 
 Plan: **30 days free** on your own work, then **₹500 / month** (GST extra). Card collection is not live yet — `/billing` records the subscription on the account as a preview.
 
@@ -34,7 +36,7 @@ CiteBench is built so a model cannot quietly invent a judgment or turn a suggest
 
 - **Research search** uses xAI `web_search` only on [Indian Kanoon](https://indiankanoon.org), [LiveLaw](https://www.livelaw.in), [CaseMine](https://www.casemine.com), [eSCR](https://judgments.ecourts.gov.in), and [sci.gov.in](https://sci.gov.in).
 - A precedent is **verified** only if its `http(s)` URL was actually retrieved **and** the host is on that allowlist. The model’s `verified` boolean is overwritten.
-- Court drafts from the memo (notice, reply, petition, written statement) **do not search**. They may cite only authorities that already passed that gate; invented names are stripped from prose.
+- Court drafts from the memo (notice, reply, petition, written statement) **do not search**. They may cite only authorities that already passed that gate; invented names are stripped from prose. From a matter they save on the papers; a standalone desk draft stays on screen.
 - On a matter file, **court directions** and **CiteBench suggestions** are separate origins. Suggestions never become directions without a human confirm.
 - Screen links go through `httpHref` — `javascript:` and other non-http URLs are dropped.
 
@@ -96,7 +98,8 @@ node --experimental-strip-types --test \
   src/lib/auth/gate-identity.test.ts \
   src/lib/billing/*.test.ts \
   src/lib/research/*.test.ts \
-  src/lib/practice/*.test.ts
+  src/lib/practice/*.test.ts \
+  src/lib/scroll-memory.test.ts
 ```
 
 ---
@@ -106,6 +109,7 @@ node --experimental-strip-types --test \
 ```text
 Browser (TanStack Start + React)
   ├── AppShell  Today · Diary · Matters · Research · Inbox
+  │     topbar + tab bar (<900px) + MatterSheet (z-50, Back)
   └── Server functions (authMiddleware)
         ├── practice/store     clients, matters, hearings, orders, tasks, deadlines
         ├── practice/extract-order   paste → directions + suggestions (human confirm)
@@ -115,7 +119,8 @@ Browser (TanStack Start + React)
         ├── research/follow-up same search; new child row (`parent_id`)
         ├── research/letter    Grok, no tools → notice | reply | petition | writtenStatement
         ├── practice/task-draft file-only paper, saved on the matter
-        └── research/files     text PDF (unpdf), image OCR, plain text
+        ├── research/files     text PDF (unpdf), image OCR, plain text
+        └── scroll-memory      sessionStorage list offsets
 ```
 
 Schema lives in `migrations/` (`0001_auth`, `0002_memos`, `0003_practice`, `0004_billing`, `0005_memo_parent`). Do not create tables inside server functions. Neon also applies pending files on first `getSql()`.
@@ -129,8 +134,8 @@ More: [docs/architecture.md](docs/architecture.md).
 | Doc | Contents |
 |---|---|
 | [docs/product.md](docs/product.md) | Screen-by-screen product tour |
-| [docs/architecture.md](docs/architecture.md) | Stack, request paths, modules |
-| [docs/practice-chamber.md](docs/practice-chamber.md) | Diary, matters, workflow stages, sample pack, inbox |
+| [docs/architecture.md](docs/architecture.md) | Stack, design system, request paths, modules |
+| [docs/practice-chamber.md](docs/practice-chamber.md) | Diary, matters, sheet + Back, workflow stages, sample pack, inbox |
 | [docs/research-and-drafts.md](docs/research-and-drafts.md) | Memo pipeline, follow-ups, court drafts |
 | [docs/trust-and-citations.md](docs/trust-and-citations.md) | Citation gate, scrub, `httpHref` |
 | [docs/billing.md](docs/billing.md) | Trial, ₹500 plan, paywall, sample exemption |

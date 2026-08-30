@@ -5,7 +5,7 @@ Ready to paste. Counts are characters including spaces and newlines. X limit is 
 **Published article:** [https://citebench.ordereasy.win/story](https://citebench.ordereasy.win/story)
 Hindi: [https://citebench.ordereasy.win/story?lang=hi](https://citebench.ordereasy.win/story?lang=hi)
 
-Do not claim live card payments or eCourts filing. Court drafts (notice, reply, petition, written statement) are a first cut on screen — not stored with the matter.
+Do not claim live card payments or eCourts filing. Court drafts from a matter save on the papers. Standalone desk drafts stay on screen.
 
 ---
 
@@ -13,9 +13,11 @@ Do not claim live card payments or eCourts filing. Court drafts (notice, reply, 
 
 Last night this was a paste-facts research desk.
 
-This morning it’s a chamber: diary, matters, order inbox, citation-gated Indian case-law, and notice/reply/petition/written statement from the memo.
+By morning: diary, matters, order inbox, citation-gated Indian case-law.
 
-CiteBench. Under 16 hours. Not legal advice.
+By night: papers on the file, Hindi that wraps, Back that means back.
+
+CiteBench. Not legal advice.
 
 ---
 
@@ -23,9 +25,11 @@ CiteBench. Under 16 hours. Not legal advice.
 
 कल रात: तथ्य चिपकाओ, मेमो लो।
 
-आज सुबह: डायरी, मामले, आदेश इनबॉक्स, जाँचे हुए उद्धरण, नोटिस/जवाब/याचिका/लिखित कथन।
+सुबह: डायरी, मामले, आदेश इनबॉक्स, जाँचे हुए उद्धरण।
 
-CiteBench. 16 घंटे से कम। कानूनी सलाह नहीं।
+रात: कागज़ फाइल पर, हिंदी कटती नहीं, वापस का मतलब वापस।
+
+CiteBench. कानूनी सलाह नहीं।
 
 ---
 
@@ -34,7 +38,7 @@ CiteBench. 16 घंटे से कम। कानूनी सलाह न�
 **1/5**
 Last night CiteBench was one job: paste facts, get an Indian case-law memo.
 
-This morning it’s a chamber. Diary, files, order inbox, drafts. Under 16 hours.
+By morning it was a chamber. By night the file opened on a phone, and Back meant back.
 
 **2/5**
 The first merge wasn’t a new screen. It was a rule.
@@ -42,12 +46,12 @@ The first merge wasn’t a new screen. It was a rule.
 A case is “verified” only if we actually retrieved an http(s) URL on Indian Kanoon, LiveLaw, CaseMine, eSCR, or SCI. The model does not get to tick its own box.
 
 **3/5**
-From that memo, notice / reply / petition / written statement. No web search on the draft. Invented names get stripped. A proposition with no case can stay. A fake cite cannot.
+From that memo, notice / reply / petition / written statement. No web search on the draft. Invented names get stripped. From a matter, the draft saves on the papers.
 
 **4/5**
 Then the desk grew a practice around it.
 
-Today board. Hearings. Matter file with stages. Paste an order — the model extracts; you confirm. Court directions and AI suggestions stay different colours.
+Today board. Hearings in today / upcoming / earlier. Matter file with stages. Paste an order — the model extracts; you confirm. Court directions and AI suggestions stay different colours. You can correct a listing, a paper, a task.
 
 **5/5**
 Sample chamber is free and does not start the trial. Your own research does. 30 days, then ₹500/month. Card not live yet.
@@ -61,7 +65,7 @@ Not legal advice. Check the original record before you file.
 **1/5**
 कल रात CiteBench एक काम था: तथ्य चिपकाओ, भारतीय केस-लॉ मेमो लो।
 
-आज सुबह यह एक चैंबर है। डायरी, फाइल, आदेश, ड्राफ्ट। 16 घंटे से कम।
+सुबह यह एक चैंबर था। रात तक फाइल फ़ोन पर खुलती है, और वापस का मतलब वापस है।
 
 **2/5**
 पहला मर्ज नई स्क्रीन नहीं था। एक नियम था।
@@ -69,12 +73,12 @@ Not legal advice. Check the original record before you file.
 साइटेशन तभी “सत्यापित” जब असल में http(s) लिंक मिला हो — Indian Kanoon, LiveLaw, CaseMine, eSCR, SCI। मॉडल खुद का टिक नहीं लगा सकता।
 
 **3/5**
-उसी मेमो से नोटिस / जवाब / याचिका / लिखित कथन। ड्राफ्ट पर वेब सर्च नहीं। गढ़े नाम कटते हैं। बिना केस की दलील रह सकती है। नकली साइटेशन नहीं।
+उसी मेमो से नोटिस / जवाब / याचिका / लिखित कथन। ड्राफ्ट पर वेब सर्च नहीं। गढ़े नाम कटते हैं। मामले से निकले ड्राफ्ट कागज़ों पर सहेजते हैं।
 
 **4/5**
 फिर डेस्क के इर्द-गिर्द प्रैक्टिस आ गई।
 
-आज की बोर्ड। पेशियाँ। मामले की फाइल। आदेश चिपकाओ — मॉडल निकाले, आप पुष्टि करो। अदालत का निर्देश और AI सुझाव अलग रंग।
+आज की बोर्ड। पेशियाँ — आज / आगे / पहले। मामले की फाइल। आदेश चिपकाओ — मॉडल निकाले, आप पुष्टि करो। अदालत का निर्देश और AI सुझाव अलग रंग। पेशी, कागज़, कार्य सुधारे जा सकते हैं।
 
 **5/5**
 नमूना चैंबर मुफ़्त है, आज़माइश नहीं चलती। अपना शोध चलने पर 30 दिन, फिर ₹500/महीना। कार्ड अभी नहीं।
@@ -86,11 +90,10 @@ Not legal advice. Check the original record before you file.
 ## WhatsApp status (English, short)
 
 Last night: a research desk.
-This morning: a chamber.
+By morning: a chamber.
+By night: the file on a phone, and Back that means back.
 
-CiteBench — diary, matters, orders, cites we actually retrieved.
-
-Under 16 hours. Not legal advice.
+CiteBench. Not legal advice.
 
 ---
 
@@ -98,7 +101,9 @@ Under 16 hours. Not legal advice.
 
 Started last night with paste-facts → memo.
 
-This morning: Today board, diary, matter files, order inbox (you confirm), notice/reply/petition/written statement from a citation-gated memo.
+Morning: Today board, diary, matter files, order inbox (you confirm), notice/reply/petition/written statement from a citation-gated memo.
+
+Night: papers on the file, Hindi that wraps, a listing you can leave.
 
 Sample chamber is free. Trial starts on your own work.
 
@@ -109,11 +114,12 @@ CiteBench. Not legal advice.
 ## WhatsApp status (Hindi)
 
 कल रात: शोध डेस्क।
-आज सुबह: पूरा चैंबर।
+सुबह: पूरा चैंबर।
+रात: फाइल फ़ोन पर, वापस का मतलब वापस।
 
 CiteBench — डायरी, मामले, आदेश, जाँचे हुए उद्धरण।
 
-16 घंटे से कम। कानूनी सलाह नहीं।
+कानूनी सलाह नहीं।
 
 ---
 

@@ -56,10 +56,11 @@ node --experimental-strip-types --test \
   src/lib/auth/gate-identity.test.ts \
   src/lib/billing/*.test.ts \
   src/lib/research/*.test.ts \
-  src/lib/practice/*.test.ts
+  src/lib/practice/*.test.ts \
+  src/lib/scroll-memory.test.ts
 ```
 
-Useful files: `src/lib/billing/plan.test.ts`, `src/lib/research/verify.test.ts`, `src/lib/research/letter-*.test.ts`, `src/lib/research/follow-up.test.ts`, `src/lib/research/history-search.test.ts`, `src/lib/practice/sample.test.ts`, `src/lib/practice/task-draft.test.ts`, `src/lib/practice/intake-from-matter.test.ts`.
+Useful files: `src/lib/billing/plan.test.ts`, `src/lib/research/verify.test.ts`, `src/lib/research/letter-*.test.ts`, `src/lib/research/follow-up.test.ts`, `src/lib/research/history-search.test.ts`, `src/lib/practice/sample.test.ts`, `src/lib/practice/task-draft.test.ts`, `src/lib/practice/intake-from-matter.test.ts`, `src/lib/scroll-memory.test.ts`.
 
 ## Auth in local vs deploy
 

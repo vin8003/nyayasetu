@@ -187,7 +187,7 @@ function StoryPage() {
           <ol className="story-beats">
             {c.beats.map((beat) => (
               <li key={beat.time}>
-                <time dateTime={`${beat.time === "08:08" ? "2026-08-30" : "2026-08-29"}T${beat.time}:00Z`}>
+                <time dateTime={`2026-08-${beat.day}T${beat.time}:00Z`}>
                   {beat.time}
                 </time>
                 <div>

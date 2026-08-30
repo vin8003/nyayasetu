@@ -2,12 +2,14 @@
 
 CiteBench is a practice assistant for Indian advocates. These pages describe **what is on `main` today**, not planned follow-ups.
 
+Last matched to `main` on the evening of **30 August 2026** (papers on the file, shared design system, phone chrome, listing sheet + Back, scroll restore). The public article at `/story` is the same first-day record, extended through that evening — not a second volume.
+
 | Page | Audience | Start here if you want… |
 |---|---|---|
 | [../README.md](../README.md) | Everyone | A one-page product + setup overview |
 | [product.md](product.md) | Advocates, PMs | What each screen is for |
-| [architecture.md](architecture.md) | Engineers | How the app is wired |
-| [practice-chamber.md](practice-chamber.md) | Engineers, PMs | Diary, matters, workflow, sample, inbox |
+| [architecture.md](architecture.md) | Engineers | How the app is wired, design system, scroll memory |
+| [practice-chamber.md](practice-chamber.md) | Engineers, PMs | Diary, matters, sheet + Back, workflow, sample, inbox |
 | [research-and-drafts.md](research-and-drafts.md) | Engineers | Memo generation, follow-ups, and court drafts |
 | [trust-and-citations.md](trust-and-citations.md) | Engineers, reviewers | Why a cite is “verified” |
 | [billing.md](billing.md) | Product, engineers | Trial clock and the ₹500 chamber |

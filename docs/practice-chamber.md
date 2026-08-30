@@ -36,6 +36,20 @@ See [data-model.md](data-model.md). In product language:
 
 All rows are `user_id`-scoped. Deletes cascade from matter where the FK is set.
 
+## Opening a listing, paper, or task
+
+The matter record (`src/components/matter-record.tsx`) is a list of rows. A row opens **MatterSheet** — a `position:fixed` overlay (`z-index: 50`) above the sticky header (`z-30`) and the mobile tab bar (`z-40`). The first control is **← Back** (`.sheet-back`). Escape and the backdrop also close.
+
+Diary rows (`src/routes/diary.tsx`) go to `/matters/$id` with `hash: hearing.id`. Today’s **Draft this** uses `/matters/$id#<itemId>`. If the file **landed** with a hash, Back is `history.back()` so the diary (or Today) is restored. Opening and closing a row while already on the file does **not** rewrite the hash — a `#id` that matches the row’s DOM `id` would otherwise jump the page.
+
+While the sheet is open the body is locked with `position: fixed; top: -<scrollY>px` (iOS `overflow: hidden` on `html`/`body` zeros `scrollY`). Close restores that Y.
+
+Particulars, a listing, a paper, an order, a task, a deadline, and a timeline note are all **editable in the sheet**. Save writes the existing row; it does not insert a duplicate.
+
+## Scroll restore
+
+`src/lib/scroll-memory.ts` + `<ScrollMemory />` in `__root`. Before an in-app navigation, the current `scrollY` is stored in `sessionStorage` under `citebench.scroll:<path+search>`. After the next page is tall enough, that Y is restored. `pathKey` coerces `location.search` to a string (TanStack does not always give one during SSR). A new page with no saved offset is left at the top — it does not force `scrollTo(0, 0)` over a live offset.
+
 ## Inbox confirm path
 
 1. Paste ≥ 40 characters of order text, **or upload** a PDF / photo / text, choose a matter. A paper on the file can send its text here via **Read as order**.
@@ -63,7 +77,7 @@ Open items on Today and on the matter record that look like a filing get **Draft
 
 The draft is built from the **file only** (notes, last order, parties, papers on file). No `web_search`. Chat Completions JSON, 45s abort, model `grok-4.20-0309-non-reasoning`. Saved as `matter_documents` with `source_kind = ai_draft` and a timeline event (`ai_suggestion`). Sample chamber uses `draftFromBundle` if the model is down. The lawyer still marks the task done — the draft does not close the item.
 
-This is not `draftLetter`. Memo letters reuse stamped cites and stay on screen. Task drafts do not load a memo.
+This is not `draftLetter`. Memo letters reuse stamped cites. From a matter they also save as papers. Standalone desk drafts stay on screen. Task drafts do not load a memo.
 
 ## Research and statutes on the file
 
@@ -86,6 +100,10 @@ Detection (`looksLikeSample` / `isSampleMatter`): exact titles or case numbers `
 ## Today board
 
 `getTodayBoard` aggregates for the user: hearings today, upcoming, open deadlines, open tasks, unconfirmed orders, stale matters, `sampleLoaded` flag, counts. The home page is this board plus Load sample. Draftable tasks and deadlines also show **Draft this**, which jumps to `/matters/$id#<itemId>`.
+
+## Diary buckets
+
+`listHearingsRange` feeds `/diary`. Rows split into today / upcoming / earlier. Each `Link` carries the hearing id as a hash so the file opens that listing.
 
 ## Trust in the file
 
