@@ -121,8 +121,12 @@ function originsForHost(host: string): string[] {
 // Custom production hosts CNAMEd onto this deploy. A *static* BETTER_AUTH_URL
 // (the grok.me URL the broker registered) would force Google/X to callback on
 // grok.me, so the __Host- session cookie never appears on the visitor's domain.
+// `*.ordereasy.win` covers citebench, nyayasetu, and any later subdomain —
+// Better Auth wildcard-matches both allowedHosts and trustedOrigins.
 const extraPublicHosts: string[] = [
-  ...parseHostList("nyayasetu.ordereasy.win"),
+  ...parseHostList(
+    "citebench.ordereasy.win,nyayasetu.ordereasy.win,*.ordereasy.win",
+  ),
   ...parseHostList(env("AUTH_ALLOWED_HOSTS")),
 ];
 
