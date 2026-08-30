@@ -9,7 +9,7 @@ export function Badge({
   tone?: "muted" | "accent" | "ok" | "warn" | "danger" | "paper";
 }) {
   const tones = {
-    muted: "bg-elevated text-muted shadow-[0_0_0_1px_rgb(255_255_255/0.08)]",
+    muted: "bg-elevated text-muted shadow-hairline",
     accent: "bg-accent/15 text-accent",
     ok: "bg-ok/15 text-ok",
     warn: "bg-warn/15 text-warn",
@@ -20,7 +20,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium tracking-wide",
+        "inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-[0.6875rem] font-medium tracking-wide",
         tones[tone],
         className,
       )}

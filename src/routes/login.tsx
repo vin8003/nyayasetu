@@ -4,6 +4,7 @@ import { GROK_PROVIDERS, authClient, authEnabled, signIn } from "@/lib/auth/clie
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { chambersAuth } from "@/lib/seed-user";
 import { CiteMark } from "@/components/cite-mark";
+import { LangToggle } from "@/components/lang-toggle";
 import { Button } from "@/components/ui/button";
 import { Field, Hint, Input, Label } from "@/components/ui/field";
 
@@ -50,7 +51,7 @@ function Login() {
   if (isPending) {
     return (
       <main className="grid min-h-dvh place-items-center bg-bg text-fg">
-        <div className="h-10 w-48 animate-pulse rounded-md bg-elevated" />
+        <div className="h-10 w-48 skeleton" />
       </main>
     );
   }
@@ -91,34 +92,23 @@ function Login() {
   }
 
   return (
-    <main className="grid min-h-dvh place-items-center bg-bg px-4 py-10 text-fg">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+    <main className="shell grid min-h-dvh place-items-center px-4 py-10">
+      <div className="stagger-in w-full max-w-sm">
+        <div className="mb-9 flex items-center justify-between">
+          <Link to="/" className="brand">
             <CiteMark className="size-8" />
-            <span className="font-display text-xl tracking-tight">CiteBench</span>
-          </div>
-          <div className="flex rounded-md bg-elevated p-0.5 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
-            {(["hi", "en"] as const).map((code) => (
-              <button
-                key={code}
-                type="button"
-                onClick={() => setLang(code)}
-                className={
-                  lang === code
-                    ? "h-8 rounded-sm px-2.5 text-xs font-medium bg-accent text-accent-fg"
-                    : "h-8 rounded-sm px-2.5 text-xs font-medium text-muted hover:text-fg"
-                }
-              >
-                {code === "hi" ? "हि" : "EN"}
-              </button>
-            ))}
-          </div>
+            <span className="brand-word text-xl">CiteBench</span>
+          </Link>
+          <LangToggle
+            lang={lang}
+            onLang={(next) => setLang(next)}
+            ariaLabel={hi ? "भाषा" : "Language"}
+          />
         </div>
         <h1 className="font-display text-3xl font-medium tracking-tight">
           {mode === "in" ? (hi ? "लॉगिन" : "Sign in") : hi ? "खाता बनाएँ" : "Create account"}
         </h1>
-        <p className="mt-2 text-sm text-muted">
+        <p className="mt-3 text-sm leading-relaxed text-muted">
           {hi
             ? "केस हिस्ट्री आपके अकाउंट पर सुरक्षित रहेगी — Google, X या ईमेल, हर लॉगिन का अपना रिकॉर्ड।"
             : "Case history is saved on the account you sign in with — Google, X, or email each keep their own memos."}
@@ -126,16 +116,13 @@ function Login() {
         <p className="mt-2 text-sm text-muted">
           {hi ? "30 दिन आज़माइश। कार्ड नहीं चाहिए।" : "30-day trial. No card required."}
         </p>
-        <p className="mt-3">
-          <Link
-            to="/story"
-            search={{ lang: hi ? "hi" : undefined }}
-            className="text-sm text-accent hover:text-fg"
-          >
+        <p className="mt-4">
+          <Link to="/story" search={{ lang: hi ? "hi" : undefined }} className="link-accent text-sm">
             {hi ? "शोध डेस्क से चैंबर तक — पहले दिन की कहानी" : "From a research desk to a chamber — the first-day story"}
           </Link>
         </p>
-        <form className="mt-8 flex flex-col gap-4" onSubmit={onSubmit}>
+        <div className="card card-pad mt-8">
+        <form className="flex flex-col gap-4" onSubmit={onSubmit}>
           <Field>
             <Label htmlFor="username">{hi ? "यूज़रनेम / ईमेल" : "Username / email"}</Label>
             <Input
@@ -167,7 +154,7 @@ function Login() {
             />
           </Field>
           {error ? (
-            <p className="rounded-md bg-danger/10 px-3.5 py-3 text-sm text-danger" role="alert">
+            <p className="rounded-md bg-danger/12 px-3.5 py-3 text-sm leading-relaxed text-danger" role="alert">
               {error}
             </p>
           ) : null}
@@ -187,7 +174,7 @@ function Login() {
         </form>
         <button
           type="button"
-          className="mt-4 text-sm text-muted hover:text-fg"
+          className="link-quiet mt-4 text-sm"
           onClick={() => {
             setMode(mode === "in" ? "up" : "in");
             setError(null);
@@ -204,9 +191,9 @@ function Login() {
         {authEnabled ? (
           <>
             <div className="mt-8 flex items-center gap-3">
-              <span className="h-px flex-1 bg-border" />
+              <span className="hairline flex-1" />
               <span className="text-xs text-subtle">{hi ? "या" : "or"}</span>
-              <span className="h-px flex-1 bg-border" />
+              <span className="hairline flex-1" />
             </div>
             <div className="mt-4 flex flex-col gap-2">
               {GROK_PROVIDERS.map((p) => (
@@ -226,6 +213,7 @@ function Login() {
         ) : (
           <p className="mt-8 text-sm text-muted">{hi ? "लॉगिन अभी बंद है।" : "Sign-in is disabled."}</p>
         )}
+        </div>
       </div>
     </main>
   );

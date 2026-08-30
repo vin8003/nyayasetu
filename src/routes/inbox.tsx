@@ -188,15 +188,15 @@ export function InboxPage() {
 		onLang,
 		active: "inbox",
 		children: [
-			isPending ? jsx("div", { className: "h-40 animate-pulse rounded-xl bg-elevated" }) : null,
+			isPending ? jsx("div", { className: "skeleton h-40" }) : null,
 			!isPending && !user ? jsx(GuestPanel, { lang }) : null,
 			!isPending && user ? jsxs("div", { children: [
 				jsx("h1", {
-					className: "font-display text-4xl tracking-tight",
+					className: "page-title",
 					children: c.inbox
 				}),
 				jsx("p", {
-					className: "mt-2 max-w-xl text-muted",
+					className: "page-lead",
 					children: c.inboxHint
 				}),
 				jsx("p", {
@@ -204,7 +204,7 @@ export function InboxPage() {
 					children: c.trustNote
 				}),
 				matters.length === 0 ? jsxs("p", {
-					className: "mt-8 text-sm text-muted",
+					className: "section-note stack-tight",
 					children: [
 						c.noMatter,
 						" ",
@@ -265,10 +265,10 @@ export function InboxPage() {
 					]
 				}),
 				extract ? jsxs("section", {
-					className: "mt-10 space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]",
+					className: "mt-10 space-y-4 card card-pad",
 					children: [
 						jsx("h2", {
-							className: "font-display text-2xl",
+							className: "section-title",
 							children: c.extractSummary
 						}),
 						jsx("p", {
@@ -302,7 +302,7 @@ export function InboxPage() {
 										children: d.text
 									}),
 									jsxs("div", {
-										className: "mt-1 text-xs text-muted",
+										className: "row-meta",
 										children: [
 											d.party,
 											" ",
@@ -329,7 +329,7 @@ export function InboxPage() {
 										children: t.title
 									}),
 									jsx("div", {
-										className: "mt-1 text-xs text-muted",
+										className: "row-meta",
 										children: t.reason
 									})
 								]
@@ -387,14 +387,14 @@ export function InboxPage() {
 							queue.length
 						]
 					}), jsx("ul", {
-						className: "mt-3 space-y-2",
+						className: "row-list",
 						children: queue.map((q) => jsx("li", { children: q.matterId ? jsx(Link, {
 							to: "/matters/$id",
 							params: { id: q.matterId },
-							className: "block min-h-11 rounded-lg bg-surface px-4 py-3 text-sm shadow-[0_0_0_1px_rgb(255_255_255/0.08)] hover:shadow-[0_0_0_1px_rgb(255_255_255/0.14)]",
+							className: "row",
 							children: q.matterTitle || c.orders
 						}) : jsx("div", {
-							className: "rounded-lg bg-surface px-4 py-3 text-sm",
+							className: "row text-sm",
 							children: q.matterTitle || c.orders
 						}) }, q.id))
 					})]

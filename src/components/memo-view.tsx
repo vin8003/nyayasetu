@@ -140,7 +140,7 @@ export function MemoView({
             <ArrowLeft className="size-4" />
             {c.back}
           </button>
-          <h1 className="font-display text-2xl font-medium tracking-tight sm:text-3xl">{memo.title}</h1>
+          <h1 className="section-title font-medium tracking-tight sm:text-3xl">{memo.title}</h1>
           {memo.causeTitle ? <p className="mt-1 text-sm text-muted">{memo.causeTitle}</p> : null}
           {parentTitle ? (
             <p className="mt-2 text-xs text-accent">
@@ -226,17 +226,17 @@ export function MemoView({
 
       {tab === "issues" ? (
         <div className="no-print stagger-in space-y-3">
-          <h2 className="font-display text-xl">{c.issues}</h2>
+          <h2 className="section-title">{c.issues}</h2>
           {memo.issues.map((issue, i) => (
-            <section key={i} className="rounded-xl bg-surface p-5 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
+            <section key={i} className="card card-pad">
               <p className="font-mono text-xs text-accent">Q.{i + 1}</p>
               <h3 className="mt-1 font-display text-lg">{issue.issue}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted">{issue.framing}</p>
             </section>
           ))}
-          <h2 className="pt-4 font-display text-xl">{c.points}</h2>
+          <h2 className="pt-4 section-title">{c.points}</h2>
           {memo.pointsForCourt.map((p, i) => (
-            <section key={i} className="rounded-xl bg-surface p-5 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
+            <section key={i} className="card card-pad">
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="font-medium">{p.point}</h3>
                 <Badge tone={strengthTone(p.strength)}>{c[p.strength]}</Badge>
@@ -249,12 +249,12 @@ export function MemoView({
 
       {tab === "cases" ? (
         <div className="no-print stagger-in space-y-3">
-          <h2 className="font-display text-xl">{c.precedents}</h2>
+          <h2 className="section-title">{c.precedents}</h2>
           {memo.precedents.length === 0 ? (
             <p className="text-sm text-muted">{c.unverified}</p>
           ) : (
             memo.precedents.map((p, i) => (
-              <article key={i} className="rounded-xl bg-surface p-5 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
+              <article key={i} className="card card-pad">
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="font-display text-lg">{p.title}</h3>
                   <Badge tone={bindingTone(p.binding)}>{c[p.binding]}</Badge>
@@ -297,10 +297,10 @@ export function MemoView({
       {tab === "law" ? (
         <div className="no-print stagger-in grid gap-6 lg:grid-cols-2">
           <section>
-            <h2 className="mb-3 font-display text-xl">{c.statutes}</h2>
+            <h2 className="mb-3 section-title">{c.statutes}</h2>
             <div className="space-y-3">
               {memo.statutes.map((s, i) => (
-                <article key={i} className="rounded-xl bg-surface p-5 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
+                <article key={i} className="card card-pad">
                   <h3 className="font-medium">{s.name}</h3>
                   <p className="mt-1 font-mono text-xs text-accent">{s.sections}</p>
                   <p className="mt-2 text-sm text-muted">{s.why}</p>
@@ -314,10 +314,10 @@ export function MemoView({
             </div>
           </section>
           <section>
-            <h2 className="mb-3 font-display text-xl">{c.doctrines}</h2>
+            <h2 className="mb-3 section-title">{c.doctrines}</h2>
             <div className="space-y-3">
               {memo.doctrines.map((d, i) => (
-                <article key={i} className="rounded-xl bg-surface p-5 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
+                <article key={i} className="card card-pad">
                   <h3 className="font-display text-lg italic">{d.name}</h3>
                   <p className="mt-2 text-sm text-muted">{d.explanation}</p>
                   {d.leadingCase ? (
@@ -335,11 +335,11 @@ export function MemoView({
           <ArgCol title={c.forSide} items={memo.argumentsFor} />
           <ArgCol title={c.against} items={memo.argumentsAgainst} />
           <ArgCol title={c.counters} items={memo.counters} />
-          <section className="rounded-xl bg-surface p-5 shadow-[0_0_0_1px_rgb(255_255_255/0.08)] lg:col-span-2">
+          <section className="card card-pad lg:col-span-2">
             <h2 className="font-display text-lg">{c.strategy}</h2>
             <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted">{memo.strategy}</p>
           </section>
-          <section className="rounded-xl bg-surface p-5 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
+          <section className="card card-pad">
             <h2 className="font-display text-lg">{c.risks}</h2>
             <ul className="mt-2 list-disc space-y-1.5 pl-4 text-sm text-muted">
               {memo.risks.map((r) => (
@@ -353,10 +353,10 @@ export function MemoView({
       {tab === "sources" ? (
         <div className="no-print stagger-in space-y-6">
           <section>
-            <h2 className="mb-3 font-display text-xl">{c.tabSources}</h2>
+            <h2 className="mb-3 section-title">{c.tabSources}</h2>
             <ul className="space-y-2">
               {memo.sources.map((s, i) => (
-                <li key={i} className="rounded-lg bg-surface px-4 py-3 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
+                <li key={i} className="row">
                   <ExternalLink href={s.url} className="text-sm text-accent hover:text-fg">
                     {s.title || s.url}
                   </ExternalLink>
@@ -369,7 +369,7 @@ export function MemoView({
               {memo.citationUrls
                 .filter((u) => !memo.sources.some((s) => s.url === u))
                 .map((u) => (
-                  <li key={u} className="rounded-lg bg-surface px-4 py-3 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
+                  <li key={u} className="row">
                     <ExternalLink href={u} className="text-sm text-accent hover:text-fg">
                       {u.replace(/^https?:\/\//, "")}
                     </ExternalLink>
@@ -393,7 +393,7 @@ export function MemoView({
       ) : null}
 
       <form
-        className="no-print rounded-xl bg-surface p-5 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]"
+        className="no-print card card-pad"
         onSubmit={(e) => {
           e.preventDefault();
           const next = question.trim();
@@ -433,7 +433,7 @@ export function MemoView({
 
 function ArgCol({ title, items }: { title: string; items: string[] }) {
   return (
-    <section className="rounded-xl bg-surface p-5 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
+    <section className="card card-pad">
       <h2 className="font-display text-lg">{title}</h2>
       <ol className="mt-3 space-y-2">
         {items.map((item, i) => (

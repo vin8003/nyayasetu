@@ -31,63 +31,75 @@ export function DiaryPage() {
 		onLang,
 		active: "diary",
 		children: [
-			isPending ? jsx("div", { className: "h-40 animate-pulse rounded-xl bg-elevated" }) : null,
+			isPending ? jsx("div", { className: "skeleton h-40" }) : null,
 			!isPending && !user ? jsx(GuestPanel, { lang }) : null,
 			!isPending && user ? jsxs("div", { children: [
 				jsx("h1", {
-					className: "font-display text-4xl tracking-tight",
+					className: "page-title",
 					children: c.diary
 				}),
 				jsx("p", {
-					className: "mt-2 text-muted",
+					className: "page-lead",
 					children: c.tagline
 				}),
 				hearings.length === 0 ? jsx("p", {
-					className: "mt-8 text-sm text-muted",
+					className: "section-note stack-tight",
 					children: c.emptyDiary
 				}) : jsxs("div", {
-					className: "mt-8 space-y-8",
+					className: "space-y-10",
 					children: [
 						["today", hearings.filter((h) => h.listedOn === today)],
 						["upcoming", hearings.filter((h) => h.listedOn > today)],
 						["past", hearings.filter((h) => h.listedOn < today)]
 					].filter(([, rows]) => rows.length > 0).map(([bucket, rows]) => jsxs("section", {
+						className: "stack",
 						children: [
 							jsx("h2", {
-								className: "font-display text-2xl",
+								className: "section-title",
 								children: bucket === "today" ? c.today : bucket === "upcoming" ? c.upcoming : c.diary
 							}),
 							jsx("ol", {
-								className: "mt-3 space-y-2",
+								className: "row-list",
 								children: rows.map((h) => jsx("li", { children: jsx(Link, {
 									to: "/matters/$id",
 									params: { id: h.matterId },
 									hash: h.id,
-									className: "flex items-start justify-between gap-3 rounded-lg bg-surface px-4 py-3 shadow-[0_0_0_1px_rgb(255_255_255/0.08)] hover:bg-elevated",
-									children: jsxs("div", { children: [
-										jsx("div", {
-											className: "text-xs tabular-nums text-accent",
-											children: h.listedOn === today ? c.today : h.listedOn
-										}),
-										jsx("div", {
-											className: "mt-1 font-medium",
-											children: h.matterTitle
-										}),
+									className: "row grid gap-x-4 gap-y-1 sm:grid-cols-[7rem_minmax(0,1fr)]",
+									children: [
 										jsxs("div", {
-											className: "mt-1 text-sm text-muted",
+											className: "flex items-baseline gap-2 sm:flex-col sm:gap-0.5",
 											children: [
-												h.listedAt,
-												" ",
-												h.courtName,
-												" ",
-												h.purpose
+												jsx("span", {
+													className: "text-xs font-medium tabular-nums text-accent",
+													children: h.listedOn === today ? c.today : h.listedOn
+												}),
+												h.listedAt ? jsx("span", {
+													className: "text-xs tabular-nums text-muted",
+													children: h.listedAt
+												}) : null
 											]
-										}),
-										h.outcome ? jsx("div", {
-											className: "mt-1 text-xs text-subtle",
-											children: h.outcome
-										}) : null
-									] })
+										}, "when"),
+										jsxs("div", {
+											className: "min-w-0",
+											children: [
+												jsx("div", {
+													className: "row-title",
+													children: h.matterTitle
+												}),
+												jsxs("div", {
+													className: "row-meta",
+													children: [
+														h.courtName ? jsx("span", { className: "truncate", children: h.courtName }, "court") : null,
+														h.purpose ? jsx("span", { children: h.purpose }, "purpose") : null
+													]
+												}),
+												h.outcome ? jsx("p", {
+													className: "mt-1.5 text-xs leading-relaxed text-subtle",
+													children: h.outcome
+												}) : null
+											]
+										}, "what")
+									]
 								}) }, h.id))
 							})
 						]

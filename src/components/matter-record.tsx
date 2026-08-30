@@ -22,7 +22,7 @@ import type {
 } from "@/lib/practice/types";
 
 export const matterRowClass =
-  "block w-full min-h-11 cursor-pointer rounded-lg bg-surface px-4 py-3 text-left shadow-[0_0_0_1px_rgb(255_255_255/0.08)] transition-[box-shadow,background-color] duration-150 hover:bg-elevated hover:shadow-[0_0_0_1px_rgb(255_255_255/0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70";
+  "row w-full cursor-pointer text-left";
 
 export function RecordButton({
   id,
@@ -94,7 +94,7 @@ export function MatterSheet({
         <div className="flex items-start justify-between gap-3 border-b border-border/80 px-5 py-4">
           <div className="min-w-0">
             {kicker ? <div className="text-xs uppercase tracking-[0.18em] text-accent">{kicker}</div> : null}
-            <h2 className="mt-1 font-display text-2xl leading-tight">{title}</h2>
+            <h2 className="mt-1 section-title leading-tight">{title}</h2>
           </div>
           <Button variant="ghost" size="sm" onClick={onClose}>
             {c.cancel}

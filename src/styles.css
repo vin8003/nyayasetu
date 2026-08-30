@@ -1,41 +1,75 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   Tokens
+   ========================================================================== */
+
 @theme {
   --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Newsreader", "Iowan Old Style", Georgia, "Times New Roman", serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
-  --color-bg: #0c1014;
-  --color-surface: #151a21;
-  --color-elevated: #1c232c;
-  --color-fg: #e8e4db;
-  --color-muted: #8e8a82;
-  --color-subtle: #6a665e;
-  --color-accent: #7d9aaa;
-  --color-accent-fg: #0c1014;
-  --color-border: #2a313a;
-  --color-ring: #7d9aaa;
-  --color-paper: #f4efe6;
-  --color-paper-ink: #1d1a16;
+  /* Ink — the app chrome */
+  --color-bg: #0a0e12;
+  --color-surface: #111721;
+  --color-elevated: #18202b;
+  --color-raised: #202935;
+  --color-fg: #ece8e0;
+  --color-muted: #a7a197;
+  /* Fineprint still has to clear 4.5:1 on --color-bg, so this cannot go darker. */
+  --color-subtle: #8b857b;
+  --color-border: #232c37;
+  --color-hairline: #2b3441;
+
+  /* Accent — a cool slate blue, kept restrained */
+  --color-accent: #8ab4c8;
+  --color-accent-fg: #080c10;
+  --color-accent-dim: #5f8598;
+  --color-ring: #8ab4c8;
+
+  /* Paper — memos, drafts, the published article */
+  --color-paper: #f5f1e8;
+  --color-paper-ink: #1c1a16;
   --color-paper-muted: #6b645a;
-  --color-paper-line: #e0d8c8;
-  --color-danger: #c2746a;
-  --color-ok: #7a9a7e;
-  --color-warn: #b08968;
+  --color-paper-line: #e2dacb;
+
+  /* Status */
+  --color-danger: #cd7f74;
+  --color-ok: #7fa383;
+  --color-warn: #bd9269;
 
   --radius-xs: 4px;
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
-  --radius-xl: 24px;
+  --radius-xl: 22px;
 
-  --shadow-border: 0 0 0 1px rgb(255 255 255 / 0.08);
-  --shadow-border-hover: 0 0 0 1px rgb(255 255 255 / 0.13);
+  /* Elevation. Hairline first — it is the workhorse of this UI. */
+  --shadow-hairline: inset 0 0 0 1px rgb(255 255 255 / 0.07);
+  --shadow-hairline-strong: inset 0 0 0 1px rgb(255 255 255 / 0.13);
+  --shadow-e1: 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --shadow-e2:
+    0 1px 2px -1px rgb(0 0 0 / 0.3),
+    0 8px 20px -12px rgb(0 0 0 / 0.5);
+  --shadow-e3:
+    0 2px 4px -2px rgb(0 0 0 / 0.35),
+    0 18px 40px -20px rgb(0 0 0 / 0.6);
   --shadow-paper:
-    0 0 0 1px rgb(29 26 22 / 0.06),
-    0 1px 2px -1px rgb(29 26 22 / 0.08),
-    0 18px 40px -24px rgb(12 16 20 / 0.55);
+    0 0 0 1px rgb(28 26 22 / 0.06),
+    0 1px 2px -1px rgb(28 26 22 / 0.1),
+    0 20px 44px -26px rgb(8 12 16 / 0.6);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 130ms;
+  --dur-base: 200ms;
+  --dur-slow: 380ms;
 }
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
 
 @layer base {
   html {
@@ -43,6 +77,7 @@
     -moz-osx-font-smoothing: grayscale;
     background: var(--color-bg);
     color: var(--color-fg);
+    scroll-behavior: smooth;
   }
 
   body {
@@ -50,6 +85,9 @@
     background: var(--color-bg);
     color: var(--color-fg);
     font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.55;
+    text-rendering: optimizeLegibility;
   }
 
   button:not(:disabled),
@@ -62,6 +100,8 @@
   h3 {
     text-wrap: balance;
     font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.02em;
   }
 
   p {
@@ -69,22 +109,53 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--color-ring);
     outline-offset: 2px;
+    border-radius: var(--radius-xs);
   }
 
   ::selection {
-    background: color-mix(in oklab, var(--color-accent) 40%, transparent);
+    background: color-mix(in oklab, var(--color-accent) 34%, transparent);
     color: var(--color-fg);
+  }
+
+  /* Tabular numerals wherever numbers are compared down a column. */
+  .tabular-nums,
+  time,
+  [data-nums] {
+    font-variant-numeric: tabular-nums;
   }
 
   .content-auto {
     content-visibility: auto;
     contain-intrinsic-size: auto 280px;
   }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border: 3px solid var(--color-bg);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-hairline);
+  }
 }
 
+/* ==========================================================================
+   Motion
+   ========================================================================== */
+
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
   *,
   *::before,
   *::after {
@@ -97,13 +168,11 @@
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(8px);
-    filter: blur(2px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
-    filter: blur(0);
   }
 }
 
@@ -127,25 +196,25 @@
 }
 
 .stagger-in > * {
-  animation: fade-up 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: fade-up var(--dur-slow) var(--ease-out) both;
 }
 .stagger-in > *:nth-child(1) {
   animation-delay: 0ms;
 }
 .stagger-in > *:nth-child(2) {
-  animation-delay: 40ms;
+  animation-delay: 35ms;
 }
 .stagger-in > *:nth-child(3) {
-  animation-delay: 80ms;
+  animation-delay: 70ms;
 }
 .stagger-in > *:nth-child(4) {
-  animation-delay: 120ms;
+  animation-delay: 105ms;
 }
 .stagger-in > *:nth-child(5) {
-  animation-delay: 160ms;
+  animation-delay: 140ms;
 }
 .stagger-in > *:nth-child(6) {
-  animation-delay: 200ms;
+  animation-delay: 175ms;
 }
 
 .shimmer-text {
@@ -162,13 +231,618 @@
   animation: shimmer 1.8s linear infinite;
 }
 
-.cite-select {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'><path d='M2.5 4.5L6 8L9.5 4.5' stroke='%238e8a82' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/></svg>"),
-    linear-gradient(var(--color-elevated), var(--color-elevated));
-  background-repeat: no-repeat, no-repeat;
-  background-position: right 12px center, 0 0;
-  background-size: 12px 12px, auto;
+/* ==========================================================================
+   Typography scale
+   ========================================================================== */
+
+.eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-accent);
 }
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.4vw, 3rem);
+  font-weight: 500;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  margin-top: 0.625rem;
+}
+
+.page-lead {
+  margin-top: 0.75rem;
+  max-width: 42rem;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-muted);
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.section-note {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-muted);
+}
+
+.meta {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+.fineprint {
+  font-size: 0.75rem;
+  line-height: 1.7;
+  color: var(--color-subtle);
+}
+
+/* A section of the page, with consistent rhythm. */
+.stack {
+  margin-top: 2.5rem;
+  scroll-margin-top: 5rem;
+}
+
+.stack-tight {
+  margin-top: 1.5rem;
+}
+
+/* ==========================================================================
+   Surfaces
+   ========================================================================== */
+
+.card {
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-hairline), var(--shadow-e1);
+}
+
+.card-pad {
+  padding: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .card-pad {
+    padding: 1.5rem;
+  }
+}
+
+/* Interactive surface: rows, tiles, anything clickable. */
+.card-link {
+  display: block;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-hairline), var(--shadow-e1);
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.card-link:hover {
+  background: var(--color-elevated);
+  box-shadow: var(--shadow-hairline-strong), var(--shadow-e2);
+}
+
+.card-link:active {
+  transform: translateY(1px);
+}
+
+/* A list row. 44px minimum target. */
+.row {
+  display: block;
+  min-height: 2.75rem;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  padding: 0.8125rem 1rem;
+  box-shadow: var(--shadow-hairline);
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+a.row:hover,
+button.row:hover {
+  background: var(--color-elevated);
+  box-shadow: var(--shadow-hairline-strong);
+}
+
+.row-list {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/*
+ * A row plus its trailing actions. The action column is a fixed track so every
+ * row in a list ends on the same edge, however many buttons each one has.
+ */
+.row-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+
+@media (min-width: 640px) {
+  .row-item {
+    grid-template-columns: minmax(0, 1fr) 11.5rem;
+  }
+}
+
+.row-title {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.row-meta {
+  margin-top: 0.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+/* Stat tile */
+.tile {
+  display: block;
+  width: 100%;
+  min-height: 2.75rem;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  padding: 1rem;
+  text-align: left;
+  box-shadow: var(--shadow-hairline), var(--shadow-e1);
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.tile:hover {
+  background: var(--color-elevated);
+  box-shadow: var(--shadow-hairline-strong), var(--shadow-e2);
+}
+
+.tile:active {
+  transform: translateY(1px);
+}
+
+.tile-num {
+  font-family: var(--font-display);
+  font-size: 1.875rem;
+  font-weight: 500;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.tile-label {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--color-muted);
+}
+
+/* A quieter inset block — hints, banners, sub-panels. */
+.panel {
+  border-radius: var(--radius-lg);
+  background: var(--color-elevated);
+  padding: 1rem 1.25rem;
+  box-shadow: var(--shadow-hairline);
+}
+
+.panel-split {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+/* The cream paper surface, for anything that reads like a document. */
+.paper {
+  border-radius: var(--radius-lg);
+  background: var(--color-paper);
+  color: var(--color-paper-ink);
+  box-shadow: var(--shadow-paper);
+}
+
+.paper-link {
+  display: block;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.paper-link:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 1px rgb(28 26 22 / 0.06),
+    0 2px 4px -2px rgb(28 26 22 / 0.12),
+    0 26px 52px -28px rgb(8 12 16 / 0.7);
+}
+
+.hairline {
+  height: 1px;
+  border: 0;
+  background: var(--color-hairline);
+}
+
+/* Skeleton while data loads. */
+.skeleton {
+  border-radius: var(--radius-lg);
+  background: var(--color-elevated);
+  box-shadow: var(--shadow-hairline);
+  animation: pulse-dot 1.6s var(--ease-in-out) infinite;
+}
+
+/* ==========================================================================
+   Controls
+   ========================================================================== */
+
+.control {
+  width: 100%;
+  border-radius: var(--radius-md);
+  background: var(--color-elevated);
+  color: var(--color-fg);
+  box-shadow: var(--shadow-hairline);
+  transition:
+    box-shadow var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.control::placeholder {
+  color: var(--color-subtle);
+}
+
+.control:hover:not(:disabled):not(:focus) {
+  box-shadow: var(--shadow-hairline-strong);
+}
+
+.control:focus {
+  outline: none;
+  background: var(--color-raised);
+  box-shadow:
+    inset 0 0 0 1px var(--color-accent),
+    0 0 0 3px color-mix(in oklab, var(--color-accent) 18%, transparent);
+}
+
+.control:disabled {
+  opacity: 0.5;
+}
+
+.cite-select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'><path d='M2.5 4.5L6 8L9.5 4.5' stroke='%23969087' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px 12px;
+}
+
+/* Segmented control — language toggle, tab-like pickers. */
+.seg {
+  display: flex;
+  gap: 0.125rem;
+  border-radius: var(--radius-md);
+  background: var(--color-elevated);
+  padding: 0.1875rem;
+  box-shadow: var(--shadow-hairline);
+}
+
+.seg-fill {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+}
+
+.seg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.125rem;
+  border-radius: calc(var(--radius-md) - 4px);
+  padding-inline: 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-muted);
+  white-space: nowrap;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.seg-btn:hover:not([aria-checked="true"]):not(.is-on) {
+  color: var(--color-fg);
+}
+
+.seg-btn.is-on,
+.seg-btn[aria-checked="true"] {
+  background: var(--color-accent);
+  color: var(--color-accent-fg);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   App chrome
+   ========================================================================== */
+
+.shell {
+  min-height: 100dvh;
+  background: var(--color-bg);
+  color: var(--color-fg);
+}
+
+/* One soft light source behind the header. The only decorative flourish. */
+.shell::before {
+  content: "";
+  position: fixed;
+  inset-block-start: -40vh;
+  inset-inline: 0;
+  height: 80vh;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    color-mix(in oklab, var(--color-accent) 9%, transparent) 0%,
+    transparent 70%
+  );
+}
+
+.shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  border-bottom: 1px solid var(--color-border);
+  background: color-mix(in oklab, var(--color-bg) 82%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+.topbar-inner,
+.shell-main {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 72rem;
+  padding-inline: 1rem;
+}
+
+@media (min-width: 640px) {
+  .topbar-inner,
+  .shell-main {
+    padding-inline: 1.5rem;
+  }
+}
+
+.topbar-inner {
+  display: flex;
+  height: 3.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  color: inherit;
+  border-radius: var(--radius-sm);
+}
+
+.brand-word {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.nav {
+  display: none;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+@media (min-width: 900px) {
+  .nav {
+    display: flex;
+  }
+}
+
+.nav-link {
+  position: relative;
+  display: inline-flex;
+  height: 2.25rem;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  padding-inline: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-muted);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.nav-link:hover {
+  color: var(--color-fg);
+  background: color-mix(in oklab, var(--color-elevated) 70%, transparent);
+}
+
+.nav-link.is-on {
+  color: var(--color-fg);
+}
+
+.nav-link.is-on::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0.75rem;
+  bottom: -0.5625rem;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--color-accent);
+}
+
+.shell-main {
+  padding-block: 2rem 6.5rem;
+}
+
+@media (min-width: 900px) {
+  .shell-main {
+    padding-block: 2.5rem 4rem;
+  }
+}
+
+/* Mobile tab bar */
+.tabbar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 30;
+  border-top: 1px solid var(--color-border);
+  background: color-mix(in oklab, var(--color-bg) 92%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (min-width: 900px) {
+  .tabbar {
+    display: none;
+  }
+}
+
+.tabbar-inner {
+  margin-inline: auto;
+  display: grid;
+  max-width: 72rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.tab-link {
+  display: flex;
+  min-height: 3.5rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1875rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--color-muted);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.tab-link.is-on {
+  color: var(--color-fg);
+}
+
+.tab-icon {
+  display: grid;
+  height: 1.625rem;
+  width: 2.5rem;
+  place-items: center;
+  border-radius: 999px;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+.tab-link.is-on .tab-icon {
+  background: color-mix(in oklab, var(--color-accent) 20%, transparent);
+  color: var(--color-accent);
+}
+
+/* Notice strip under the header */
+.banner {
+  border-bottom: 1px solid var(--color-border);
+  background: color-mix(in oklab, var(--color-elevated) 75%, transparent);
+}
+
+.banner-strong {
+  background: var(--color-elevated);
+}
+
+.banner-inner {
+  margin-inline: auto;
+  display: flex;
+  max-width: 72rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+@media (min-width: 640px) {
+  .banner-inner {
+    padding-inline: 1.5rem;
+  }
+}
+
+.link-accent {
+  color: var(--color-accent);
+  font-weight: 500;
+  border-radius: var(--radius-xs);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.link-accent:hover {
+  color: var(--color-fg);
+}
+
+.link-quiet {
+  color: var(--color-muted);
+  border-radius: var(--radius-xs);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.link-quiet:hover {
+  color: var(--color-fg);
+}
+
+/* ==========================================================================
+   Empty states
+   ========================================================================== */
+
+.empty {
+  margin-top: 1rem;
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklab, var(--color-surface) 60%, transparent);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-hairline);
+}
+
+.empty-text {
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: var(--color-muted);
+  max-width: 34rem;
+}
+
+/* ==========================================================================
+   Published article — /story
+   ========================================================================== */
 
 html:has(.story-page),
 body:has(.story-page) {
@@ -283,7 +957,7 @@ body:has(.story-page) {
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--color-accent);
+  color: var(--color-accent-dim);
 }
 
 .story-title {
@@ -428,7 +1102,7 @@ body:has(.story-page) {
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-variant-numeric: tabular-nums;
-  color: var(--color-accent);
+  color: var(--color-accent-dim);
   padding-top: 0.2rem;
 }
 
@@ -591,6 +1265,10 @@ body:has(.story-page) {
   padding-top: 0.04em;
 }
 
+/* ==========================================================================
+   Print
+   ========================================================================== */
+
 .print-only {
   display: none;
 }
@@ -605,6 +1283,9 @@ body:has(.story-page) {
   }
   .print-only {
     display: block !important;
+  }
+  .shell::before {
+    display: none !important;
   }
   .print-paper {
     box-shadow: none !important;

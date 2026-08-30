@@ -13,14 +13,14 @@ export function StagePanel({ lang, proceeding, stage }: { lang: OutputLang; proc
 	const next = possibleNext(proceeding, stage);
 	const label = lang === "hi" ? def.labelHi : def.label;
 	return jsxs("aside", {
-		className: "rounded-xl bg-surface p-5 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]",
+		className: "card card-pad",
 		children: [
 			jsx("p", {
 				className: "text-xs font-medium uppercase tracking-[0.16em] text-accent",
 				children: c.stage
 			}),
 			jsx("h2", {
-				className: "mt-2 font-display text-2xl tracking-tight",
+				className: "mt-2 section-title tracking-tight",
 				children: label
 			}),
 			jsx("p", {

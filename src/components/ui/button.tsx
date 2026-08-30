@@ -4,21 +4,21 @@ import type { ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 font-medium select-none whitespace-nowrap transition-[background-color,color,box-shadow,opacity,transform] duration-150 ease-out active:not-disabled:scale-[0.96] disabled:pointer-events-none disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-bg",
+  "inline-flex items-center justify-center gap-2 font-medium select-none whitespace-nowrap transition-[background-color,color,box-shadow,opacity,transform] duration-150 ease-out active:not-disabled:translate-y-px disabled:pointer-events-none disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-bg",
   {
     variants: {
       variant: {
-        primary: "bg-accent text-accent-fg hover:bg-accent/90",
+        primary: "bg-accent text-accent-fg shadow-e1 hover:bg-accent/90",
         outline:
-          "bg-transparent text-fg shadow-[0_0_0_1px_rgb(255_255_255/0.10)] hover:bg-elevated hover:shadow-[0_0_0_1px_rgb(255_255_255/0.16)]",
+          "bg-transparent text-fg shadow-hairline hover:bg-elevated hover:shadow-hairline-strong",
         ghost: "bg-transparent text-muted hover:bg-elevated hover:text-fg",
-        paper: "bg-paper text-paper-ink hover:bg-paper/90",
-        danger: "bg-danger/15 text-danger hover:bg-danger/25",
+        paper: "bg-paper-ink text-paper hover:opacity-90",
+        danger: "bg-danger/15 text-danger shadow-hairline hover:bg-danger/25",
       },
       size: {
-        sm: "h-9 rounded-sm px-3 text-sm",
+        sm: "h-9 rounded-sm px-3 text-[0.8125rem]",
         md: "h-11 rounded-md px-4 text-sm",
-        lg: "h-12 rounded-lg px-5 text-base",
+        lg: "h-12 rounded-md px-5 text-[0.9375rem]",
         icon: "size-11 rounded-md",
       },
     },

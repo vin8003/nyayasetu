@@ -16,10 +16,8 @@ import { classifyTaskDraft } from "@/lib/practice/task-draft-class";
 
 export const Route = createFileRoute("/")({ component: TodayPage });
 
-const tileClass =
-  "block min-h-11 w-full rounded-xl bg-surface px-4 py-4 text-left shadow-[0_0_0_1px_rgb(255_255_255/0.08)] transition-[box-shadow,background-color] duration-150 hover:bg-elevated hover:shadow-[0_0_0_1px_rgb(255_255_255/0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70";
-const rowClass =
-  "block min-h-11 rounded-lg bg-surface px-4 py-3 shadow-[0_0_0_1px_rgb(255_255_255/0.08)] transition-[box-shadow,background-color] duration-150 hover:bg-elevated hover:shadow-[0_0_0_1px_rgb(255_255_255/0.16)]";
+const tileClass = "tile";
+const rowClass = "row";
 
 export function isUnauthorized(err) {
   return /unauthorized/i.test(err instanceof Error ? err.message : String(err ?? ""));
@@ -105,19 +103,19 @@ export function TodayPage() {
 
   return (
     <AppShell lang={lang} onLang={onLang} active="today">
-      {isPending ? <div className="h-40 animate-pulse rounded-xl bg-elevated" /> : null}
+      {isPending ? <div className="skeleton h-40" /> : null}
       {!isPending && !user ? <GuestPanel lang={lang} /> : null}
       {!isPending && user ? (
         <div className="stagger-in">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent">{c.kicker}</p>
-          <h1 className="mt-3 font-display text-4xl font-medium tracking-tight sm:text-5xl">{c.hero}</h1>
-          <p className="mt-3 max-w-xl text-base text-muted">{c.tagline}</p>
+          <p className="eyebrow">{c.kicker}</p>
+          <h1 className="page-title">{c.hero}</h1>
+          <p className="page-lead">{c.tagline}</p>
 
           {board?.sampleLoaded ? (
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-elevated px-4 py-3 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
+            <div className="panel panel-split stack-tight">
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium">{c.sampleBanner}</div>
-                <p className="mt-1 text-xs text-muted">{confirmExit ? c.clearSampleConfirm : c.clearSampleHint}</p>
+                <p className="meta mt-1">{confirmExit ? c.clearSampleConfirm : c.clearSampleHint}</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 {confirmExit ? (
@@ -152,10 +150,10 @@ export function TodayPage() {
               </div>
             </div>
           ) : (
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-elevated px-4 py-3 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
+            <div className="panel panel-split stack-tight">
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium">{c.loadSample}</div>
-                <p className="mt-1 text-xs text-muted">{c.sampleHint}</p>
+                <p className="meta mt-1">{c.sampleHint}</p>
               </div>
               <Button onClick={() => void loadSample()} disabled={busy} type="button">
                 {c.loadSample}
@@ -163,28 +161,28 @@ export function TodayPage() {
             </div>
           )}
 
-          <div className="mt-8 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
             <button type="button" className={tileClass} onClick={() => scrollToId("hearings-today")}>
-              <div className="font-display text-3xl tabular-nums">{counts?.hearingsToday ?? 0}</div>
-              <div className="mt-1 text-xs text-muted">{c.hearingsToday}</div>
+              <div className="tile-num">{counts?.hearingsToday ?? 0}</div>
+              <div className="tile-label">{c.hearingsToday}</div>
             </button>
             <button type="button" className={tileClass} onClick={() => scrollToId("deadlines")}>
-              <div className="font-display text-3xl tabular-nums">{counts?.deadlines ?? 0}</div>
-              <div className="mt-1 text-xs text-muted">{c.deadlines}</div>
+              <div className="tile-num">{counts?.deadlines ?? 0}</div>
+              <div className="tile-label">{c.deadlines}</div>
             </button>
             <Link to="/inbox" className={tileClass}>
-              <div className="font-display text-3xl tabular-nums">{counts?.unconfirmedOrders ?? 0}</div>
-              <div className="mt-1 text-xs text-muted">{c.ordersAction}</div>
+              <div className="tile-num">{counts?.unconfirmedOrders ?? 0}</div>
+              <div className="tile-label">{c.ordersAction}</div>
             </Link>
             <button type="button" className={tileClass} onClick={() => scrollToId("stale")}>
-              <div className="font-display text-3xl tabular-nums">{counts?.staleMatters ?? 0}</div>
-              <div className="mt-1 text-xs text-muted">{c.stale}</div>
+              <div className="tile-num">{counts?.staleMatters ?? 0}</div>
+              <div className="tile-label">{c.stale}</div>
             </button>
           </div>
 
           {empty ? (
-            <div className="mt-10 max-w-lg rounded-xl bg-surface p-5 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
-              <p className="text-sm text-muted">{c.emptyToday}</p>
+            <div className="empty stack-tight max-w-lg">
+              <p className="empty-text">{c.emptyToday}</p>
               <div className="mt-4">
                 <Button asChild variant="outline">
                   <Link to="/matters">{c.newMatter}</Link>
@@ -193,135 +191,139 @@ export function TodayPage() {
             </div>
           ) : null}
 
-          <section id="hearings-today" className="mt-10 scroll-mt-20">
-            <h2 className="font-display text-2xl">{c.hearingsToday}</h2>
+          <section id="hearings-today" className="stack">
+            <h2 className="section-title">{c.hearingsToday}</h2>
             {board && board.hearingsToday.length > 0 ? (
-              <ul className="mt-4 space-y-2">
+              <ul className="row-list sm:grid sm:grid-cols-2 sm:gap-3">
                 {board.hearingsToday.map((h) => (
                   <li key={h.id}>
                     <Link
                       to="/matters/$id"
                       params={{ id: h.matterId }}
                       hash={h.id}
-                      className="block rounded-xl bg-paper px-4 py-4 text-paper-ink shadow-paper"
+                      className="paper paper-link h-full px-4 py-4"
                     >
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
-                        <span className="font-display text-xl">{h.listedAt || "—"}</span>
+                        <span className="font-display text-xl tabular-nums">{h.listedAt || "—"}</span>
                         <span className="text-xs text-paper-muted">{h.courtName}</span>
                       </div>
-                      <div className="mt-1 font-medium">{h.matterTitle}</div>
+                      <div className="mt-1.5 font-medium">{h.matterTitle}</div>
                       <div className="mt-1 text-sm text-paper-muted">{h.purpose || h.stage}</div>
                     </Link>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="mt-3 text-sm text-muted">{c.emptyDiary}</p>
+              <p className="section-note">{c.emptyDiary}</p>
             )}
           </section>
 
-          <section id="deadlines" className="mt-10 scroll-mt-20">
-            <h2 className="font-display text-2xl">{c.deadlines}</h2>
+          <section id="deadlines" className="stack">
+            <h2 className="section-title">{c.deadlines}</h2>
             {board && board.deadlines.length > 0 ? (
-              <ul className="mt-4 space-y-2">
+              <ul className="row-list">
                 {board.deadlines.map((d) => (
-                  <li key={d.id} className="flex items-stretch gap-2">
+                  <li key={d.id} className="row-item">
                     {d.matterId ? (
-                      <Link to="/matters/$id" params={{ id: d.matterId }} hash={d.id} className={`${rowClass} min-w-0 flex-1`}>
+                      <Link to="/matters/$id" params={{ id: d.matterId }} hash={d.id} className={`${rowClass} min-w-0`}>
                         <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="text-sm font-medium">{d.title}</div>
-                            <div className="mt-1 text-xs text-muted">
-                              {d.dueOn} · {d.matterTitle}
+                          <div className="min-w-0">
+                            <div className="row-title">{d.title}</div>
+                            <div className="row-meta">
+                              <span className="tabular-nums">{d.dueOn}</span>
+                              <span aria-hidden>·</span>
+                              <span className="truncate">{d.matterTitle}</span>
                             </div>
                           </div>
                           <TrustChip origin={d.origin} lang={lang} />
                         </div>
                       </Link>
                     ) : (
-                      <div className={`${rowClass} min-w-0 flex-1`}>
-                        <div className="text-sm font-medium">{d.title}</div>
+                      <div className={`${rowClass} min-w-0`}>
+                        <div className="row-title">{d.title}</div>
                       </div>
                     )}
-                    {d.matterId && classifyTaskDraft(d.title, d.sourceQuote).draftable ? (
-                      <Link to="/matters/$id" params={{ id: d.matterId }} hash={d.id}>
-                        <Button size="sm" variant="outline" className="self-center">
-                          {c.draftForTask}
+                    <div className="row-actions">
+                      {d.matterId && classifyTaskDraft(d.title, d.sourceQuote).draftable ? (
+                        <Button asChild size="sm" variant="outline">
+                          <Link to="/matters/$id" params={{ id: d.matterId }} hash={d.id}>
+                            {c.draftForTask}
+                          </Link>
                         </Button>
-                      </Link>
-                    ) : null}
-                    {d.status === "open" ? (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="self-center"
-                        onClick={() => void setTaskStatus({ data: { id: d.id, status: "done" } }).then(reload)}
-                      >
-                        {c.markDone}
-                      </Button>
-                    ) : null}
+                      ) : null}
+                      {d.status === "open" ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => void setTaskStatus({ data: { id: d.id, status: "done" } }).then(reload)}
+                        >
+                          {c.markDone}
+                        </Button>
+                      ) : null}
+                    </div>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="mt-3 text-sm text-muted">{c.deadlines}: 0</p>
+              <p className="section-note">{c.deadlines}: 0</p>
             )}
           </section>
 
-          <section id="tasks" className="mt-10 scroll-mt-20">
-            <h2 className="font-display text-2xl">{c.tasks}</h2>
+          <section id="tasks" className="stack">
+            <h2 className="section-title">{c.tasks}</h2>
             {board && board.openTasks.length > 0 ? (
-              <ul className="mt-4 space-y-2">
+              <ul className="row-list">
                 {board.openTasks.map((t) => (
-                  <li key={t.id} className="flex items-stretch gap-2">
+                  <li key={t.id} className="row-item">
                     {t.matterId ? (
-                      <Link to="/matters/$id" params={{ id: t.matterId }} hash={t.id} className={`${rowClass} min-w-0 flex-1`}>
-                        <div className="text-sm font-medium">{t.title}</div>
-                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
+                      <Link to="/matters/$id" params={{ id: t.matterId }} hash={t.id} className={`${rowClass} min-w-0`}>
+                        <div className="row-title">{t.title}</div>
+                        <div className="row-meta">
                           <TrustChip origin={t.origin} lang={lang} />
-                          <span>{t.matterTitle}</span>
-                          {t.dueOn ? <span>{t.dueOn}</span> : null}
+                          <span className="truncate">{t.matterTitle}</span>
+                          {t.dueOn ? <span className="tabular-nums">{t.dueOn}</span> : null}
                         </div>
                       </Link>
                     ) : (
-                      <div className={`${rowClass} min-w-0 flex-1`}>
-                        <div className="text-sm font-medium">{t.title}</div>
+                      <div className={`${rowClass} min-w-0`}>
+                        <div className="row-title">{t.title}</div>
                       </div>
                     )}
-                    {t.matterId && classifyTaskDraft(t.title, t.sourceQuote).draftable ? (
-                      <Link to="/matters/$id" params={{ id: t.matterId }} hash={t.id}>
-                        <Button size="sm" variant="outline" className="self-center">
-                          {c.draftForTask}
+                    <div className="row-actions">
+                      {t.matterId && classifyTaskDraft(t.title, t.sourceQuote).draftable ? (
+                        <Button asChild size="sm" variant="outline">
+                          <Link to="/matters/$id" params={{ id: t.matterId }} hash={t.id}>
+                            {c.draftForTask}
+                          </Link>
                         </Button>
-                      </Link>
-                    ) : null}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="self-center"
-                      onClick={() =>
-                        void setTaskStatus({ data: { id: t.id, status: "done" } }).then(reload)
-                      }
-                    >
-                      {c.markDone}
-                    </Button>
+                      ) : null}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          void setTaskStatus({ data: { id: t.id, status: "done" } }).then(reload)
+                        }
+                      >
+                        {c.markDone}
+                      </Button>
+                    </div>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="mt-3 text-sm text-muted">{c.openTasks}: 0</p>
+              <p className="section-note">{c.openTasks}: 0</p>
             )}
           </section>
 
           {board && board.unconfirmedOrders.length > 0 ? (
-            <section id="orders" className="mt-10 scroll-mt-20">
-              <h2 className="font-display text-2xl">{c.ordersAction}</h2>
-              <ul className="mt-4 space-y-2">
+            <section id="orders" className="stack">
+              <h2 className="section-title">{c.ordersAction}</h2>
+              <ul className="row-list">
                 {board.unconfirmedOrders.map((o) => (
                   <li key={o.id}>
                     <Link to="/inbox" className={rowClass}>
-                      <div className="text-sm font-medium">{o.matterTitle || c.orders}</div>
-                      <div className="mt-1 text-xs text-muted">{c.confirm}</div>
+                      <div className="row-title">{o.matterTitle || c.orders}</div>
+                      <div className="row-meta">{c.confirm}</div>
                     </Link>
                   </li>
                 ))}
@@ -330,14 +332,14 @@ export function TodayPage() {
           ) : null}
 
           {board && board.hearingsUpcoming.length > 0 ? (
-            <section className="mt-10">
-              <h2 className="font-display text-2xl">{c.upcoming}</h2>
-              <ul className="mt-4 space-y-2">
+            <section className="stack">
+              <h2 className="section-title">{c.upcoming}</h2>
+              <ul className="row-list">
                 {board.hearingsUpcoming.map((h) => (
                   <li key={h.id}>
-                    <Link to="/matters/$id" params={{ id: h.matterId }} hash={h.id} className={`${rowClass} flex items-center justify-between gap-3 text-sm`}>
-                      <span className="truncate font-medium">{h.matterTitle}</span>
-                      <span className="shrink-0 tabular-nums text-muted">
+                    <Link to="/matters/$id" params={{ id: h.matterId }} hash={h.id} className={`${rowClass} flex items-center justify-between gap-3`}>
+                      <span className="row-title truncate">{h.matterTitle}</span>
+                      <span className="shrink-0 text-xs tabular-nums text-muted">
                         {h.listedOn} {h.listedAt}
                       </span>
                     </Link>
@@ -347,18 +349,20 @@ export function TodayPage() {
             </section>
           ) : null}
 
-          <section id="stale" className="mt-10 scroll-mt-20">
-            <h2 className="font-display text-2xl">{c.stale}</h2>
+          <section id="stale" className="stack">
+            <h2 className="section-title">{c.stale}</h2>
             {board && board.staleMatters.length > 0 ? (
-              <ul className="mt-4 space-y-2">
+              <ul className="row-list">
                 {board.staleMatters.map((m) => {
                   const st = stageDef(m.proceeding, m.stage);
                   return (
                     <li key={m.id}>
                       <Link to="/matters/$id" params={{ id: m.id }} className={rowClass}>
-                        <div className="font-medium">{m.title}</div>
-                        <div className="mt-1 text-xs text-muted">
-                          {m.courtName} · {st ? (lang === "hi" ? st.labelHi : st.label) : m.stage}
+                        <div className="row-title">{m.title}</div>
+                        <div className="row-meta">
+                          <span className="truncate">{m.courtName}</span>
+                          <span aria-hidden>·</span>
+                          <span>{st ? (lang === "hi" ? st.labelHi : st.label) : m.stage}</span>
                         </div>
                       </Link>
                     </li>
@@ -366,11 +370,11 @@ export function TodayPage() {
                 })}
               </ul>
             ) : (
-              <p className="mt-3 text-sm text-muted">{c.stale}: 0</p>
+              <p className="section-note">{c.stale}: 0</p>
             )}
           </section>
 
-          <p className="mt-12 max-w-2xl text-xs leading-relaxed text-subtle">{c.disclaimer}</p>
+          <p className="fineprint mt-14 max-w-2xl">{c.disclaimer}</p>
         </div>
       ) : null}
     </AppShell>

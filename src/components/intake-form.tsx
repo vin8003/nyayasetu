@@ -59,7 +59,7 @@ function SampleButtons({
             type="button"
             disabled={busy}
             onClick={() => onPick(sample)}
-            className="min-h-11 touch-manipulation rounded-lg bg-surface px-4 py-3 text-left shadow-[0_0_0_1px_rgb(255_255_255/0.08)] transition-[box-shadow,background-color] duration-150 active:bg-elevated lg:hover:shadow-[0_0_0_1px_rgb(255_255_255/0.14)] disabled:opacity-50"
+            className="row touch-manipulation text-left disabled:opacity-50"
           >
             <div className="text-sm font-medium text-fg">{lang === "hi" ? sample.titleHi : sample.titleEn}</div>
             {compact ? null : (
@@ -134,7 +134,7 @@ export function IntakeForm({
           <span className="block text-sm font-medium tracking-tight text-fg/90">{c.files}</span>
           <label
             htmlFor="docs"
-            className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md bg-elevated px-3.5 text-sm text-muted shadow-[0_0_0_1px_rgb(255_255_255/0.08)] hover:text-fg"
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md bg-elevated px-3.5 text-sm text-muted shadow-hairline hover:text-fg"
           >
             <Paperclip className="size-4 shrink-0" />
             PDF · JPG · TXT
@@ -166,7 +166,7 @@ export function IntakeForm({
               {files.map((f) => (
                 <li
                   key={f.name + f.size}
-                  className="flex items-center justify-between gap-2 rounded-md bg-surface px-3 py-2 text-sm"
+                  className="flex items-center justify-between gap-2 rounded-md bg-elevated px-3 py-2 text-sm shadow-hairline"
                 >
                   <span className="min-w-0 truncate">
                     {f.name}
@@ -272,7 +272,7 @@ export function IntakeForm({
       </form>
 
       <aside className="flex flex-col gap-6">
-        <section className="rounded-xl bg-surface p-5 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
+        <section className="card card-pad">
           <h2 className="font-display text-lg font-medium tracking-tight">{c.how}</h2>
           <ol className="mt-4 space-y-3 text-sm text-muted">
             {[c.step1, c.step2, c.step3, c.step4].map((step, i) => (

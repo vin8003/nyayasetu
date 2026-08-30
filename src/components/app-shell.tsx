@@ -4,6 +4,7 @@ import { BookOpen, CalendarDays, FolderOpen, Inbox, LayoutDashboard } from "luci
 import { AuthChip } from "@/components/auth-chip";
 import { BillingBanner } from "@/components/billing-banner";
 import { CiteMark } from "@/components/cite-mark";
+import { LangToggle } from "@/components/lang-toggle";
 import { p } from "@/lib/practice/copy";
 import type { OutputLang } from "@/lib/research/types";
 import { cn } from "@/lib/utils";
@@ -37,52 +38,40 @@ export function AppShell({
   };
 
   return (
-    <div className="min-h-dvh bg-bg text-fg">
-      <header className="no-print sticky top-0 z-20 border-b border-border/80 bg-bg md:bg-bg/90 md:backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4">
-          <Link to="/" className="flex items-center gap-2.5" aria-label={c.app}>
+    <div className="shell">
+      <header className="topbar no-print">
+        <div className="topbar-inner">
+          <Link to="/" className="brand" aria-label={c.app}>
             <CiteMark className="size-7" />
-            <span className="hidden font-display text-lg tracking-tight sm:inline">{c.app}</span>
+            <span className="brand-word hidden sm:inline">{c.app}</span>
           </Link>
-          <nav className="hidden items-center gap-1 md:flex">
+
+          <nav className="nav" aria-label={c.app}>
             {NAV.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
-                className={cn(
-                  "inline-flex h-10 items-center rounded-md px-3 text-sm",
-                  active === item.key ? "bg-elevated text-fg" : "text-muted hover:text-fg",
-                )}
+                className={cn("nav-link", active === item.key && "is-on")}
+                aria-current={active === item.key ? "page" : undefined}
               >
                 {labels[item.key]}
               </Link>
             ))}
           </nav>
-          <div className="flex items-center gap-1">
-            <div className="flex rounded-md bg-elevated p-0.5 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
-              {(["hi", "en"] as const).map((code) => (
-                <button
-                  key={code}
-                  type="button"
-                  onClick={() => onLang(code)}
-                  className={
-                    lang === code
-                      ? "h-8 rounded-sm px-2.5 text-xs font-medium bg-accent text-accent-fg"
-                      : "h-8 rounded-sm px-2.5 text-xs font-medium text-muted hover:text-fg"
-                  }
-                >
-                  {code === "hi" ? "हि" : "EN"}
-                </button>
-              ))}
-            </div>
+
+          <div className="flex items-center gap-2">
+            <LangToggle lang={lang} onLang={onLang} ariaLabel={c.langLabel} />
             <AuthChip lang={lang} />
           </div>
         </div>
       </header>
+
       <BillingBanner lang={lang} />
-      <main className="mx-auto w-full max-w-6xl px-4 py-8 pb-24 sm:py-10 md:pb-12">{children}</main>
-      <nav className="no-print fixed inset-x-0 bottom-0 z-20 border-t border-border/80 bg-bg md:hidden">
-        <div className="mx-auto grid max-w-6xl grid-cols-5">
+
+      <main className="shell-main">{children}</main>
+
+      <nav className="tabbar no-print" aria-label={c.app}>
+        <div className="tabbar-inner">
           {NAV.map((item) => {
             const Icon = item.icon;
             const on = active === item.key;
@@ -90,12 +79,12 @@ export function AppShell({
               <Link
                 key={item.to}
                 to={item.to}
-                className={cn(
-                  "flex min-h-14 flex-col items-center justify-center gap-1 text-[11px]",
-                  on ? "text-fg" : "text-muted",
-                )}
+                className={cn("tab-link", on && "is-on")}
+                aria-current={on ? "page" : undefined}
               >
-                <Icon className="size-4" />
+                <span className="tab-icon">
+                  <Icon className="size-[1.15rem]" />
+                </span>
                 {labels[item.key]}
               </Link>
             );

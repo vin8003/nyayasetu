@@ -73,55 +73,53 @@ export function BillingPage() {
 
   return (
     <AppShell lang={lang} onLang={onLang} active="today">
-      {isPending ? <div className="h-40 animate-pulse rounded-xl bg-elevated" /> : null}
+      {isPending ? <div className="skeleton h-40" /> : null}
       {!isPending && !user ? <GuestPanel lang={lang} /> : null}
       {!isPending && user && snap ? (
         <div className="stagger-in mx-auto max-w-2xl">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent">{c.kicker}</p>
-          <h1 className="mt-3 font-display text-4xl font-medium tracking-tight sm:text-5xl">{c.title}</h1>
-          <p className="mt-3 text-base text-muted">{c.lead}</p>
+          <p className="eyebrow">{c.kicker}</p>
+          <h1 className="page-title">{c.title}</h1>
+          <p className="page-lead">{c.lead}</p>
 
-          <div className="mt-8 rounded-xl bg-paper p-6 text-paper-ink shadow-paper">
+          <div className="paper mt-8 p-6 sm:p-8">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <div className="font-display text-3xl">{c.price}</div>
+                <div className="font-display text-4xl font-medium tracking-tight tabular-nums">{c.price}</div>
                 <div className="mt-1 text-sm text-paper-muted">{c.perMonth}</div>
               </div>
               <StatusPill snap={snap} lang={lang} />
             </div>
             <p className="mt-4 text-xs text-paper-muted">{c.gst}</p>
-            <dl className="mt-6 grid gap-3 text-sm sm:grid-cols-2">
+            <dl className="mt-7 grid gap-4 border-t border-paper-line pt-6 text-sm sm:grid-cols-2">
               <div>
-                <dt className="text-xs uppercase tracking-wide text-paper-muted">{c.trialOn}</dt>
-                <dd className="mt-1 tabular-nums">
+                <dt className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-paper-muted">{c.trialOn}</dt>
+                <dd className="mt-1.5 tabular-nums">
                   {snap.trialStarted
                     ? `${formatDay(snap.trialEndsAt)}${snap.status === "trial" ? ` · ${snap.daysLeft} ${c.trialDays}` : ""}`
                     : c.trialIdle}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs uppercase tracking-wide text-paper-muted">{c.accessUntil}</dt>
-                <dd className="mt-1 tabular-nums">{formatDay(snap.periodEnd)}</dd>
+                <dt className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-paper-muted">{c.accessUntil}</dt>
+                <dd className="mt-1.5 tabular-nums">{formatDay(snap.periodEnd)}</dd>
               </div>
             </dl>
-            <h2 className="mt-8 text-sm font-medium">{c.includes}</h2>
-            <ul className="mt-3 space-y-2 text-sm">
+            <h2 className="mt-8 font-display text-lg font-medium">{c.includes}</h2>
+            <ul className="mt-3 space-y-2.5 text-sm">
               {[c.itemTrial, c.itemResearch, c.itemChamber, c.itemOrders].map((item) => (
-                <li key={item} className="flex gap-2">
-                  <span className="text-accent" aria-hidden>
-                    —
-                  </span>
-                  <span>{item}</span>
+                <li key={item} className="flex gap-2.5">
+                  <span className="mt-2 h-px w-3 shrink-0 bg-paper-muted" aria-hidden />
+                  <span className="leading-relaxed">{item}</span>
                 </li>
               ))}
             </ul>
-            <div className="mt-8 flex flex-col gap-3">
+            <div className="mt-8 flex flex-col gap-3 border-t border-paper-line pt-6">
               {snap.status === "active" ? (
-                <Button variant="outline" onClick={() => void cancel()} disabled={busy}>
+                <Button variant="paper" onClick={() => void cancel()} disabled={busy}>
                   {c.cancelPlan}
                 </Button>
               ) : (
-                <Button onClick={() => void subscribe()} disabled={busy}>
+                <Button variant="paper" size="lg" onClick={() => void subscribe()} disabled={busy}>
                   {busy ? c.subscribing : c.subscribe}
                 </Button>
               )}
@@ -129,7 +127,7 @@ export function BillingPage() {
             </div>
           </div>
           <p className="mt-8">
-            <Link to="/" className="text-sm text-muted hover:text-fg">
+            <Link to="/" className="link-quiet text-sm">
               ← CiteBench
             </Link>
           </p>
@@ -152,6 +150,8 @@ function StatusPill({ snap, lang }: { snap: BillingSnapshot; lang: "hi" | "en" }
           ? c.cancelledOn
           : c.expired;
   return (
-    <div className="rounded-full px-3 py-1 text-xs font-medium shadow-[0_0_0_1px_rgb(0_0_0/0.12)]">{label}</div>
+    <div className="rounded-full bg-paper-ink/6 px-3 py-1 text-xs font-medium shadow-[0_0_0_1px_rgb(0_0_0/0.1)]">
+      {label}
+    </div>
   );
 }
