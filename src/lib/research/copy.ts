@@ -29,6 +29,10 @@ export const copy = {
     disclaimer:
       "यह अधिवक्ताओं की रिसर्च सहायता है, कानूनी सलाह नहीं। हर साइटेशन मूल निर्णय — Indian Kanoon, eSCR या SCI — पर जाकर वेरिफाई करें। अदालत में पेश करने से पहले वकील अपनी स्वतंत्र जाँच करें।",
     emptyHistory: "अभी कोई सेव मेमो नहीं। एक ब्रीफ चलाएँ, वो यहीं दिखेगा।",
+    searchHistory: "मेमो खोजें",
+    searchHistoryHint: "कारण शीर्षक, पक्षकार, अदालत, या तथ्यों की एक पंक्ति",
+    searchHistoryEmpty: "इस खोज से कोई मेमो नहीं मिला।",
+    followUps: "फॉलो-अप",
     tabBrief: "मेमो",
     tabIssues: "मुद्दे",
     tabCases: "नज़ीरें",
@@ -164,6 +168,10 @@ export const copy = {
     disclaimer:
       "This is research assistance for advocates, not legal advice. Verify every citation against the original judgment on Indian Kanoon, eSCR or SCI. Independent professional review is required before filing.",
     emptyHistory: "No saved memos yet. Run a brief and it will appear here.",
+    searchHistory: "Search memos",
+    searchHistoryHint: "Cause title, party, court, or a phrase from the facts",
+    searchHistoryEmpty: "No memos match that search.",
+    followUps: "follow-ups",
     tabBrief: "Memo",
     tabIssues: "Issues",
     tabCases: "Precedents",

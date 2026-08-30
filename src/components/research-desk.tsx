@@ -2,7 +2,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Bookmark, Trash2 } from "lucide-react";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import { CiteMark } from "@/components/cite-mark";
 import { AuthChip } from "@/components/auth-chip";
@@ -10,6 +9,7 @@ import { IntakeForm, type PendingFile } from "@/components/intake-form";
 import { ResearchStage } from "@/components/research-stage";
 import { MemoView } from "@/components/memo-view";
 import { LetterView } from "@/components/letter-view";
+import { MemoHistory } from "@/components/memo-history";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { emptyIntake, type HistoryItem, type Intake, type LegalLetter, type LegalMemo, type LetterKind, type OutputLang } from "@/lib/research/types";
 import { t } from "@/lib/research/copy";
@@ -64,6 +64,7 @@ export function ResearchDesk({ lang, matterId }) {
 	const [error, setError] = useState(null);
 	const [elapsed, setElapsed] = useState(0);
 	const [history, setHistory] = useState([]);
+	const [historyQuery, setHistoryQuery] = useState("");
 	const [savedId, setSavedId] = useState(null);
 	const [parentTitle, setParentTitle] = useState("");
 	const [runMode, setRunMode] = useState("research");
@@ -124,10 +125,15 @@ export function ResearchDesk({ lang, matterId }) {
 			setHistory([]);
 			return;
 		}
-		listMemos().then(setHistory).catch((err) => {
-			if (isUnauthorized(err)) navigate({ to: "/login" });
-		});
-	}, [userId, navigate]);
+		const q = historyQuery.trim();
+		const delay = view === "history" && q.length >= 2 ? 250 : 0;
+		const handle = window.setTimeout(() => {
+			listMemos({ data: { q: view === "history" ? q : "" } }).then(setHistory).catch((err) => {
+				if (isUnauthorized(err)) navigate({ to: "/login" });
+			});
+		}, delay);
+		return () => window.clearTimeout(handle);
+	}, [userId, navigate, historyQuery, view]);
 	useEffect(() => {
 		if (view !== "running" && view !== "drafting") return;
 		setElapsed(0);
@@ -451,53 +457,25 @@ export function ResearchDesk({ lang, matterId }) {
 				setError(null);
 			}
 		}) : null,
-		view === "history" ? jsxs("section", { children: [jsxs("div", {
-			className: "mb-6 flex items-center justify-between",
-			children: [jsx("h1", {
-				className: "font-display text-3xl",
-				children: c.history
-			}), jsx(Button, {
-				variant: "outline",
-				onClick: () => setView("desk"),
-				children: c.newBrief
-			})]
-		}), history.length === 0 ? jsx("p", {
-			className: "text-sm text-muted",
-			children: c.emptyHistory
-		}) : jsx("ul", {
-			className: "space-y-2",
-			children: history.map((item) => jsxs("li", {
-				className: "flex items-stretch rounded-lg bg-surface shadow-[0_0_0_1px_rgb(255_255_255/0.08)]",
-				children: [jsxs("button", {
-					type: "button",
-					onClick: () => {
-						setIntake(item.intake);
-						setMemo(item.memo);
-						setMemoLang(item.intake.lang);
-						setLetter(null);
-						setSavedId(item.id);
-						setParentTitle(item.parentId ? (history.find((h) => h.id === item.parentId)?.title ?? c.followUp) : "");
-						setView("memo");
-					},
-					className: "min-w-0 flex-1 px-4 py-3 text-left",
-					children: [jsx("div", {
-						className: "truncate font-medium",
-						children: item.title
-					}), jsxs("div", {
-						className: "mt-1 text-xs text-muted",
-						children: [
-							new Date(item.createdAt).toLocaleString(lang === "hi" ? "hi-IN" : "en-IN"),
-							item.parentId ? ` · ${c.followUp}` : ""
-						]
-					})]
-				}), jsx("button", {
-					type: "button",
-					className: "inline-flex size-11 shrink-0 items-center justify-center text-muted hover:text-danger",
-					"aria-label": c.deleteMemo,
-					onClick: () => void onDelete(item.id),
-					children: jsx(Trash2, { className: "size-4" })
-				})]
-			}, item.id))
-		})] }) : null
+		view === "history" ? jsx(MemoHistory, {
+			lang,
+			items: history,
+			query: historyQuery,
+			onQuery: setHistoryQuery,
+			onOpen: (item) => {
+				setIntake(item.intake);
+				setMemo(item.memo);
+				setMemoLang(item.intake.lang);
+				setLetter(null);
+				setSavedId(item.id);
+				setParentTitle(item.parentId ? (history.find((h) => h.id === item.parentId)?.title ?? c.followUp) : "");
+				setView("memo");
+			},
+			onDelete: (id) => void onDelete(id),
+			onBack: () => {
+				setHistoryQuery("");
+				setView("desk");
+			}
+		}) : null
 	] });
 }

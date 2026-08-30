@@ -57,7 +57,7 @@ The original NyayaSetu desk, now a chamber tab.
 1. Paste facts (and optional legal question). Pick forum, practice area, side, language.
 2. Optionally attach up to three files: images (OCR), text-layer PDFs, plain text. Scanned image-only PDFs are still weak.
 3. Run research → structured memo (issues, statutes, doctrines, precedents with verified flags, arguments both ways, risks).
-4. Save to **Past memos** (per account). Memos are stored; court drafts are not.
+4. Save to **Past memos** (per account). Search by cause title, party, court, or a phrase from the facts. Follow-ups stay grouped under the parent. Memos are stored; court drafts are not.
 5. **Follow-up** on the memo: another issue or “what if” — same facts and verified cites, saved as a new memo, not an overwrite.
 6. From the memo toolbar: **Notice**, **Reply**, **Petition**, or **Written statement**. Same language as the memo. Drafts reuse only verified cites.
 
