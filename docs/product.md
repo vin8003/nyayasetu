@@ -43,7 +43,7 @@ A date-ordered list of hearings. Each row links to `/matters/$id`. Empty copy: n
 - What AI **may** help with vs what a **human must decide**
 - Hearings (add listing, outcome, next date)
 - Documents and pasted orders
-- Tasks and deadlines, each tagged with an **origin** (court / AI / lawyer / statute / system)
+- Tasks and deadlines, each tagged with an **origin** (court / AI / lawyer / statute / system). Open items that need a filing get **Draft this** — written statement, affidavit, application, petition, or a court note — saved on the papers. Appearance / gather work is left for the lawyer.
 - Timeline
 - **Hearing brief** (AI, gated) — a structured note from the file, not a new search
 - **Research from this matter** — opens `/research?matter=<id>` with facts and issues prefilled from the file

@@ -437,6 +437,25 @@ export const savePastedDocument = createServerFn({ method: "POST" }).middleware(
 	await addEvent(sql, context.userId, data.matterId, "document", data.title, "", "lawyer", id);
 	return { id };
 });
+export async function saveAiDraftDocument(userId, matterId, title, kind, body) {
+	const sql = await getSql();
+	const id = newId("dc");
+	await sql`
+      insert into matter_documents (id, user_id, matter_id, kind, title, body, source_kind)
+      values (${id}, ${userId}, ${matterId}, ${kind}, ${title}, ${body}, ${"ai_draft"})
+    `;
+	await addEvent(
+		sql,
+		userId,
+		matterId,
+		"document",
+		title,
+		"Drafted from a task or deadline. Review before filing.",
+		"ai_suggestion",
+		id,
+	);
+	return id;
+}
 export const saveUnconfirmedOrder = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => z.object({
 	matterId: z.string().min(1),
 	body: z.string().min(1).max(40000),

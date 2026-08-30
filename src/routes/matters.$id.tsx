@@ -24,6 +24,8 @@ import { proceedingDef } from "@/lib/practice/workflow";
 import { findInBundle, lastOrderId, nextHearingId, relatedIdForEvent } from "@/lib/practice/record-links";
 import { useChamberLang } from "@/lib/practice/use-lang";
 import { prepareHearingBrief } from "@/lib/practice/hearing-brief";
+import { classifyTaskDraft } from "@/lib/practice/task-draft-class";
+import { draftForWork } from "@/lib/practice/task-draft";
 import { intakeFromMatter } from "@/lib/practice/intake-from-matter";
 import { isSampleTitle } from "@/lib/practice/sample";
 import { DRAFT_KEY } from "@/lib/research/draft";
@@ -43,6 +45,8 @@ export function MatterDetailPage() {
   const [taskTitle, setTaskTitle] = useState("");
   const [confirmExit, setConfirmExit] = useState(false);
   const [exiting, setExiting] = useState(false);
+  const [draftingId, setDraftingId] = useState("");
+  const [workDrafts, setWorkDrafts] = useState({});
   const c = p(lang);
 
   async function reload() {
@@ -97,7 +101,6 @@ export function MatterDetailPage() {
   const { matter } = bundle;
   const proc = proceedingDef(matter.proceeding);
   const located = findInBundle(bundle, openId);
-  const sheet = sheetContent(bundle, located, lang, c);
 
   async function onStage(stage) {
     await setMatterStage({ data: { matterId: matter.id, stage } });
@@ -139,6 +142,39 @@ export function MatterDetailPage() {
     setTaskTitle("");
     await reload();
   }
+  async function onDraftWork(itemKind, itemId) {
+    setDraftingId(itemId);
+    try {
+      const result = await draftForWork({ data: { matterId: matter.id, itemId, itemKind, lang } });
+      if (!result.ok) {
+        if (result.error === "PAYWALL") {
+          toast.error(c.paywall);
+          navigate({ to: "/billing" });
+          return;
+        }
+        toast.error(c.failedAi);
+        return;
+      }
+      if (!result.draftable) {
+        toast.error(c.cannotDraft);
+        return;
+      }
+      setWorkDrafts((prev) => ({ ...prev, [itemId]: result.body }));
+      toast.success(c.draftSaved);
+      await reload();
+    } catch (err) {
+      if (/unauthorized/i.test(String(err))) navigate({ to: "/login" });
+      else toast.error(c.failedAi);
+    } finally {
+      setDraftingId("");
+    }
+  }
+  const sheet = sheetContent(bundle, located, lang, c, {
+    draftingId,
+    workDrafts,
+    onDraftWork,
+    onMarkDone: (itemId) => void setTaskStatus({ data: { id: itemId, status: "done" } }).then(reload),
+  });
   async function onBrief() {
     setBriefing(true);
     try {
@@ -446,14 +482,29 @@ export function MatterDetailPage() {
                     </div>
                   </RecordButton>
                   {t.status === "open" ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="self-center"
-                      onClick={() => void setTaskStatus({ data: { id: t.id, status: "done" } }).then(reload)}
-                    >
-                      {c.markDone}
-                    </Button>
+                    <div className="flex flex-col justify-center gap-1">
+                      {classifyTaskDraft(t.title, t.sourceQuote).draftable ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="self-center"
+                          onClick={() => {
+                            openRecord(t.id);
+                            void onDraftWork("task", t.id);
+                          }}
+                        >
+                          {c.draftForTask}
+                        </Button>
+                      ) : null}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="self-center"
+                        onClick={() => void setTaskStatus({ data: { id: t.id, status: "done" } }).then(reload)}
+                      >
+                        {c.markDone}
+                      </Button>
+                    </div>
                   ) : null}
                 </li>
               ))}
@@ -468,8 +519,8 @@ export function MatterDetailPage() {
             <h2 className="font-display text-2xl">{c.deadlines}</h2>
             <ul className="mt-3 space-y-2">
               {bundle.deadlines.map((d) => (
-                <li key={d.id}>
-                  <RecordButton id={d.id} active={openId === d.id} onOpen={openRecord}>
+                <li key={d.id} className="flex items-stretch gap-2">
+                  <RecordButton id={d.id} active={openId === d.id} onOpen={openRecord} className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="text-sm font-medium">{d.title}</div>
@@ -478,6 +529,19 @@ export function MatterDetailPage() {
                       <TrustChip origin={d.origin} lang={lang} />
                     </div>
                   </RecordButton>
+                  {d.status === "open" && classifyTaskDraft(d.title, d.sourceQuote).draftable ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="self-center"
+                      onClick={() => {
+                        openRecord(d.id);
+                        void onDraftWork("deadline", d.id);
+                      }}
+                    >
+                      {c.draftForTask}
+                    </Button>
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -526,7 +590,8 @@ export function MatterDetailPage() {
   );
 }
 
-function sheetContent(bundle, located, lang, c) {
+function sheetContent(bundle, located, lang, c, work = {}) {
+  const { draftingId = "", workDrafts = {}, onDraftWork, onMarkDone } = work;
   if (!located) return null;
   if (located.kind === "notes") {
     return { title: c.notes, kicker: bundle.matter.title, body: <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">{bundle.matter.notes}</pre> };
@@ -569,12 +634,38 @@ function sheetContent(bundle, located, lang, c) {
   if (located.kind === "task") {
     const t = bundle.tasks.find((x) => x.id === located.id);
     if (!t) return null;
-    return { title: t.title, kicker: c.tasks, body: <TaskBody t={t} lang={lang} /> };
+    return {
+      title: t.title,
+      kicker: c.tasks,
+      body: (
+        <TaskBody
+          t={t}
+          lang={lang}
+          drafting={draftingId === t.id}
+          draftText={workDrafts[t.id] || ""}
+          onDraft={() => onDraftWork?.("task", t.id)}
+          onMarkDone={() => onMarkDone?.(t.id)}
+        />
+      ),
+    };
   }
   if (located.kind === "deadline") {
     const d = bundle.deadlines.find((x) => x.id === located.id);
     if (!d) return null;
-    return { title: d.title, kicker: c.deadlines, body: <DeadlineBody d={d} lang={lang} /> };
+    return {
+      title: d.title,
+      kicker: c.deadlines,
+      body: (
+        <DeadlineBody
+          d={d}
+          lang={lang}
+          drafting={draftingId === d.id}
+          draftText={workDrafts[d.id] || ""}
+          onDraft={() => onDraftWork?.("deadline", d.id)}
+          onMarkDone={() => onMarkDone?.(d.id)}
+        />
+      ),
+    };
   }
   if (located.kind === "event") {
     const e = bundle.timeline.find((x) => x.id === located.id);

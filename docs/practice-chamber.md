@@ -51,6 +51,10 @@ Unconfirmed orders also appear on Today until handled.
 
 `prepareHearingBrief(matterId)` reads the bundle (no web search): last hearing, last confirmed order, open tasks, deadlines, stage meaning. Returns JSON (purpose, last order, positions, issues, documents, authorities mentioned in the file, open items, expected next, caveats). Gated like other AI.
 
+## Draft from a task or deadline
+
+`draftForWork` classifies the item (`classifyTaskDraft`). Filings (written statement, reply, notice, petition, application, affidavit, court note) are drafted from the file with no web search and saved as `matter_documents` (`source_kind = ai_draft`). Gather / appearance tasks are not drafted. Sample chamber uses a deterministic skeleton if the model is down. Gated like other AI. The lawyer still marks the task done.
+
 ## Sample chamber
 
 `buildSampleChamber()` in `src/lib/practice/sample.ts` seeds three files:

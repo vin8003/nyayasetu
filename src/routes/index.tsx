@@ -12,6 +12,7 @@ import { useChamberLang } from "@/lib/practice/use-lang";
 import { clearSampleChamber, getTodayBoard, seedSampleChamber, setTaskStatus } from "@/lib/practice/store";
 import type { TodayBoard } from "@/lib/practice/types";
 import { stageDef } from "@/lib/practice/workflow";
+import { classifyTaskDraft } from "@/lib/practice/task-draft-class";
 
 export const Route = createFileRoute("/")({ component: TodayPage });
 
@@ -224,9 +225,9 @@ export function TodayPage() {
             {board && board.deadlines.length > 0 ? (
               <ul className="mt-4 space-y-2">
                 {board.deadlines.map((d) => (
-                  <li key={d.id}>
+                  <li key={d.id} className="flex items-stretch gap-2">
                     {d.matterId ? (
-                      <Link to="/matters/$id" params={{ id: d.matterId }} hash={d.id} className={rowClass}>
+                      <Link to="/matters/$id" params={{ id: d.matterId }} hash={d.id} className={`${rowClass} min-w-0 flex-1`}>
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <div className="text-sm font-medium">{d.title}</div>
@@ -238,10 +239,17 @@ export function TodayPage() {
                         </div>
                       </Link>
                     ) : (
-                      <div className={rowClass}>
+                      <div className={`${rowClass} min-w-0 flex-1`}>
                         <div className="text-sm font-medium">{d.title}</div>
                       </div>
                     )}
+                    {d.matterId && classifyTaskDraft(d.title, d.sourceQuote).draftable ? (
+                      <Link to="/matters/$id" params={{ id: d.matterId }} hash={d.id}>
+                        <Button size="sm" variant="outline" className="self-center">
+                          {c.draftForTask}
+                        </Button>
+                      </Link>
+                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -270,6 +278,13 @@ export function TodayPage() {
                         <div className="text-sm font-medium">{t.title}</div>
                       </div>
                     )}
+                    {t.matterId && classifyTaskDraft(t.title, t.sourceQuote).draftable ? (
+                      <Link to="/matters/$id" params={{ id: t.matterId }} hash={t.id}>
+                        <Button size="sm" variant="outline" className="self-center">
+                          {c.draftForTask}
+                        </Button>
+                      </Link>
+                    ) : null}
                     <Button
                       size="sm"
                       variant="ghost"

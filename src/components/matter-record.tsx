@@ -2,7 +2,9 @@ import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { TrustChip } from "@/components/trust-chip";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { p } from "@/lib/practice/copy";
+import { classifyTaskDraft } from "@/lib/practice/task-draft-class";
 import type { OutputLang } from "@/lib/research/types";
 import type {
   Deadline,
@@ -157,24 +159,128 @@ export function OrderBody({ o, lang }: { o: MatterOrder; lang: OutputLang }) {
   );
 }
 
-export function TaskBody({ t, lang }: { t: Task; lang: OutputLang }) {
+export function TaskBody({
+  t,
+  lang,
+  drafting = false,
+  draftText = "",
+  onDraft,
+  onMarkDone,
+}: {
+  t: Task;
+  lang: OutputLang;
+  drafting?: boolean;
+  draftText?: string;
+  onDraft?: () => void;
+  onMarkDone?: () => void;
+}) {
   const c = p(lang);
+  const classified = classifyTaskDraft(t.title, t.sourceQuote);
   return (
     <div className="space-y-3 text-sm">
       <TrustChip origin={t.origin} lang={lang} />
       <Row label={c.due} value={t.dueOn ?? ""} />
       {t.sourceQuote ? <p className="leading-relaxed text-muted">{t.sourceQuote}</p> : null}
+      <WorkDraftActions
+        lang={lang}
+        draftable={classified.draftable}
+        drafting={drafting}
+        draftText={draftText}
+        showDone={t.status === "open" && Boolean(onMarkDone)}
+        onDraft={onDraft}
+        onMarkDone={onMarkDone}
+      />
     </div>
   );
 }
 
-export function DeadlineBody({ d, lang }: { d: Deadline; lang: OutputLang }) {
+export function DeadlineBody({
+  d,
+  lang,
+  drafting = false,
+  draftText = "",
+  onDraft,
+  onMarkDone,
+}: {
+  d: Deadline;
+  lang: OutputLang;
+  drafting?: boolean;
+  draftText?: string;
+  onDraft?: () => void;
+  onMarkDone?: () => void;
+}) {
   const c = p(lang);
+  const classified = classifyTaskDraft(d.title, d.sourceQuote);
   return (
     <div className="space-y-3 text-sm">
       <TrustChip origin={d.origin} lang={lang} />
       <Row label={c.due} value={d.dueOn} />
       {d.sourceQuote ? <p className="leading-relaxed text-muted">{d.sourceQuote}</p> : null}
+      <WorkDraftActions
+        lang={lang}
+        draftable={classified.draftable}
+        drafting={drafting}
+        draftText={draftText}
+        showDone={d.status === "open" && Boolean(onMarkDone)}
+        onDraft={onDraft}
+        onMarkDone={onMarkDone}
+      />
+    </div>
+  );
+}
+
+function WorkDraftActions({
+  lang,
+  draftable,
+  drafting,
+  draftText,
+  showDone,
+  onDraft,
+  onMarkDone,
+}: {
+  lang: OutputLang;
+  draftable: boolean;
+  drafting: boolean;
+  draftText: string;
+  showDone: boolean;
+  onDraft?: () => void;
+  onMarkDone?: () => void;
+}) {
+  const c = p(lang);
+  return (
+    <div className="space-y-3 pt-2">
+      {draftable && onDraft ? (
+        <Button type="button" size="sm" disabled={drafting} onClick={onDraft}>
+          {drafting ? c.draftingWork : c.draftForTask}
+        </Button>
+      ) : null}
+      {!draftable ? <p className="text-xs leading-relaxed text-muted">{c.cannotDraft}</p> : null}
+      {draftText ? (
+        <div className="space-y-2">
+          <p className="text-xs text-accent">{c.draftSaved}</p>
+          <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-md bg-elevated px-3 py-3 font-sans text-sm leading-relaxed">
+            {draftText}
+          </pre>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                await navigator.clipboard.writeText(draftText);
+                toast.success(c.draftCopied);
+              }}
+            >
+              {c.copyDraft}
+            </Button>
+            {showDone && onMarkDone ? (
+              <Button type="button" size="sm" variant="ghost" onClick={onMarkDone}>
+                {c.markDone}
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

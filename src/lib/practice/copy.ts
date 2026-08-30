@@ -129,7 +129,13 @@ export const appCopy = {
 		partiesHint: "एक पंक्ति में एक पक्ष — भूमिका, नाम",
 		whatHappens: "कानूनी तौर पर क्या हो रहा है",
 		failedAi: "AI इस समय उपलब्ध नहीं। पाठ स्वयं दर्ज करें।",
-		parseErr: "निकाल नहीं सके। आदेश साफ करके फिर कोशिश करें।"
+		parseErr: "निकाल नहीं सके। आदेश साफ करके फिर कोशिश करें।",
+		draftForTask: "ड्राफ्ट बनाएँ",
+		draftingWork: "फ़ाइल से ड्राफ्ट बन रहा है…",
+		cannotDraft: "यह फाइलिंग नहीं — अदालत में या फ़ाइल पर करना है।",
+		draftSaved: "ड्राफ्ट कागज़ों पर सेव हो गया। फाइल करने से पहले जाँचें।",
+		copyDraft: "ड्राफ्ट कॉपी",
+		draftCopied: "कॉपी हो गया",
 	},
 	en: {
 		app: "CiteBench",
@@ -257,7 +263,13 @@ export const appCopy = {
 		partiesHint: "One party per line — role, name",
 		whatHappens: "What is happening legally",
 		failedAi: "AI is unavailable. Record it yourself.",
-		parseErr: "Could not extract. Clean the order text and retry."
+		parseErr: "Could not extract. Clean the order text and retry.",
+		draftForTask: "Draft this",
+		draftingWork: "Drafting from the file…",
+		cannotDraft: "This is not a filing — do it on the file or in court.",
+		draftSaved: "Draft saved on the papers. Check it before you file.",
+		copyDraft: "Copy draft",
+		draftCopied: "Copied",
 	}
 };
 export function p(lang: OutputLang) {
