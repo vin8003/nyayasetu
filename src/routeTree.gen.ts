@@ -16,6 +16,7 @@ import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MattersRouteImport } from './routes/matters'
 import { Route as ResearchRouteImport } from './routes/research'
+import { Route as StoryRouteImport } from './routes/story'
 import { Route as MattersIndexRouteImport } from './routes/matters.index'
 import { Route as MattersIdRouteImport } from './routes/matters.$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -55,6 +56,11 @@ const ResearchRoute = ResearchRouteImport.update({
   path: '/research',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoryRoute = StoryRouteImport.update({
+  id: '/story',
+  path: '/story',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MattersIndexRoute = MattersIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/matters': typeof MattersRouteWithChildren
   '/research': typeof ResearchRoute
+  '/story': typeof StoryRoute
   '/matters/$id': typeof MattersIdRoute
   '/matters/': typeof MattersIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/research': typeof ResearchRoute
+  '/story': typeof StoryRoute
   '/matters/$id': typeof MattersIdRoute
   '/matters': typeof MattersIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/matters': typeof MattersRouteWithChildren
   '/research': typeof ResearchRoute
+  '/story': typeof StoryRoute
   '/matters/$id': typeof MattersIdRoute
   '/matters/': typeof MattersIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/matters'
     | '/research'
+    | '/story'
     | '/matters/$id'
     | '/matters/'
     | '/api/auth/$'
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/login'
     | '/research'
+    | '/story'
     | '/matters/$id'
     | '/matters'
     | '/api/auth/$'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/matters'
     | '/research'
+    | '/story'
     | '/matters/$id'
     | '/matters/'
     | '/api/auth/$'
@@ -153,6 +165,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   MattersRoute: typeof MattersRouteWithChildren
   ResearchRoute: typeof ResearchRoute
+  StoryRoute: typeof StoryRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -207,6 +220,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResearchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/story': {
+      id: '/story'
+      path: '/story'
+      fullPath: '/story'
+      preLoaderRoute: typeof StoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/matters/': {
       id: '/matters/'
       path: '/'
@@ -252,6 +272,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   MattersRoute: MattersRouteWithChildren,
   ResearchRoute: ResearchRoute,
+  StoryRoute: StoryRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport

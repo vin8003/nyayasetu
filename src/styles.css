@@ -165,6 +165,16 @@
   background-size: 12px 12px, auto;
 }
 
+.story-drop::first-letter {
+  float: left;
+  font-family: var(--font-display);
+  font-size: 3.35em;
+  font-weight: 500;
+  line-height: 0.8;
+  padding-right: 0.08em;
+  padding-top: 0.12em;
+}
+
 .print-only {
   display: none;
 }
