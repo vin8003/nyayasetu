@@ -106,6 +106,7 @@ export type HistoryItem = {
   title: string;
   intake: Intake;
   memo: LegalMemo;
+  parentId: string | null;
 };
 
 export const LETTER_KINDS = ["notice", "reply", "petition", "writtenStatement"] as const;

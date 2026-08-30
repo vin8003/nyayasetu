@@ -31,6 +31,7 @@ export function saveMemo(intake: Intake, memo: LegalMemo): HistoryItem {
     title: memo.title || memo.causeTitle || "Untitled memo",
     intake,
     memo,
+    parentId: null,
   };
   writeHistory([item, ...readHistory().filter((h) => h.title !== item.title)]);
   return item;

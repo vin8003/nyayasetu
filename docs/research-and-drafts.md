@@ -38,11 +38,11 @@ Memo shape (high level): title, cause title, courts consulted, facts summary, is
 
 Saved memos: `memos` table (`user_id`, `intake_json`, `memo_json`). `matter_id` exists on the table (`0003_practice.sql`) but save/list in `research/store.ts` do not write it yet. Drafts of letters are **not** stored.
 
-Past memos: last 40 for the user, open from the desk.
+Past memos: last 40 for the user, open from the desk. Follow-up (`runFollowUp`) asks a new question against the same facts and verified cites, searches the same Indian hosts, and **saves a new row** with `parent_id` — it does not overwrite. Citation URLs from the parent stay in the union so a reused cite can remain verified.
 
 ## Court drafts
 
-`LETTER_KINDS = ["notice", "reply", "petition"]`.
+`LETTER_KINDS = ["notice", "reply", "petition", "writtenStatement"]`.
 
 `draftLetter` shares one handler (`z.enum(LETTER_KINDS)`). Language is the **memo** language.
 

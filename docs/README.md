@@ -22,6 +22,5 @@ These exist as later work, not as product on `main`:
 
 - Persisting court drafts (letters are session-only)
 - Vakalatnama as a filled form
-- Follow-up Q&A against a memo
 - OCR for scanned, image-only PDFs
 - Live card capture on `/billing`

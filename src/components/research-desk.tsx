@@ -15,6 +15,8 @@ import { emptyIntake, type HistoryItem, type Intake, type LegalLetter, type Lega
 import { t } from "@/lib/research/copy";
 import { DRAFT_KEY } from "@/lib/research/draft";
 import { runResearch } from "@/lib/research/run";
+import { runFollowUp } from "@/lib/research/follow-up";
+import { followUpIntake } from "@/lib/research/follow-up-prompt";
 import { draftLetter } from "@/lib/research/letter";
 import { extractUploads } from "@/lib/research/files";
 import { deleteMemoRecord, listMemos, saveMemoRecord } from "@/lib/research/store";
@@ -63,6 +65,8 @@ export function ResearchDesk({ lang, matterId }) {
 	const [elapsed, setElapsed] = useState(0);
 	const [history, setHistory] = useState([]);
 	const [savedId, setSavedId] = useState(null);
+	const [parentTitle, setParentTitle] = useState("");
+	const [runMode, setRunMode] = useState("research");
 	const [memoLang, setMemoLang] = useState(lang);
 	const runSeq = useRef(0);
 	const draftLock = useRef(false);
@@ -152,8 +156,8 @@ export function ResearchDesk({ lang, matterId }) {
 	}
 	function cancelRun() {
 		abandonRun();
-		setView(view === "drafting" ? "memo" : "desk");
-		if (view !== "drafting") setError(null);
+		setView(view === "drafting" || runMode === "followup" ? "memo" : "desk");
+		if (view !== "drafting" && runMode !== "followup") setError(null);
 	}
 	function mapAiError(code, forLetter = false) {
 		if (code === "PAYWALL") {
@@ -165,10 +169,11 @@ export function ResearchDesk({ lang, matterId }) {
 		if (code === "PARSE") return forLetter ? c.letterParseErr : c.parseErr;
 		return code;
 	}
-	async function persist(currentIntake, currentMemo) {
+	async function persist(currentIntake, currentMemo, parentId = null) {
 		const item = await saveMemoRecord({ data: {
 			intake: currentIntake,
-			memo: currentMemo
+			memo: currentMemo,
+			parentId
 		} });
 		setSavedId(item.id);
 		setHistory((prev) => [item, ...prev.filter((h) => h.id !== item.id)]);
@@ -216,7 +221,9 @@ export function ResearchDesk({ lang, matterId }) {
 		}
 		setIntake(payload);
 		setView("running");
+		setRunMode("research");
 		setSavedId(null);
+		setParentTitle("");
 		try {
 			const result = await runResearch({ data: payload });
 			if (token !== runSeq.current) return;
@@ -240,6 +247,56 @@ export function ResearchDesk({ lang, matterId }) {
 			if (bounceIfUnauthorized(err)) return;
 			setError(err instanceof Error ? err.message : c.parseErr);
 			setView("desk");
+		}
+	}
+	async function startFollowUp(question) {
+		if (!memo) return;
+		if (!requireAccount()) return;
+		const q = String(question ?? "").trim();
+		if (q.length < 8) {
+			toast.error(c.followUpNeed);
+			return;
+		}
+		const token = ++runSeq.current;
+		setError(null);
+		setRunMode("followup");
+		setView("running");
+		try {
+			let parentId = savedId;
+			if (!parentId) {
+				const parent = await persist(intake, memo, null);
+				parentId = parent.id;
+			}
+			const result = await runFollowUp({ data: {
+				intake,
+				memo,
+				question: q
+			} });
+			if (token !== runSeq.current) return;
+			if (!result.ok) {
+				toast.error(mapAiError(result.error));
+				setView("memo");
+				return;
+			}
+			const priorTitle = memo.title;
+			const nextIntake = followUpIntake(intake, q);
+			try {
+				await persist(nextIntake, result.memo, parentId);
+			} catch (err) {
+				if (bounceIfUnauthorized(err)) return;
+			}
+			if (token !== runSeq.current) return;
+			setIntake(nextIntake);
+			setMemo(result.memo);
+			setMemoLang(nextIntake.lang);
+			setParentTitle(priorTitle);
+			setLetter(null);
+			setView("memo");
+		} catch (err) {
+			if (token !== runSeq.current) return;
+			if (bounceIfUnauthorized(err)) return;
+			toast.error(err instanceof Error ? err.message : c.parseErr);
+			setView("memo");
 		}
 	}
 	async function startDraft(kind) {
@@ -364,7 +421,8 @@ export function ResearchDesk({ lang, matterId }) {
 		view === "running" ? jsx(ResearchStage, {
 			lang,
 			elapsed,
-			onCancel: cancelRun
+			onCancel: cancelRun,
+			mode: runMode === "followup" ? "followup" : "research"
 		}) : null,
 		view === "drafting" ? jsx(ResearchStage, {
 			lang,
@@ -376,12 +434,14 @@ export function ResearchDesk({ lang, matterId }) {
 			lang,
 			memo,
 			saved: Boolean(savedId),
+			parentTitle: parentTitle || null,
 			onBack: () => {
 				setView("desk");
 				setError(null);
 			},
 			onSave: () => void onSave(),
-			onDraft: (kind) => void startDraft(kind)
+			onDraft: (kind) => void startDraft(kind),
+			onFollowUp: (question) => void startFollowUp(question)
 		}) : null,
 		view === "letter" && letter ? jsx(LetterView, {
 			lang,
@@ -416,15 +476,19 @@ export function ResearchDesk({ lang, matterId }) {
 						setMemoLang(item.intake.lang);
 						setLetter(null);
 						setSavedId(item.id);
+						setParentTitle(item.parentId ? (history.find((h) => h.id === item.parentId)?.title ?? c.followUp) : "");
 						setView("memo");
 					},
 					className: "min-w-0 flex-1 px-4 py-3 text-left",
 					children: [jsx("div", {
 						className: "truncate font-medium",
 						children: item.title
-					}), jsx("div", {
+					}), jsxs("div", {
 						className: "mt-1 text-xs text-muted",
-						children: new Date(item.createdAt).toLocaleString(lang === "hi" ? "hi-IN" : "en-IN")
+						children: [
+							new Date(item.createdAt).toLocaleString(lang === "hi" ? "hi-IN" : "en-IN"),
+							item.parentId ? ` · ${c.followUp}` : ""
+						]
 					})]
 				}), jsx("button", {
 					type: "button",

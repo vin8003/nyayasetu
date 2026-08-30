@@ -11,6 +11,14 @@ memos
 
 `intake_json` / `memo_json` are stringified `Intake` and `LegalMemo`. List limit: 40, newest first. No letter table.
 
+## `0005_memo_parent.sql`
+
+```text
+memos.parent_id    nullable — id of the memo this row follows up
+```
+
+Follow-up always inserts a new row. It never updates the parent.
+
 ## `0003_practice.sql`
 
 ```text

@@ -12,10 +12,10 @@ export function ResearchStage({
   lang: OutputLang;
   elapsed: number;
   onCancel: () => void;
-  mode?: "research" | "letter";
+  mode?: "research" | "letter" | "followup";
 }) {
   const c = t(lang);
-  const title = mode === "letter" ? c.draftingLetter : c.researching;
+  const title = mode === "letter" ? c.draftingLetter : mode === "followup" ? c.followUpRunning : c.researching;
   const note = mode === "letter" ? c.letterWaitNote : c.waitNote;
 
   return (

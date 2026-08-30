@@ -7,6 +7,7 @@ import { formatMemoBrief, formatMemoBriefHtml } from "@/lib/research/brief";
 import { httpHref } from "@/lib/research/verify";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label, Textarea } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
 
 const TABS = ["brief", "issues", "cases", "law", "args", "sources"] as const;
@@ -78,19 +79,24 @@ export function MemoView({
   lang,
   memo,
   saved = false,
+  parentTitle,
   onBack,
   onSave,
   onDraft,
+  onFollowUp,
 }: {
   lang: OutputLang;
   memo: LegalMemo;
   saved?: boolean;
+  parentTitle?: string | null;
   onBack: () => void;
   onSave: () => void;
   onDraft: (kind: LetterKind) => void;
+  onFollowUp: (question: string) => void;
 }) {
   const c = t(lang);
   const [tab, setTab] = useState<Tab>("brief");
+  const [question, setQuestion] = useState("");
 
   const tabLabel: Record<Tab, string> = {
     brief: c.tabBrief,
@@ -136,6 +142,11 @@ export function MemoView({
           </button>
           <h1 className="font-display text-2xl font-medium tracking-tight sm:text-3xl">{memo.title}</h1>
           {memo.causeTitle ? <p className="mt-1 text-sm text-muted">{memo.causeTitle}</p> : null}
+          {parentTitle ? (
+            <p className="mt-2 text-xs text-accent">
+              {c.followUpOf} · {parentTitle}
+            </p>
+          ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => onDraft("notice")}>
@@ -380,6 +391,36 @@ export function MemoView({
           ) : null}
         </div>
       ) : null}
+
+      <form
+        className="no-print rounded-xl bg-surface p-5 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const next = question.trim();
+          if (next.length < 8) {
+            toast.error(c.followUpNeed);
+            return;
+          }
+          onFollowUp(next);
+          setQuestion("");
+        }}
+      >
+        <Label htmlFor="follow-up">{c.followUp}</Label>
+        <p className="mt-1 text-xs text-muted">{c.followUpHint}</p>
+        <Textarea
+          id="follow-up"
+          className="mt-3 min-h-24"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          maxLength={2000}
+          placeholder={lang === "hi" ? "अगर घायल डिस्चार्ज हो गया हो?" : "What if the injured has been discharged?"}
+        />
+        <div className="mt-3">
+          <Button type="submit" size="sm">
+            {c.followUpAsk}
+          </Button>
+        </div>
+      </form>
 
       <article className="print-only print-paper rounded-xl bg-paper px-5 py-8 text-paper-ink">
         <pre className="whitespace-pre-wrap font-display text-[17px] leading-[1.65]">{formatMemoBrief(memo, lang)}</pre>
