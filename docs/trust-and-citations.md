@@ -43,6 +43,10 @@ Unverified authorities stay on the memo under `unverified` and as `verified: fal
 
 The letter **prompt** lists only citable authorities and forbids `web_search`. The letter **xAI body** has no `tools` key. Enforcement is still the stamp + filter: the model is not trusted.
 
+Follow-up memos **do** search, on the same allowlist. `stampPrecedents` runs on this run’s URLs **union** the parent memo’s citation URLs so a reused parent cite can remain verified. Unverified names from the parent stay off-limits unless this run retrieves a URL.
+
+**Draft this** (task/deadline) does not use `letter-cites.ts`. It has no search. The prompt forbids invented citations; there is no stamp. Treat it as a first cut from the papers, origin `ai_suggestion`.
+
 ## Practice-file trust (different problem)
 
 Orders and tasks use **origin**, not URLs:
@@ -62,6 +66,9 @@ Orders and tasks use **origin**, not URLs:
 - `src/lib/research/verify.test.ts` — stamp, host, `javascript:`, www/slash/hash
 - `src/lib/research/letter-cites.test.ts` — filter, scrub, forged verified flag
 - `src/lib/research/letter-prompt.test.ts` — no `tools` / `web_search` on the letter body
+- `src/lib/research/follow-up.test.ts` — follow-up intake, prompt, parent URL merge
+- `src/lib/research/history-search.test.ts` — thread grouping and search
+- `src/lib/practice/task-draft.test.ts` — classify vs gather/appearance; sample skeleton
 - `src/lib/practice/sample.test.ts` / `workflow.test.ts` — sample and stage helpers
 
 If you add a new draft kind, keep `letterChrome` and `kindLine` as `Record<LetterKind, …>` and run grounds through `filterLetterGrounds` — do not add a second cite policy.

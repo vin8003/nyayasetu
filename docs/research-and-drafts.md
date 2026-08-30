@@ -36,9 +36,21 @@ OCR is paywalled like other AI (`gateAi`). Missing `XAI_API_KEY` returns a place
 
 Memo shape (high level): title, cause title, courts consulted, facts summary, issues, statutes, doctrines, precedents, points for court, arguments for/against, counters, strategy, risks, full memo, sources, unverified list, searched queries, citation URLs.
 
-Saved memos: `memos` table (`user_id`, `intake_json`, `memo_json`). `matter_id` exists on the table (`0003_practice.sql`) but save/list in `research/store.ts` do not write it yet. Drafts of letters are **not** stored.
+Saved memos: `memos` table (`user_id`, `intake_json`, `memo_json`, `parent_id`). `matter_id` exists (`0003_practice.sql`) but save/list in `research/store.ts` do not write it. Research-desk letters are **not** stored.
 
-Past memos: last 80 for the user, searchable (`listMemos` `q` — title, intake JSON, memo JSON). Follow-ups stay grouped under the original memo. Follow-up (`runFollowUp`) asks a new question against the same facts and verified cites, searches the same Indian hosts, and **saves a new row** with `parent_id` — it does not overwrite. Citation URLs from the parent stay in the union so a reused cite can remain verified.
+Past memos (`listMemos`): last **80** for the user when unfiltered; a search (`q`, min useful length 2) seeds **40** matches on `title` / `intake_json` / `memo_json` then hydrates parent and child rows so a hit is not shown without its thread. Client-side `threadsMatchingQuery` / `groupMemoHistory` (`src/lib/research/history-search.ts`) nest follow-ups under the original memo (newest thread first). An orphan follow-up (missing parent) stays its own root.
+
+## Follow-up Q&A
+
+`runFollowUp` (`src/lib/research/follow-up.ts`):
+
+- Same auth + `gateAi` as research (sample facts skip the trial insert)
+- Question: 8–2000 characters
+- `followUpIntake` keeps facts, forum, side, and language; replaces the legal question
+- xAI Responses + `web_search` on `LEGAL_DOMAINS` (max 3 tool calls) — **not** a no-tools letter call
+- Same timeout and token budget as `runResearch` (90s, 12k)
+- `stampPrecedents` on the **union** of this run’s retrieved URLs and the parent memo’s `citationUrls` / precedent URLs, so a reused parent cite can stay verified
+- Save inserts a **new** row with `parent_id` set. The parent memo is never updated.
 
 ## Court drafts
 
@@ -51,20 +63,25 @@ Past memos: last 80 for the user, searchable (`listMemos` `q` — title, intake 
 | Notice | Demand + time to comply. No without-prejudice. No verification. |
 | Reply | Without prejudice, para-wise reply, stand taken. No demand, no time to comply, no verification. |
 | Petition | Grounds, prayer, optional interim, verification clause. |
+| Written statement | Para-wise reply grounds, optional preliminary objections first (`followOnFirst`), prayer to dismiss/contest, verification. |
 
-`assembleLetter` keeps `verification` only for petition (`kind === "petition"`). Notice and reply force it to empty even if the model emitted a clause.
+`assembleLetter` keeps `verification` when `letterChrome` has a verification heading — **petition and written statement**. Notice and reply force it to empty even if the model emitted a clause.
 
-Prompt (`LETTER_SYSTEM` + `kindLine`): no tools, cite only the verified list, keep case names in English in Hindi output. User message currently includes side and practice area (`Forum / side: …`); forum name and memo statutes are **not** yet injected on `main`.
+Prompt (`LETTER_SYSTEM` + `kindLine`): no tools, cite only the verified list, keep case names in English in Hindi output. User message includes forum name (unless intake is “all courts”), cause title, side, practice area, and memo statutes (blank statute rows are skipped).
 
 After parse: `filterLetterGrounds` + `scrubUnverifiedText`. `LetterView` renders chrome headings; ground URLs use `httpHref`. Copy / print / Word HTML (`formatLegalLetterHtml`) use the same formatted text.
+
+These drafts stay in client state. They are a different path from **Draft this** on a chamber task, which is file-only and saved as a `matter_documents` row — see [practice-chamber.md](practice-chamber.md).
 
 ## Models (as of this tree)
 
 | Job | API | Model |
 |---|---|---|
 | Research memo | Responses + `web_search` | `grok-4.20-0309-non-reasoning` |
-| Notice / reply / petition | Responses, no tools | `grok-4.20-0309-non-reasoning` |
+| Follow-up memo | Responses + `web_search` | `grok-4.20-0309-non-reasoning` |
+| Notice / reply / petition / written statement | Responses, no tools | `grok-4.20-0309-non-reasoning` |
 | Image OCR | Chat Completions | `grok-4.20-0309-non-reasoning` |
+| Draft this (task / deadline) | Chat Completions, no search | `grok-4.20-0309-non-reasoning` |
 | Order extract, hearing brief | Chat Completions | `grok-4.5` |
 
 ## Error strings the UI maps
@@ -76,4 +93,4 @@ After parse: `filterLetterGrounds` + `scrubUnverifiedText`. `LetterView` renders
 
 ## Tests
 
-`src/lib/research/*.test.ts` covers parse fail-closed, stamp, letter chrome, cite filter, letter budget (no `tools` key), and prompt kind-lines (petition must not contain “time to comply”; reply must contain that phrase as a **prohibition**).
+`src/lib/research/*.test.ts` covers parse fail-closed, stamp, letter chrome (including written statement), cite filter, letter budget (no `tools` key), prompt kind-lines, follow-up intake/prompt, and history search grouping.

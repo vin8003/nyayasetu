@@ -9,15 +9,16 @@ memos
   id, user_id, title, intake_json, memo_json, created_at
 ```
 
-`intake_json` / `memo_json` are stringified `Intake` and `LegalMemo`. List limit: 40, newest first. No letter table.
+`intake_json` / `memo_json` are stringified `Intake` and `LegalMemo`. Unfiltered list: **80**, newest first. Search seed: **40**, then hydrate parents/children (cap ~120). No letter table.
 
 ## `0005_memo_parent.sql`
 
 ```text
 memos.parent_id    nullable — id of the memo this row follows up
+memos_parent_id_idx
 ```
 
-Follow-up always inserts a new row. It never updates the parent.
+Follow-up always inserts a new row. It never updates the parent. `research/store.ts` also `ALTER`s the column on first list/save so a warm Neon that missed migrate still gets it.
 
 ## `0003_practice.sql`
 
@@ -30,6 +31,7 @@ matters            id, user_id, client_id?, title, proceeding, stage,
 hearings           id, user_id, matter_id, listed_on, listed_at, court_room,
                    bench, purpose, stage, outcome, next_date, notes
 matter_documents   id, user_id, matter_id, kind, title, body, source_kind
+                   source_kind: paste | ai_draft | sample seed (`paste` default)
 matter_orders      id, user_id, matter_id, document_id?, order_date, body,
                    directions_json, confirmed
 tasks              id, user_id, matter_id?, title, origin, status, due_on, source_quote
@@ -59,7 +61,9 @@ Access is **computed** from timestamps (`computeSnapshot`), not from trusting `s
 
 `LegalMemo` fields that matter for trust: `precedents[].url`, `precedents[].verified` (overwritten), `citationUrls` (retrieved), `unverified[]`.
 
-`LegalLetter` is in-memory / client state only.
+`LegalLetter` from the research desk is in-memory / client state only.
+
+`TaskDraft` from **Draft this** is formatted text stored in `matter_documents` (`source_kind = ai_draft`, `kind` = writtenStatement | reply | notice | petition | application | affidavit | note). Timeline origin is `ai_suggestion`.
 
 ## Practice JSON
 
@@ -76,11 +80,12 @@ Access is **computed** from timestamps (`computeSnapshot`), not from trusting `s
 - `deadlines (user_id, due_on)`
 - `timeline_events (matter_id, happened_on desc)`
 - `memos (user_id)`
+- `memos (parent_id)`
 - `clients (user_id)`
 
 ## Adding a table
 
-1. New file `migrations/0005_….sql` (next number).
+1. New file `migrations/0006_….sql` (next number).
 2. Keep it idempotent (`if not exists`) where possible.
 3. Filter every query by `user_id` from `authMiddleware`.
 4. Add tests next to the store/module, not only in scripts.

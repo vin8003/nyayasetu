@@ -11,7 +11,7 @@ This is **not legal advice**. The footer on memos and drafts says so. Court date
 - Google and X (federated)
 - Username / email + password (register once; password ≥ 8 characters)
 
-Guests see a short pitch on Today and can open **Research**, but chamber data and AI are behind an account.
+Guests see a short pitch on Today, can open **Research**, and can read the public first-day article at **`/story`**. Chamber data and AI are behind an account.
 
 Language toggle: **हि** / **EN** in the header (stored as chamber language).
 
@@ -20,7 +20,7 @@ Language toggle: **हि** / **EN** in the header (stored as chamber language).
 The board for the logged-in user:
 
 - Hearings **today** and **upcoming**
-- Open **deadlines** and **tasks**
+- Open **deadlines** and **tasks**. Items that look like a filing get **Draft this**, which opens the matter record.
 - **Unconfirmed orders** (from Inbox; still waiting for a human)
 - **Stale matters** (active files that have gone quiet)
 
@@ -87,6 +87,7 @@ Nothing hits the diary until you **Confirm**. Reject discards the pending extrac
 |---|---|
 | Shell, Today, Diary, Matters, Inbox, Billing | Chamber language (`hi` / `en`) |
 | Research memo and court drafts | Memo language from intake (the desk passes it through) |
+| `/story` | Toggle on the article (`?lang=hi` for Hindi) |
 | Case names, citations, statute names in Hindi drafts | Kept in English by prompt |
 
 ## What CiteBench will not do
@@ -94,5 +95,5 @@ Nothing hits the diary until you **Confirm**. Reject discards the pending extrac
 - File on eCourts or CIS
 - Fetch Indian Kanoon HTML to “prove” a cite
 - Treat a model `verified: true` as truth
-- Persist notice / reply / petition to the database
+- Persist notice / reply / petition / written statement **from the research memo** to the database (those stay on screen). Drafts started with **Draft this** on a task or deadline *are* saved as matter papers.
 - Bill a card in this preview

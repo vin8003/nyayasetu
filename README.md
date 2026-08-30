@@ -14,13 +14,15 @@ After you sign in you get a chamber with five surfaces:
 
 | Surface | Route | What you do there |
 |---|---|---|
-| **Today** | `/` | Hearings today, upcoming listings, deadlines, open tasks, unconfirmed orders, stale matters |
+| **Today** | `/` | Hearings today, upcoming listings, deadlines, open tasks (Draft this when it is a filing), unconfirmed orders, stale matters |
 | **Diary** | `/diary` | Chronological list of listings, linked to the matter |
 | **Matters** | `/matters` | Client files: parties, stage, hearings, documents, timeline, hearing brief |
-| **Research** | `/research` | Facts in → Indian case-law memo → notice / reply / petition drafts |
+| **Research** | `/research` | Facts in → Indian case-law memo → follow-up Q&A → notice / reply / petition / written statement |
 | **Inbox** | `/inbox` | Paste an order; the model extracts directions; **you** confirm before the chamber updates |
 
 A **sample chamber** (three demo matters) is free and does **not** start the 30-day trial. The clock starts when you run AI on **your** matter.
+
+The first-day story is public at **`/story`** (no login).
 
 Plan: **30 days free** on your own work, then **₹500 / month** (GST extra). Card collection is not live yet — `/billing` records the subscription on the account as a preview.
 
@@ -32,7 +34,7 @@ CiteBench is built so a model cannot quietly invent a judgment or turn a suggest
 
 - **Research search** uses xAI `web_search` only on [Indian Kanoon](https://indiankanoon.org), [LiveLaw](https://www.livelaw.in), [CaseMine](https://www.casemine.com), [eSCR](https://judgments.ecourts.gov.in), and [sci.gov.in](https://sci.gov.in).
 - A precedent is **verified** only if its `http(s)` URL was actually retrieved **and** the host is on that allowlist. The model’s `verified` boolean is overwritten.
-- Court drafts (notice, reply, petition) **do not search**. They may cite only authorities that already passed that gate; invented names are stripped from prose.
+- Court drafts from the memo (notice, reply, petition, written statement) **do not search**. They may cite only authorities that already passed that gate; invented names are stripped from prose.
 - On a matter file, **court directions** and **CiteBench suggestions** are separate origins. Suggestions never become directions without a human confirm.
 - Screen links go through `httpHref` — `javascript:` and other non-http URLs are dropped.
 
@@ -110,11 +112,13 @@ Browser (TanStack Start + React)
         ├── practice/hearing-brief   matter bundle → hearing note
         ├── billing/store      trial clock + chamber_monthly entitlement
         ├── research/run       Grok + web_search → stamped memo
-        ├── research/letter    Grok, no tools → notice | reply | petition
+        ├── research/follow-up same search; new child row (`parent_id`)
+        ├── research/letter    Grok, no tools → notice | reply | petition | writtenStatement
+        ├── practice/task-draft file-only paper, saved on the matter
         └── research/files     text PDF (unpdf), image OCR, plain text
 ```
 
-Schema lives in `migrations/` (`0001_auth`, `0002_memos`, `0003_practice`, `0004_billing`). Do not create tables inside server functions.
+Schema lives in `migrations/` (`0001_auth`, `0002_memos`, `0003_practice`, `0004_billing`, `0005_memo_parent`). Do not create tables inside server functions. Neon also applies pending files on first `getSql()`.
 
 More: [docs/architecture.md](docs/architecture.md).
 
@@ -127,11 +131,12 @@ More: [docs/architecture.md](docs/architecture.md).
 | [docs/product.md](docs/product.md) | Screen-by-screen product tour |
 | [docs/architecture.md](docs/architecture.md) | Stack, request paths, modules |
 | [docs/practice-chamber.md](docs/practice-chamber.md) | Diary, matters, workflow stages, sample pack, inbox |
-| [docs/research-and-drafts.md](docs/research-and-drafts.md) | Memo pipeline and court drafts |
+| [docs/research-and-drafts.md](docs/research-and-drafts.md) | Memo pipeline, follow-ups, court drafts |
 | [docs/trust-and-citations.md](docs/trust-and-citations.md) | Citation gate, scrub, `httpHref` |
 | [docs/billing.md](docs/billing.md) | Trial, ₹500 plan, paywall, sample exemption |
 | [docs/data-model.md](docs/data-model.md) | Tables and JSON blobs |
 | [docs/local-development.md](docs/local-development.md) | Env, auth modes, tests, deploy notes |
+| [docs/from-desk-to-chamber.md](docs/from-desk-to-chamber.md) | Public first-day article at `/story` |
 
 ---
 

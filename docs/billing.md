@@ -33,7 +33,7 @@ canUseAi = paid OR trial
 | Cancelled | Cancelled but `period_end` still in the future — keep using |
 | Expired | Neither trial nor paid window |
 
-`gateAi` for real work: `ensureTrial` then `canUseAi`. If false, handlers return `{ ok: false, error: "PAYWALL" }`. The research desk, letter draft, order extract, hearing brief, and file OCR all share this gate.
+`gateAi` for real work: `ensureTrial` then `canUseAi`. If false, handlers return `{ ok: false, error: "PAYWALL" }`. The research desk, follow-up, letter draft, **Draft this**, order extract, hearing brief, and file OCR all share this gate.
 
 ## Subscribe / cancel (preview)
 
