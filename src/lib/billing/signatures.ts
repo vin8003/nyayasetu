@@ -8,7 +8,22 @@ function equalHex(expected: string, given: string): boolean {
   return timingSafeEqual(a, b);
 }
 
-/** Checkout handler: HMAC_SHA256(payment_id|subscription_id, key_secret). */
+/** Standard Checkout (Orders): HMAC_SHA256(order_id|payment_id, key_secret). */
+export function orderCheckoutSignature(orderId: string, paymentId: string, keySecret: string): string {
+  return createHmac("sha256", keySecret).update(`${orderId}|${paymentId}`).digest("hex");
+}
+
+export function verifyOrderCheckoutSignature(
+  orderId: string,
+  paymentId: string,
+  signature: string,
+  keySecret: string,
+): boolean {
+  if (!orderId || !paymentId || !signature || !keySecret) return false;
+  return equalHex(orderCheckoutSignature(orderId, paymentId, keySecret), signature);
+}
+
+/** Subscription Checkout handler: HMAC_SHA256(payment_id|subscription_id, key_secret). */
 export function checkoutSignature(paymentId: string, subscriptionId: string, keySecret: string): string {
   return createHmac("sha256", keySecret).update(`${paymentId}|${subscriptionId}`).digest("hex");
 }

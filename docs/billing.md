@@ -8,7 +8,7 @@ CiteBench sells a **chamber**: diary + matters + research + order reading. There
 | Plan id | `chamber_monthly` | `PLAN_ID` |
 | Price | ₹500 / month, all-in | `PLAN_PRICE_INR` |
 | GST | Not added. No GSTIN. | `billingCopy.gst` |
-| Collector | Razorpay Subscriptions (UPI, card, netbanking) | `src/lib/billing/razorpay.server.ts` |
+| Collector | Razorpay Standard Checkout (UPI, card, netbanking) | `src/lib/billing/razorpay.server.ts` |
 
 ## When the clock starts
 
@@ -46,19 +46,19 @@ What the Subscribe button does depends on keys, not on a feature flag:
 |---|---|---|
 | Live preview (no Postgres URL) | absent | Records one month from now. **Does not charge.** Does not stack on leftover trial. |
 | Public chamber (Postgres URL, no Razorpay keys) | absent | Refuses. Copy: payments are not connected yet. |
-| Public chamber | `RAZORPAY_KEY_ID` + `RAZORPAY_KEY_SECRET` + `RAZORPAY_WEBHOOK_SECRET` | Opens Razorpay Checkout. Chamber turns **on only after** a verified payment (Checkout signature and/or webhook). |
+| Preview or public chamber | `RAZORPAY_KEY_ID` + `RAZORPAY_KEY_SECRET` | Opens Razorpay Standard Checkout. Chamber turns **on only after** a verified payment (HMAC of `order_id\|payment_id`). |
 
-Live path:
+Live path (Standard Checkout, Orders API):
 
-1. Create (or reuse) a monthly Razorpay plan at ₹500.
-2. Create a subscription. Store `razorpay_subscription_id` on the entitlement. Status stays trial until money moves.
-3. Checkout (UPI / card / netbanking).
-4. `confirmCheckout` checks HMAC(`payment_id|subscription_id`) and fetches the subscription. Webhook `/api/billing/razorpay` does the same from `subscription.activated` / `subscription.charged` / `invoice.paid`.
-5. `period_end` comes from Razorpay `current_end`. Later `subscription.charged` events extend it.
-6. **Cancel** tells Razorpay to stop at cycle end (`cancel_at_cycle_end`) and sets local `cancelled`. Access continues until `period_end`.
-7. `subscription.halted` (retries exhausted) closes access immediately.
+1. `POST /api/create-order` (or Subscribe on `/billing`) creates a Razorpay order for ₹500 (50000 paise). Amount below 100 paise is rejected.
+2. Checkout.js opens with that `order_id`. UPI / card / netbanking.
+3. On success the browser sends `razorpay_payment_id`, `razorpay_order_id`, `razorpay_signature` to `POST /api/verify-payment` (or `confirmCheckout`).
+4. Server checks HMAC-SHA256(`order_id|payment_id`, key secret). Mismatch → 400, **not** marked paid. Missing fields → 400.
+5. Order amount must be ₹500 and the order note must match this user. Then `period_end` = now + 30 days.
+6. **Cancel** stops the local row. There is no auto-debit — the next month is another Checkout. Access continues until `period_end`.
+7. Optional webhook `/api/billing/razorpay` still accepts subscription events if a webhook secret is set later.
 
-The browser is never trusted to flip `status = active`.
+The browser is never trusted to flip `status = active`. The Key Secret never reaches the browser.
 
 ## Dummy Subscribe already on the books
 
@@ -92,24 +92,15 @@ Razorpay onboard **individuals**. You do not need a Pvt Ltd, LLP, GSTIN, or CIN.
 
    | Variable | What it is |
    |---|---|
-   | `RAZORPAY_KEY_ID` | Key Id (Checkout uses this) |
-   | `RAZORPAY_KEY_SECRET` | Key Secret (server only) |
-   | `RAZORPAY_WEBHOOK_SECRET` | Webhook signing secret |
-   | `RAZORPAY_PLAN_ID` | Optional. If unset, CiteBench creates the ₹500 monthly plan once and stores it. |
+   | `RAZORPAY_KEY_ID` | Key Id (Checkout uses this; server sends it to the sheet) |
+   | `RAZORPAY_KEY_SECRET` | Key Secret (**server only**) |
+   | `RAZORPAY_WEBHOOK_SECRET` | Optional. Only if you add the webhook below. |
 
-4. In the Razorpay dashboard, add a webhook to **https://citebench.ordereasy.win/api/billing/razorpay** for:
-
-   - `subscription.activated`
-   - `subscription.authenticated`
-   - `subscription.charged`
-   - `subscription.cancelled`
-   - `subscription.completed`
-   - `subscription.halted`
-   - `invoice.paid`
+4. Optional. In the Razorpay dashboard, add a webhook to **https://citebench.ordereasy.win/api/billing/razorpay** if you later turn on subscriptions.
 
 5. Do **not** turn on GST invoices. The price is ₹500, not ₹500 + tax. If turnover later needs a GSTIN, that is a separate step.
 
-Test keys do not take real money. Live keys do. Card recurring is the usual monthly path; UPI Autopay may need Razorpay to switch it on for the account.
+Test keys do not take real money. Live keys do. Test card: `4111 1111 1111 1111`, any future expiry, any CVV. Each successful payment covers 30 days — there is no auto-debit until you add a subscription.
 
 ## Banner
 

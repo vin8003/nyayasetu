@@ -26,7 +26,7 @@ A **sample chamber** (three demo matters) is free and does **not** start the 30-
 
 The first-day story is public at **`/story`** (no login). Hindi: `/story?lang=hi`.
 
-Plan: **30 days free** on your own work, then **₹500 / month**. On the public chamber, Subscribe opens Razorpay (UPI, card, netbanking) once the payment account is connected. This preview still records membership without charging. See [docs/billing.md](docs/billing.md).
+Plan: **30 days free** on your own work, then **₹500 / month**. Subscribe opens Razorpay Standard Checkout (UPI, card, netbanking) when keys are set. Each payment covers 30 days. See [docs/billing.md](docs/billing.md).
 
 ---
 

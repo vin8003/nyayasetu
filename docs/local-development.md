@@ -30,8 +30,8 @@ Copy `.env.example` to `.env` if you need secrets. Do not commit `.env`.
 | `BETTER_AUTH_SECRET` | Cookie signing | Preview mints a process-local secret |
 | `AUTH_ALLOWED_HOSTS` | Extra allowed Hosts | Comma-separated |
 | `GROK_PROJECT_ID` / `GROK_GATE_ORIGIN` | Grok gate identity | Optional; used when the app is embedded in the Grok host |
-| `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` / `RAZORPAY_WEBHOOK_SECRET` | Live Subscribe | All three required before the public chamber charges. Test keys (`rzp_test_`) do not take real money. See [billing.md](billing.md) |
-| `RAZORPAY_PLAN_ID` | Optional Razorpay plan | Unset → the app creates the ₹500 monthly plan once |
+| `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | Live Subscribe | Standard Checkout. Test keys (`rzp_test_`) do not take real money. See [billing.md](billing.md) |
+| `RAZORPAY_WEBHOOK_SECRET` | Optional webhook | Only if `/api/billing/razorpay` is used |
 
 Username/password is on (`src/lib/auth/email-password.ts` → `emailAndPasswordEnabled = true`). Register from `/login`.
 

@@ -17,6 +17,8 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as MattersRouteImport } from './routes/matters'
 import { Route as ResearchRouteImport } from './routes/research'
 import { Route as StoryRouteImport } from './routes/story'
+import { Route as ApiCreateOrderRouteImport } from './routes/api/create-order'
+import { Route as ApiVerifyPaymentRouteImport } from './routes/api/verify-payment'
 import { Route as MattersIndexRouteImport } from './routes/matters.index'
 import { Route as MattersIdRouteImport } from './routes/matters.$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -62,6 +64,16 @@ const StoryRoute = StoryRouteImport.update({
   path: '/story',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCreateOrderRoute = ApiCreateOrderRouteImport.update({
+  id: '/api/create-order',
+  path: '/api/create-order',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiVerifyPaymentRoute = ApiVerifyPaymentRouteImport.update({
+  id: '/api/verify-payment',
+  path: '/api/verify-payment',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MattersIndexRoute = MattersIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -92,6 +104,8 @@ export interface FileRoutesByFullPath {
   '/matters': typeof MattersRouteWithChildren
   '/research': typeof ResearchRoute
   '/story': typeof StoryRoute
+  '/api/create-order': typeof ApiCreateOrderRoute
+  '/api/verify-payment': typeof ApiVerifyPaymentRoute
   '/matters/$id': typeof MattersIdRoute
   '/matters/': typeof MattersIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -105,6 +119,8 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/research': typeof ResearchRoute
   '/story': typeof StoryRoute
+  '/api/create-order': typeof ApiCreateOrderRoute
+  '/api/verify-payment': typeof ApiVerifyPaymentRoute
   '/matters/$id': typeof MattersIdRoute
   '/matters': typeof MattersIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -120,6 +136,8 @@ export interface FileRoutesById {
   '/matters': typeof MattersRouteWithChildren
   '/research': typeof ResearchRoute
   '/story': typeof StoryRoute
+  '/api/create-order': typeof ApiCreateOrderRoute
+  '/api/verify-payment': typeof ApiVerifyPaymentRoute
   '/matters/$id': typeof MattersIdRoute
   '/matters/': typeof MattersIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -136,6 +154,8 @@ export interface FileRouteTypes {
     | '/matters'
     | '/research'
     | '/story'
+    | '/api/create-order'
+    | '/api/verify-payment'
     | '/matters/$id'
     | '/matters/'
     | '/api/auth/$'
@@ -149,6 +169,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/research'
     | '/story'
+    | '/api/create-order'
+    | '/api/verify-payment'
     | '/matters/$id'
     | '/matters'
     | '/api/auth/$'
@@ -163,6 +185,8 @@ export interface FileRouteTypes {
     | '/matters'
     | '/research'
     | '/story'
+    | '/api/create-order'
+    | '/api/verify-payment'
     | '/matters/$id'
     | '/matters/'
     | '/api/auth/$'
@@ -178,6 +202,8 @@ export interface RootRouteChildren {
   MattersRoute: typeof MattersRouteWithChildren
   ResearchRoute: typeof ResearchRoute
   StoryRoute: typeof StoryRoute
+  ApiCreateOrderRoute: typeof ApiCreateOrderRoute
+  ApiVerifyPaymentRoute: typeof ApiVerifyPaymentRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiBillingRazorpayRoute: typeof ApiBillingRazorpayRoute
 }
@@ -240,6 +266,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/create-order': {
+      id: '/api/create-order'
+      path: '/api/create-order'
+      fullPath: '/api/create-order'
+      preLoaderRoute: typeof ApiCreateOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/verify-payment': {
+      id: '/api/verify-payment'
+      path: '/api/verify-payment'
+      fullPath: '/api/verify-payment'
+      preLoaderRoute: typeof ApiVerifyPaymentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/matters/': {
       id: '/matters/'
       path: '/'
@@ -293,6 +333,8 @@ const rootRouteChildren: RootRouteChildren = {
   MattersRoute: MattersRouteWithChildren,
   ResearchRoute: ResearchRoute,
   StoryRoute: StoryRoute,
+  ApiCreateOrderRoute: ApiCreateOrderRoute,
+  ApiVerifyPaymentRoute: ApiVerifyPaymentRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiBillingRazorpayRoute: ApiBillingRazorpayRoute,
 }

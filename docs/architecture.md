@@ -26,7 +26,9 @@ CiteBench is a TanStack Start (Vite + React) app. The browser talks to **server 
 /story            Public first-day article (no login)
 /login            Google, X, username/password
 /api/auth/*       Better Auth
-/api/billing/razorpay  Razorpay webhook (no session; HMAC of the raw body)
+/api/create-order        Razorpay order (session; ₹500)
+/api/verify-payment      Razorpay signature (session; HMAC of order_id|payment_id)
+/api/billing/razorpay    Optional Razorpay webhook (no session; HMAC of the raw body)
 ```
 
 Shell: `src/components/app-shell.tsx` — sticky topbar, desktop nav from 900px, 5-column tab bar below that.
@@ -143,18 +145,17 @@ Timeout 45s. Sample chamber falls back to a deterministic skeleton if the model 
 
 ```text
 Billing → startSubscription
-  → preview (no Postgres URL): grant 30 days, no charge
+  → preview (no Postgres URL, no keys): grant 30 days, no charge
   → unset (Postgres, no Razorpay keys): refuse
-  → live keys: create Razorpay subscription, return Checkout
-Billing → confirmCheckout
-  → HMAC payment_id|subscription_id
-  → fetch subscription, set period_end from current_end
-POST /api/billing/razorpay
-  → HMAC raw body
-  → subscription.charged / invoice.paid extends period_end
+  → live keys: POST Razorpay /orders ₹500, return Checkout
+Billing → confirmCheckout  (also POST /api/verify-payment)
+  → HMAC order_id|payment_id
+  → fetch order, amount must be ₹500, then period_end = now + 30 days
+POST /api/create-order
+  → same order, session required
 ```
 
-The browser cannot mark a chamber `active`. Cancel asks Razorpay to stop at cycle end.
+The browser cannot mark a chamber `active`. Key Secret never reaches the browser. Cancel is local — each payment is 30 days, no auto-debit.
 
 ### Order extract / hearing brief
 

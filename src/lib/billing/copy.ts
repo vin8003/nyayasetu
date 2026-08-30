@@ -18,7 +18,7 @@ export const billingCopy = {
     expired: "अवधि समाप्त",
     price: "₹500",
     perMonth: "/ महीना",
-    gst: "₹500 पूरा। मासिक, जब तक रद्द न करें।",
+    gst: "₹500 पूरा। एक भुगतान 30 दिन का है।",
     includes: "इसमें क्या है",
     itemResearch: "भारतीय केस-लॉ शोध डेस्क",
     itemChamber: "डायरी, मामले, पेशियाँ, समय-सीमा",
@@ -35,7 +35,7 @@ export const billingCopy = {
     confirmHint:
       "यह पूर्वावलोकन सदस्यता आपके अकाउंट पर दर्ज करता है। लाइव भुगतान जुड़ने पर यहीं कार्ड कटेगा।",
     confirmHintLive:
-      "UPI, कार्ड या नेटबैंकिंग। चैंबर भुगतान सफल होने के बाद खुलता है। हर महीने कटता है, जब तक रद्द न करें।",
+      "UPI, कार्ड या नेटबैंकिंग। चैंबर भुगतान सफल होने के बाद खुलता है। एक भुगतान 30 दिन का है।",
     paymentsUnset: "भुगतान अभी जुड़ा नहीं है। तब तक पैसे नहीं कटेंगे।",
     checkoutDismissed: "भुगतान रद्द। चैंबर नहीं खुला।",
     leftoverHint: "डेस्क इस तारीख तक खुला रहेगा। उसके बाद सब्सक्राइब करने पर भुगतान शुरू होगा।",
@@ -62,7 +62,7 @@ export const billingCopy = {
     expired: "Ended",
     price: "₹500",
     perMonth: "/ month",
-    gst: "₹500 is the price. Monthly, until you cancel.",
+    gst: "₹500 is the price. Each payment covers 30 days.",
     includes: "What you get",
     itemResearch: "Indian case-law research desk",
     itemChamber: "Diary, matters, hearings, deadlines",
@@ -79,7 +79,7 @@ export const billingCopy = {
     confirmHint:
       "This preview records the subscription on your account. When live payments are connected, this is where the card will be charged.",
     confirmHintLive:
-      "UPI, card, or netbanking. The chamber opens after payment succeeds. Monthly, until you cancel.",
+      "UPI, card, or netbanking. The chamber opens after payment succeeds. Each payment covers 30 days.",
     paymentsUnset: "Payments are not connected yet. The chamber cannot take money until they are.",
     checkoutDismissed: "Payment cancelled. The chamber did not open.",
     leftoverHint: "The desk stays open until this date. Payment starts the next time you subscribe after it ends.",

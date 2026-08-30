@@ -186,10 +186,40 @@ export async function rememberCheckout(userId: string, subscriptionId: string, c
   `;
 }
 
+export async function grantVerifiedOrder(opts: {
+  userId: string;
+  paymentId: string;
+  orderId: string;
+  signature: string;
+}): Promise<BillingSnapshot> {
+  const { assertOrderCheckout, fetchOrder, CHAMBER_AMOUNT_PAISE, RazorpayHttpError } = await import(
+    "./razorpay.server"
+  );
+  if (!opts.orderId || !opts.paymentId || !opts.signature) {
+    throw new RazorpayHttpError(400, "Missing payment fields.");
+  }
+  if (!assertOrderCheckout(opts.orderId, opts.paymentId, opts.signature)) {
+    throw new RazorpayHttpError(400, "Payment signature did not match.");
+  }
+  const order = await fetchOrder(opts.orderId);
+  if (Number(order.amount) !== CHAMBER_AMOUNT_PAISE) {
+    throw new RazorpayHttpError(400, "Payment does not match this chamber.");
+  }
+  const noteUser = order.notes?.user_id?.trim();
+  if (noteUser && noteUser !== opts.userId) {
+    throw new RazorpayHttpError(400, "Payment does not match this chamber.");
+  }
+  return applyPaidSubscription({
+    userId: opts.userId,
+    subscriptionId: opts.orderId,
+    currentEnd: null,
+  });
+}
+
 export const startSubscription = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .handler(async ({ context }): Promise<SubscribeResult> => {
-    const { subscribeMode, createChamberCheckout, fetchSubscription } = await import("./razorpay.server");
+    const { subscribeMode, createChamberCheckout } = await import("./razorpay.server");
     const mode = subscribeMode();
     const row = await ensureTrial(context.userId);
     const snap = await markSnapshot(computeSnapshot(row));
@@ -199,27 +229,9 @@ export const startSubscription = createServerFn({ method: "POST" })
 
     if (snap.status === "active") return { kind: "active", snap };
 
-    // Dummy Subscribe left a paid window and no Razorpay id. Keep it until it
-    // lapses — do not open Checkout on top of days they already have.
-    if (snap.status === "cancelled" && snap.canUseAi && !row.razorpay_subscription_id) {
+    // Leftover paid window (dummy grant or cancelled after payment).
+    if (snap.status === "cancelled" && snap.canUseAi) {
       return { kind: "covered", snap };
-    }
-
-    if (row.razorpay_subscription_id) {
-      try {
-        const existing = await fetchSubscription(row.razorpay_subscription_id);
-        if (existing.status === "active" || existing.status === "authenticated") {
-          const paid = await applyPaidSubscription({
-            userId: context.userId,
-            subscriptionId: existing.id,
-            customerId: existing.customer_id,
-            currentEnd: existing.current_end,
-          });
-          return { kind: "active", snap: paid };
-        }
-      } catch {
-        /* fall through and create */
-      }
     }
 
     const account = await accountOf(context.userId);
@@ -227,34 +239,23 @@ export const startSubscription = createServerFn({ method: "POST" })
       userId: context.userId,
       name: account.name,
       email: account.email,
-      existingSubscriptionId: row.razorpay_subscription_id,
     });
-    await rememberCheckout(context.userId, checkout.subscriptionId);
     return { kind: "checkout", snap, checkout };
   });
 
 export const confirmCheckout = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((input: { paymentId?: string; subscriptionId?: string; signature?: string }) => ({
+  .validator((input: { paymentId?: string; orderId?: string; signature?: string }) => ({
     paymentId: String(input?.paymentId ?? "").trim(),
-    subscriptionId: String(input?.subscriptionId ?? "").trim(),
+    orderId: String(input?.orderId ?? "").trim(),
     signature: String(input?.signature ?? "").trim(),
   }))
   .handler(async ({ context, data }): Promise<BillingSnapshot> => {
-    const { assertCheckout, fetchSubscription } = await import("./razorpay.server");
-    if (!assertCheckout(data.paymentId, data.subscriptionId, data.signature)) {
-      throw new Error("Payment could not be verified.");
-    }
-    const row = await fetchRow(context.userId);
-    if (row?.razorpay_subscription_id && row.razorpay_subscription_id !== data.subscriptionId) {
-      throw new Error("Payment does not match this chamber.");
-    }
-    const sub = await fetchSubscription(data.subscriptionId);
-    return applyPaidSubscription({
+    return grantVerifiedOrder({
       userId: context.userId,
-      subscriptionId: sub.id,
-      customerId: sub.customer_id,
-      currentEnd: sub.current_end,
+      paymentId: data.paymentId,
+      orderId: data.orderId,
+      signature: data.signature,
     });
   });
 
@@ -263,7 +264,7 @@ export const cancelSubscription = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<BillingSnapshot> => {
     const { paymentsLive, cancelRemoteSubscription } = await import("./razorpay.server");
     const row = await fetchRow(context.userId);
-    if (paymentsLive() && row?.razorpay_subscription_id) {
+    if (paymentsLive() && row?.razorpay_subscription_id?.startsWith("sub_")) {
       await cancelRemoteSubscription(row.razorpay_subscription_id);
     }
     return applyCancelledSubscription(context.userId);

@@ -2,7 +2,9 @@ import type { BillingSnapshot } from "./plan";
 
 export type CheckoutSession = {
   keyId: string;
-  subscriptionId: string;
+  orderId: string;
+  amount: number;
+  currency: string;
   name: string;
   description: string;
   prefillName: string;

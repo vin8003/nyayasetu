@@ -9,6 +9,7 @@ import {
   APP_ENV_REL_PATH,
   mergeAppEnv,
   parseAppEnv,
+  parseDotEnv,
   projectRoot,
   readAppEnv,
 } from "./with-app-env.mjs";
@@ -25,6 +26,16 @@ function makeWorkspace(appEnvJson) {
   }
   return root;
 }
+
+test("parseDotEnv keeps secrets server-side and skips comments", () => {
+  const parsed = parseDotEnv(
+    "# comment\nRAZORPAY_KEY_ID=rzp_test_x\nRAZORPAY_KEY_SECRET='abc def'\nVITE_OK=nope\n=bad\n",
+  );
+  assert.equal(parsed.RAZORPAY_KEY_ID, "rzp_test_x");
+  assert.equal(parsed.RAZORPAY_KEY_SECRET, "abc def");
+  assert.equal(parsed.VITE_OK, "nope");
+  assert.equal(parsed[""], undefined);
+});
 
 test("keeps VITE_-prefixed string entries", () => {
   assert.deepEqual(parseAppEnv('{"VITE_AUTH_ENABLED":"false"}'), {

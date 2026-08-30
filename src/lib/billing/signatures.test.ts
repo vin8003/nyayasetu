@@ -3,13 +3,24 @@ import assert from "node:assert/strict";
 import { periodEndIso } from "./plan.ts";
 import {
   checkoutSignature,
+  orderCheckoutSignature,
   verifyCheckoutSignature,
+  verifyOrderCheckoutSignature,
   verifyWebhookSignature,
   webhookSignature,
 } from "./signatures.ts";
 
 describe("razorpay signatures", () => {
-  it("accepts a matching checkout HMAC and rejects a flipped one", () => {
+  it("accepts a matching order Checkout HMAC (order_id|payment_id)", () => {
+    const secret = "test_key_secret";
+    const sig = orderCheckoutSignature("order_abc", "pay_xyz", secret);
+    assert.equal(verifyOrderCheckoutSignature("order_abc", "pay_xyz", sig, secret), true);
+    assert.equal(verifyOrderCheckoutSignature("order_other", "pay_xyz", sig, secret), false);
+    assert.equal(verifyOrderCheckoutSignature("order_abc", "pay_xyz", sig, "other"), false);
+    assert.equal(verifyOrderCheckoutSignature("", "pay_xyz", sig, secret), false);
+  });
+
+  it("accepts a matching subscription Checkout HMAC and rejects a flipped one", () => {
     const secret = "test_key_secret";
     const sig = checkoutSignature("pay_abc", "sub_xyz", secret);
     assert.equal(verifyCheckoutSignature("pay_abc", "sub_xyz", sig, secret), true);

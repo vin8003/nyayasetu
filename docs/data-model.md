@@ -60,7 +60,7 @@ billing_config
   razorpay_plan_id
 ```
 
-Access is **computed** from timestamps (`computeSnapshot`), not from trusting `status` alone. A cancelled row with a future `period_end` still has `canUseAi`. `razorpay_subscription_id` is how a webhook finds the chamber. Status becomes `active` only after a verified payment (or the preview grant when there is no Postgres URL).
+Access is **computed** from timestamps (`computeSnapshot`), not from trusting `status` alone. A cancelled row with a future `period_end` still has `canUseAi`. `razorpay_subscription_id` stores the last Razorpay order (or an older subscription id). Status becomes `active` only after a verified payment (or the preview grant when there is no Postgres URL and no keys).
 
 ## JSON blobs (research)
 

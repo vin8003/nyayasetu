@@ -1,6 +1,9 @@
 export const TRIAL_DAYS = 30;
 export const PLAN_ID = "chamber_monthly" as const;
 export const PLAN_PRICE_INR = 500;
+export const MIN_ORDER_PAISE = 100;
+export const CHAMBER_AMOUNT_PAISE = PLAN_PRICE_INR * 100;
+export const CHAMBER_CURRENCY = "INR";
 
 export type EntitlementStatus = "trial" | "active" | "cancelled" | "expired";
 
@@ -83,6 +86,15 @@ export function unstartedSnapshot(now = new Date()): BillingSnapshot {
 
 export function addDays(from: Date, days: number): Date {
   return new Date(from.getTime() + days * DAY_MS);
+}
+
+/** Razorpay orders are integer paise. Below 100 is rejected. */
+export function parseOrderAmount(raw: unknown): number {
+  const amount = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(amount) || amount < MIN_ORDER_PAISE) {
+    throw new Error("Amount must be at least 100 paise.");
+  }
+  return Math.round(amount);
 }
 
 /** Razorpay `current_end` is unix seconds. Missing value → now + 30 days. */
