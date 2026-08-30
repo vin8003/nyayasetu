@@ -22,10 +22,11 @@ CiteBench is a TanStack Start (Vite + React) app. The browser talks to **server 
 /matters/$id      Matter record (rows open a sheet)
 /research         Research desk  (?matter= optional)
 /inbox            Order paste + confirm queue
-/billing          Trial + ₹500 chamber
+/billing          Trial + ₹500 chamber (Razorpay when keys are set)
 /story            Public first-day article (no login)
 /login            Google, X, username/password
 /api/auth/*       Better Auth
+/api/billing/razorpay  Razorpay webhook (no session; HMAC of the raw body)
 ```
 
 Shell: `src/components/app-shell.tsx` — sticky topbar, desktop nav from 900px, 5-column tab bar below that.
@@ -137,6 +138,23 @@ Today / MatterRecord → draftForWork
 ```
 
 Timeout 45s. Sample chamber falls back to a deterministic skeleton if the model is down. Gather / appearance titles are not drafted. The task is not marked done.
+
+### Chamber subscription
+
+```text
+Billing → startSubscription
+  → preview (no Postgres URL): grant 30 days, no charge
+  → unset (Postgres, no Razorpay keys): refuse
+  → live keys: create Razorpay subscription, return Checkout
+Billing → confirmCheckout
+  → HMAC payment_id|subscription_id
+  → fetch subscription, set period_end from current_end
+POST /api/billing/razorpay
+  → HMAC raw body
+  → subscription.charged / invoice.paid extends period_end
+```
+
+The browser cannot mark a chamber `active`. Cancel asks Razorpay to stop at cycle end.
 
 ### Order extract / hearing brief
 

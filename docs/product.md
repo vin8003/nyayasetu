@@ -13,7 +13,7 @@ This is **not legal advice**. The footer on memos and drafts says so. Court date
 
 Guests see a short pitch on Today, can open **Research**, and can read the public first-day article at **`/story`**. Chamber data and AI are behind an account.
 
-Language toggle: **हि** / **EN** in the header (stored as chamber language). On a narrow screen the wordmark hides, sign-out is an icon, and the five chamber surfaces sit in a tab bar.
+Language toggle: **हि** / **EN** in the header (stored as chamber language).
 
 ## Today — `/`
 
@@ -28,19 +28,17 @@ Empty desk: create a matter, or **Load sample chamber**.
 
 The sample banner is explicit: the three demo files are **free** and **do not start the trial**. Exit sample purges those demo rows and leaves a Load control on Today.
 
-After you open a listing and come back, the board stays where you left it.
-
 ## Diary — `/diary`
 
-Hearings in three buckets: **today**, **upcoming**, and earlier listings. Each row opens that listing on the matter (`/matters/$id#<hearingId>`). Empty copy: nothing listed yet.
+Hearings in three buckets: **today**, **upcoming**, and earlier listings. Each row opens the matter on that listing (`/matters/$id#<hearingId>`). Empty copy: nothing listed yet.
 
-On a phone the listing is a sheet with **Back**. If you arrived from the diary, Back returns you there, at the same scroll offset.
+On a phone the listing is a sheet with **Back**. After you leave, the diary stays where you were.
 
 ## Matters — `/matters` and `/matters/$id`
 
 **List:** title, court, case number, stage, next hearing, status (active / stayed / dormant / closed). New matter form: client, proceeding type, court, CNR, our side, parties.
 
-**Record** is the case file. A row opens a sheet (not a new page). The sheet has **← Back** above the title. Opening a row in-page does not rewrite the URL hash; a hash from Diary or Today is how you landed on that item.
+**Record** is the case file. A listing, paper, task, deadline, timeline event, memo or statute opens in a **sheet** above the tab bar, with **Back**. If you arrived from Diary (hash on the URL), Back returns to Diary. Opening and closing a row in-page does not rewrite the address, so the list does not jump.
 
 - Caption, stage checklist (from the proceeding workflow), typical documents and deadlines. **Edit file** to change particulars, parties, status and notes.
 - What the lawyer does vs what the court does at this stage
@@ -84,13 +82,15 @@ Nothing hits the diary until you **Confirm**. Reject discards the pending extrac
 
 ## Billing — `/billing`
 
-30 days on your own AI use, then ₹500 / month. Sample chamber does not count. Subscribe / cancel is recorded on the account; live card charge is not wired. See [billing.md](billing.md).
+30 days on your own AI use, then ₹500 / month. Sample chamber does not count.
+
+On the **public chamber**, Subscribe opens Razorpay (UPI, card, netbanking) once the payment account is connected. The chamber turns on after payment succeeds, not on the click. Cancel stops the next charge; access runs to the period end.
+
+This preview (no payment keys) still records membership without charging. See [billing.md](billing.md).
 
 ## On a phone
 
-Below 900px the five surfaces are a tab bar (Today · Diary · Matters · Research · Inbox), not the desktop nav. The bar is opaque and stays above the page. Hindi labels wrap rather than clip. Sample actions on Today stack so a long Hindi string is still tappable.
-
-A listing, paper, task or event opens as a sheet **above** the header and the tab bar. **← Back** is the first control on that sheet. Closing it does not jump the list to the top.
+Below a wide screen the five chamber tabs sit in a bar at the bottom (Today, Diary, Matters, Research, Inbox). The top bar stays compact: language **EN/हि**, sign-out as an icon. Hindi labels wrap instead of clipping. The listing sheet sits above that chrome so **Back** is tappable.
 
 ## Languages
 
@@ -106,4 +106,4 @@ A listing, paper, task or event opens as a sheet **above** the header and the ta
 - File on eCourts or CIS
 - Fetch Indian Kanoon HTML to “prove” a cite
 - Treat a model `verified: true` as truth
-- Bill a card in this preview
+- Charge a card in this preview (the public chamber charges ₹500 through Razorpay when the individual payment account is connected)

@@ -26,4 +26,4 @@ These exist as later work, not as product on `main`:
 - A separate letters table (research-desk drafts from a matter now save on the papers; standalone desk drafts stay on screen)
 - Vakalatnama as a filled form
 - OCR for scanned, image-only PDFs
-- Live card capture on `/billing`
+- GST registration / invoices (price is ₹500 all-in; no company, no GSTIN)

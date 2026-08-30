@@ -1,0 +1,40 @@
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import { periodEndIso } from "./plan.ts";
+import {
+  checkoutSignature,
+  verifyCheckoutSignature,
+  verifyWebhookSignature,
+  webhookSignature,
+} from "./signatures.ts";
+
+describe("razorpay signatures", () => {
+  it("accepts a matching checkout HMAC and rejects a flipped one", () => {
+    const secret = "test_key_secret";
+    const sig = checkoutSignature("pay_abc", "sub_xyz", secret);
+    assert.equal(verifyCheckoutSignature("pay_abc", "sub_xyz", sig, secret), true);
+    assert.equal(verifyCheckoutSignature("pay_abc", "sub_other", sig, secret), false);
+    assert.equal(verifyCheckoutSignature("pay_abc", "sub_xyz", sig, "other"), false);
+    assert.equal(verifyCheckoutSignature("", "sub_xyz", sig, secret), false);
+  });
+
+  it("accepts a matching webhook HMAC of the raw body", () => {
+    const secret = "whsec_test";
+    const body = '{"event":"subscription.charged"}';
+    const sig = webhookSignature(body, secret);
+    assert.equal(verifyWebhookSignature(body, sig, secret), true);
+    assert.equal(verifyWebhookSignature(body + " ", sig, secret), false);
+    assert.equal(verifyWebhookSignature(body, "00" + sig.slice(2), secret), false);
+  });
+});
+
+describe("period end from Razorpay", () => {
+  it("reads unix current_end, else +30 days", () => {
+    const unix = Date.parse("2026-09-30T00:00:00.000Z") / 1000;
+    assert.equal(periodEndIso(unix), "2026-09-30T00:00:00.000Z");
+    assert.equal(
+      periodEndIso(null, new Date("2026-08-30T00:00:00.000Z"), 30),
+      "2026-09-29T00:00:00.000Z",
+    );
+  });
+});

@@ -20,6 +20,7 @@ import { Route as StoryRouteImport } from './routes/story'
 import { Route as MattersIndexRouteImport } from './routes/matters.index'
 import { Route as MattersIdRouteImport } from './routes/matters.$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiBillingRazorpayRouteImport } from './routes/api/billing.razorpay'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -76,6 +77,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBillingRazorpayRoute = ApiBillingRazorpayRouteImport.update({
+  id: '/api/billing/razorpay',
+  path: '/api/billing/razorpay',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/matters/$id': typeof MattersIdRoute
   '/matters/': typeof MattersIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/billing/razorpay': typeof ApiBillingRazorpayRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/matters/$id': typeof MattersIdRoute
   '/matters': typeof MattersIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/billing/razorpay': typeof ApiBillingRazorpayRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/matters/$id': typeof MattersIdRoute
   '/matters/': typeof MattersIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/billing/razorpay': typeof ApiBillingRazorpayRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/matters/$id'
     | '/matters/'
     | '/api/auth/$'
+    | '/api/billing/razorpay'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -142,6 +152,7 @@ export interface FileRouteTypes {
     | '/matters/$id'
     | '/matters'
     | '/api/auth/$'
+    | '/api/billing/razorpay'
   id:
     | '__root__'
     | '/'
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/matters/$id'
     | '/matters/'
     | '/api/auth/$'
+    | '/api/billing/razorpay'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -167,6 +179,7 @@ export interface RootRouteChildren {
   ResearchRoute: typeof ResearchRoute
   StoryRoute: typeof StoryRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiBillingRazorpayRoute: typeof ApiBillingRazorpayRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -248,6 +261,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/billing/razorpay': {
+      id: '/api/billing/razorpay'
+      path: '/api/billing/razorpay'
+      fullPath: '/api/billing/razorpay'
+      preLoaderRoute: typeof ApiBillingRazorpayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -274,6 +294,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResearchRoute: ResearchRoute,
   StoryRoute: StoryRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiBillingRazorpayRoute: ApiBillingRazorpayRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

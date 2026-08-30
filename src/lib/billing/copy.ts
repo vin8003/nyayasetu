@@ -6,6 +6,8 @@ export const billingCopy = {
     kicker: "CiteBench चैंबर",
     title: "30 दिन आज़माइश, फिर चैंबर।",
     lead: "नमूना चैंबर मुफ़्त है — घड़ी नहीं चलती। 30 दिन तब शुरू होंगे जब आप अपना मामला शोध करें। कार्ड नहीं। बाद में ₹500 / महीना।",
+    leadLive:
+      "नमूना चैंबर मुफ़्त है — घड़ी नहीं चलती। 30 दिन तब शुरू होंगे जब आप अपना मामला शोध करें। फिर ₹500 / महीना, UPI, कार्ड या नेटबैंकिंग से।",
     trialOn: "आज़माइश चल रही है",
     trialDays: "दिन बाकी",
     trialIdle: "शुरू नहीं हुई — नमूना चैंबर मुफ़्त है",
@@ -16,7 +18,7 @@ export const billingCopy = {
     expired: "अवधि समाप्त",
     price: "₹500",
     perMonth: "/ महीना",
-    gst: "GST अलग। मासिक, जब तक रद्द न करें।",
+    gst: "₹500 पूरा। मासिक, जब तक रद्द न करें।",
     includes: "इसमें क्या है",
     itemResearch: "भारतीय केस-लॉ शोध डेस्क",
     itemChamber: "डायरी, मामले, पेशियाँ, समय-सीमा",
@@ -32,6 +34,11 @@ export const billingCopy = {
     noCard: "कार्ड अभी नहीं चाहिए।",
     confirmHint:
       "यह पूर्वावलोकन सदस्यता आपके अकाउंट पर दर्ज करता है। लाइव भुगतान जुड़ने पर यहीं कार्ड कटेगा।",
+    confirmHintLive:
+      "UPI, कार्ड या नेटबैंकिंग। चैंबर भुगतान सफल होने के बाद खुलता है। हर महीने कटता है, जब तक रद्द न करें।",
+    paymentsUnset: "भुगतान अभी जुड़ा नहीं है। तब तक पैसे नहीं कटेंगे।",
+    checkoutDismissed: "भुगतान रद्द। चैंबर नहीं खुला।",
+    payFailed: "भुगतान नहीं खुल सका।",
     bannerTrial: "आज़माइश",
     bannerIdle: "नमूना मुफ़्त · आज़माइश बाकी",
     bannerExpired: "आज़माइश खत्म — चैंबर लें",
@@ -42,6 +49,8 @@ export const billingCopy = {
     kicker: "CiteBench chamber",
     title: "30 days free, then the chamber.",
     lead: "Sample chamber is free and does not start the clock. The 30 days begin when you research your own matter. No card. Then ₹500 a month.",
+    leadLive:
+      "Sample chamber is free and does not start the clock. The 30 days begin when you research your own matter. Then ₹500 a month, paid with UPI, card, or netbanking.",
     trialOn: "Trial running",
     trialDays: "days left",
     trialIdle: "Not started — sample chamber is free",
@@ -52,7 +61,7 @@ export const billingCopy = {
     expired: "Ended",
     price: "₹500",
     perMonth: "/ month",
-    gst: "GST extra. Monthly, until you cancel.",
+    gst: "₹500 is the price. Monthly, until you cancel.",
     includes: "What you get",
     itemResearch: "Indian case-law research desk",
     itemChamber: "Diary, matters, hearings, deadlines",
@@ -68,6 +77,11 @@ export const billingCopy = {
     noCard: "No card needed to start.",
     confirmHint:
       "This preview records the subscription on your account. When live payments are connected, this is where the card will be charged.",
+    confirmHintLive:
+      "UPI, card, or netbanking. The chamber opens after payment succeeds. Monthly, until you cancel.",
+    paymentsUnset: "Payments are not connected yet. The chamber cannot take money until they are.",
+    checkoutDismissed: "Payment cancelled. The chamber did not open.",
+    payFailed: "Could not open payment.",
     bannerTrial: "Trial",
     bannerIdle: "Sample is free · trial unused",
     bannerExpired: "Trial ended — open the chamber",

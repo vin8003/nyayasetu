@@ -14,6 +14,8 @@ export type EntitlementRow = {
   period_end: string | null;
   cancelled_at: string | null;
   updated_at: string;
+  razorpay_customer_id: string | null;
+  razorpay_subscription_id: string | null;
 };
 
 export type BillingSnapshot = {
@@ -26,6 +28,8 @@ export type BillingSnapshot = {
   priceInr: number;
   /** False until the user researches their own (non-sample) matter. */
   trialStarted: boolean;
+  /** True when Razorpay keys are set — Subscribe opens Checkout instead of a free toggle. */
+  paymentsLive: boolean;
 };
 
 const DAY_MS = 86_400_000;
@@ -58,6 +62,7 @@ export function computeSnapshot(row: EntitlementRow, now = new Date()): BillingS
     plan: PLAN_ID,
     priceInr: PLAN_PRICE_INR,
     trialStarted: true,
+    paymentsLive: false,
   };
 }
 
@@ -72,9 +77,18 @@ export function unstartedSnapshot(now = new Date()): BillingSnapshot {
     plan: PLAN_ID,
     priceInr: PLAN_PRICE_INR,
     trialStarted: false,
+    paymentsLive: false,
   };
 }
 
 export function addDays(from: Date, days: number): Date {
   return new Date(from.getTime() + days * DAY_MS);
+}
+
+/** Razorpay `current_end` is unix seconds. Missing value → now + 30 days. */
+export function periodEndIso(currentEnd: unknown, now = new Date(), days = TRIAL_DAYS): string {
+  if (typeof currentEnd === "number" && Number.isFinite(currentEnd) && currentEnd > 0) {
+    return new Date(currentEnd * 1000).toISOString();
+  }
+  return addDays(now, days).toISOString();
 }

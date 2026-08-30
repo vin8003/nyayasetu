@@ -5,8 +5,9 @@ import { AppShell } from "@/components/app-shell";
 import { GuestPanel } from "@/components/guest-panel";
 import { Button } from "@/components/ui/button";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { openRazorpayCheckout } from "@/lib/billing/checkout";
 import { b } from "@/lib/billing/copy";
-import { cancelSubscription, getEntitlement, startSubscription } from "@/lib/billing/store";
+import { cancelSubscription, confirmCheckout, getEntitlement, startSubscription } from "@/lib/billing/store";
 import { writeEntitlementCache } from "@/lib/billing/cache";
 import type { BillingSnapshot } from "@/lib/billing/plan";
 import { useChamberLang } from "@/lib/practice/use-lang";
@@ -20,6 +21,11 @@ function formatDay(iso: string | null) {
   } catch {
     return iso.slice(0, 10);
   }
+}
+
+function failMessage(err: unknown, fallback: string) {
+  if (err instanceof Error && err.message && !/unauthorized/i.test(err.message)) return err.message;
+  return fallback;
 }
 
 export function BillingPage() {
@@ -45,12 +51,31 @@ export function BillingPage() {
   async function subscribe() {
     setBusy(true);
     try {
-      const next = await startSubscription();
+      const result = await startSubscription();
+      if (result.kind === "unset") {
+        writeEntitlementCache(result.snap);
+        setSnap(result.snap);
+        toast.error(c.paymentsUnset);
+        return;
+      }
+      if (result.kind === "preview" || result.kind === "active") {
+        writeEntitlementCache(result.snap);
+        setSnap(result.snap);
+        toast.success(c.subscribed);
+        return;
+      }
+      const paid = await openRazorpayCheckout(result.checkout);
+      if (!paid) {
+        toast.message(c.checkoutDismissed);
+        return;
+      }
+      const next = await confirmCheckout({ data: paid });
       writeEntitlementCache(next);
       setSnap(next);
       toast.success(c.subscribed);
     } catch (err) {
       if (/unauthorized/i.test(String(err))) navigate({ to: "/login" });
+      else toast.error(failMessage(err, c.payFailed));
     } finally {
       setBusy(false);
     }
@@ -66,10 +91,13 @@ export function BillingPage() {
       toast.success(c.cancelled);
     } catch (err) {
       if (/unauthorized/i.test(String(err))) navigate({ to: "/login" });
+      else toast.error(failMessage(err, c.payFailed));
     } finally {
       setBusy(false);
     }
   }
+
+  const live = Boolean(snap?.paymentsLive);
 
   return (
     <AppShell lang={lang} onLang={onLang} active="today">
@@ -79,7 +107,7 @@ export function BillingPage() {
         <div className="stagger-in mx-auto max-w-2xl">
           <p className="eyebrow">{c.kicker}</p>
           <h1 className="page-title">{c.title}</h1>
-          <p className="page-lead">{c.lead}</p>
+          <p className="page-lead">{live ? c.leadLive : c.lead}</p>
 
           <div className="paper mt-8 p-6 sm:p-8">
             <div className="flex flex-wrap items-end justify-between gap-3">
@@ -123,7 +151,7 @@ export function BillingPage() {
                   {busy ? c.subscribing : c.subscribe}
                 </Button>
               )}
-              <p className="text-xs leading-relaxed text-paper-muted">{c.confirmHint}</p>
+              <p className="text-xs leading-relaxed text-paper-muted">{live ? c.confirmHintLive : c.confirmHint}</p>
             </div>
           </div>
           <p className="mt-8">

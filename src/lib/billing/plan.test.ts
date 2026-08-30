@@ -13,6 +13,8 @@ function row(patch: Partial<EntitlementRow>): EntitlementRow {
     period_end: null,
     cancelled_at: null,
     updated_at: "2026-08-01T00:00:00.000Z",
+    razorpay_customer_id: null,
+    razorpay_subscription_id: null,
     ...patch,
   };
 }
@@ -25,6 +27,7 @@ describe("billing snapshot", () => {
     assert.equal(snap.canUseAi, true);
     assert.equal(snap.daysLeft, 21);
     assert.equal(snap.trialStarted, true);
+    assert.equal(snap.paymentsLive, false);
   });
 
   it("closes AI when the trial lapses without a subscription", () => {
@@ -76,5 +79,6 @@ describe("billing snapshot", () => {
     assert.equal(snap.canUseAi, true);
     assert.equal(snap.daysLeft, 30);
     assert.equal(snap.status, "trial");
+    assert.equal(snap.paymentsLive, false);
   });
 });

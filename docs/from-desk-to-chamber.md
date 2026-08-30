@@ -21,6 +21,6 @@ This is **volume 1** of the first-day record (29–30 August 2026), extended thr
 | 30 Aug 16:20 | Shared type, rows and panels. Hindi wraps instead of clipping |
 | 30 Aug 22:10 | A listing has Back. The diary stays where you left it. The tab bar stays put |
 
-Matter-scoped court drafts save as papers. Standalone desk drafts stay on screen. Card collection is not live. OCR for scan-only PDFs is not shipped.
+Matter-scoped court drafts save as papers. Standalone desk drafts stay on screen. ₹500 / month is all-in (no GST line). The public chamber charges through Razorpay once the individual payment account is connected. OCR for scan-only PDFs is not shipped.
 
 Social paste: [social-copy.md](social-copy.md).

@@ -43,7 +43,7 @@ memos.matter_id    nullable — set when research is run from a matter
 
 `parties_json` and `directions_json` are JSON text. Booleans and dates follow the pg/PGLite normalizers in `src/lib/db.ts` (dates as `YYYY-MM-DD` strings).
 
-## `0004_billing.sql`
+## `0004_billing.sql` + `0006_payments.sql`
 
 ```text
 entitlements
@@ -52,10 +52,15 @@ entitlements
   plan            chamber_monthly
   trial_started_at, trial_ends_at
   subscribed_at, period_end, cancelled_at
+  razorpay_customer_id, razorpay_subscription_id
   updated_at
+
+billing_config
+  id              'default'
+  razorpay_plan_id
 ```
 
-Access is **computed** from timestamps (`computeSnapshot`), not from trusting `status` alone. A cancelled row with a future `period_end` still has `canUseAi`.
+Access is **computed** from timestamps (`computeSnapshot`), not from trusting `status` alone. A cancelled row with a future `period_end` still has `canUseAi`. `razorpay_subscription_id` is how a webhook finds the chamber. Status becomes `active` only after a verified payment (or the preview grant when there is no Postgres URL).
 
 ## JSON blobs (research)
 
