@@ -108,6 +108,28 @@ export type HistoryItem = {
   memo: LegalMemo;
 };
 
+export const LETTER_KINDS = ["notice", "reply"] as const;
+export type LetterKind = (typeof LETTER_KINDS)[number];
+
+export type LetterGround = {
+  heading: string;
+  text: string;
+  citation: string;
+  url: string;
+};
+
+export type LegalLetter = {
+  kind: LetterKind;
+  lang: OutputLang;
+  heading: string;
+  parties: string;
+  facts: string;
+  grounds: LetterGround[];
+  closing: string;
+  timeOrStand: string;
+  risks: string;
+};
+
 export const emptyIntake = (lang: OutputLang = "en"): Intake => ({
   facts: "",
   query: "",

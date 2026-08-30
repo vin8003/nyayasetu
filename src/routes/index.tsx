@@ -7,17 +7,19 @@ import { AuthChip } from "@/components/auth-chip";
 import { IntakeForm, type PendingFile } from "@/components/intake-form";
 import { ResearchStage } from "@/components/research-stage";
 import { MemoView } from "@/components/memo-view";
+import { LetterView } from "@/components/letter-view";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
-import { emptyIntake, type HistoryItem, type Intake, type LegalMemo, type OutputLang } from "@/lib/research/types";
+import { emptyIntake, type HistoryItem, type Intake, type LegalLetter, type LegalMemo, type LetterKind, type OutputLang } from "@/lib/research/types";
 import { t } from "@/lib/research/copy";
 import { runResearch } from "@/lib/research/run";
+import { draftLetter } from "@/lib/research/letter";
 import { extractUploads } from "@/lib/research/files";
 import { deleteMemoRecord, listMemos, saveMemoRecord } from "@/lib/research/store";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({ component: Home });
 
-type View = "desk" | "running" | "memo" | "history";
+type View = "desk" | "running" | "memo" | "history" | "drafting" | "letter";
 
 const DRAFT_KEY = "nyayasetu.draft";
 
@@ -47,12 +49,16 @@ function Home() {
   const [files, setFiles] = useState<PendingFile[]>([]);
   const [view, setView] = useState<View>("desk");
   const [memo, setMemo] = useState<LegalMemo | null>(null);
+  const [letter, setLetter] = useState<LegalLetter | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [savedId, setSavedId] = useState<string | null>(null);
+  const [memoLang, setMemoLang] = useState<OutputLang>("en");
   const runSeq = useRef(0);
+  const draftLock = useRef(false);
 
+  const userId = user?.id;
   const c = t(lang);
 
   useEffect(() => {
@@ -73,7 +79,7 @@ function Home() {
   }, []);
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       setHistory([]);
       return;
     }
@@ -82,10 +88,10 @@ function Home() {
       .catch((err) => {
         if (isUnauthorized(err)) void navigate({ to: "/login" });
       });
-  }, [user, navigate]);
+  }, [userId, navigate]);
 
   useEffect(() => {
-    if (view !== "running") return;
+    if (view !== "running" && view !== "drafting") return;
     setElapsed(0);
     const id = window.setInterval(() => setElapsed((n) => n + 1), 1000);
     return () => window.clearInterval(id);
@@ -97,8 +103,8 @@ function Home() {
   }
 
   function requireAccount() {
-    if (isPending) return false;
     if (user) return true;
+    if (isPending) return false;
     try {
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ intake, lang }));
     } catch {
@@ -114,6 +120,17 @@ function Home() {
     return true;
   }
 
+  async function openHistory() {
+    if (!requireAccount()) return;
+    abandonRun();
+    setView("history");
+    try {
+      setHistory(await listMemos());
+    } catch (err) {
+      bounceIfUnauthorized(err);
+    }
+  }
+
   function abandonRun() {
     // Client wait only. The createServerFn / xAI fetch keeps running.
     runSeq.current += 1;
@@ -121,8 +138,19 @@ function Home() {
 
   function cancelRun() {
     abandonRun();
+    if (view === "drafting") {
+      setView("memo");
+      return;
+    }
     setView("desk");
     setError(null);
+  }
+
+  function mapAiError(code: string, forLetter = false) {
+    if (code === "AI_UNAVAILABLE") return c.aiDown;
+    if (code === "TIMEOUT") return c.timeout;
+    if (code === "PARSE") return forLetter ? c.letterParseErr : c.parseErr;
+    return code;
   }
 
   async function persist(currentIntake: Intake, currentMemo: LegalMemo) {
@@ -180,15 +208,7 @@ function Home() {
       const result = await runResearch({ data: payload });
       if (token !== runSeq.current) return;
       if (!result.ok) {
-        const mapped =
-          result.error === "AI_UNAVAILABLE"
-            ? c.aiDown
-            : result.error === "TIMEOUT"
-              ? c.timeout
-              : result.error === "PARSE"
-                ? c.parseErr
-                : result.error;
-        setError(mapped);
+        setError(mapAiError(result.error));
         setView("desk");
         return;
       }
@@ -200,12 +220,42 @@ function Home() {
       }
       if (token !== runSeq.current) return;
       setMemo(result.memo);
+      setMemoLang(payload.lang);
+      setLetter(null);
       setView("memo");
     } catch (err) {
       if (token !== runSeq.current) return;
       if (bounceIfUnauthorized(err)) return;
       setError(err instanceof Error ? err.message : c.parseErr);
       setView("desk");
+    }
+  }
+
+  async function startDraft(kind: LetterKind) {
+    if (!memo) return;
+    if (!requireAccount()) return;
+    if (draftLock.current) return;
+    draftLock.current = true;
+    const token = ++runSeq.current;
+    setError(null);
+    setView("drafting");
+    try {
+      const result = await draftLetter({ data: { kind, intake: { ...intake, lang: memoLang }, memo } });
+      if (token !== runSeq.current) return;
+      if (!result.ok) {
+        toast.error(mapAiError(result.error, true));
+        setView("memo");
+        return;
+      }
+      setLetter(result.letter);
+      setView("letter");
+    } catch (err) {
+      if (token !== runSeq.current) return;
+      if (bounceIfUnauthorized(err)) return;
+      toast.error(err instanceof Error ? err.message : c.letterParseErr);
+      setView("memo");
+    } finally {
+      draftLock.current = false;
     }
   }
 
@@ -258,8 +308,7 @@ function Home() {
               type="button"
               onClick={() => {
                 if (!requireAccount()) return;
-                abandonRun();
-                setView("history");
+                void openHistory();
               }}
               className="inline-flex h-10 items-center gap-1.5 rounded-md px-2.5 text-sm text-muted hover:text-fg"
               aria-label={c.history}
@@ -326,6 +375,10 @@ function Home() {
           <ResearchStage lang={lang} elapsed={elapsed} onCancel={cancelRun} />
         ) : null}
 
+        {view === "drafting" ? (
+          <ResearchStage lang={lang} elapsed={elapsed} onCancel={cancelRun} mode="letter" />
+        ) : null}
+
         {view === "memo" && memo ? (
           <MemoView
             lang={lang}
@@ -336,6 +389,18 @@ function Home() {
               setError(null);
             }}
             onSave={() => void onSave()}
+            onDraft={(kind) => void startDraft(kind)}
+          />
+        ) : null}
+
+        {view === "letter" && letter ? (
+          <LetterView
+            lang={lang}
+            letter={letter}
+            onBack={() => {
+              setView("memo");
+              setError(null);
+            }}
           />
         ) : null}
 
@@ -361,6 +426,8 @@ function Home() {
                       onClick={() => {
                         setIntake(item.intake);
                         setMemo(item.memo);
+                        setMemoLang(item.intake.lang);
+                        setLetter(null);
                         setSavedId(item.id);
                         setView("memo");
                       }}
