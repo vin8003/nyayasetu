@@ -278,4 +278,61 @@ describe("assembleLetter / formatLegalLetter", () => {
     assert.equal(petition.followOnHeading, en.letterInterim);
     assert.equal(petition.verificationHeading, en.letterVerification);
   });
+
+  it("written statement is a court pleading with para-wise reply, prayer, preliminary objections, and verification", () => {
+    const letter = assembleLetter({
+      kind: "writtenStatement",
+      lang: "en",
+      draft: {
+        ...draft,
+        heading: "Written statement on behalf of the respondent",
+        parties: "State of Rajasthan, Respondent\nVivek Sharma, Petitioner",
+        facts: "The respondent denies cruelty and injury.",
+        closing: "It is therefore prayed that the petition be dismissed with costs.",
+        timeOrStand: "The petition is not maintainable for want of territorial jurisdiction.",
+        verification: "I, IO Sharma, do hereby verify that the contents are true to my knowledge.",
+      },
+      memo,
+    });
+    const text = formatLegalLetter(letter);
+    const en = t("en");
+    assert.match(text, /Written statement on behalf of the respondent/);
+    assert.match(text, new RegExp(en.letterWsKicker));
+    assert.match(text, new RegExp(en.letterParaReply));
+    assert.match(text, new RegExp(en.letterPrayer));
+    assert.match(text, /dismissed with costs/);
+    assert.match(text, new RegExp(en.letterPrelim));
+    assert.match(text, /territorial jurisdiction/);
+    assert.match(text, new RegExp(en.letterVerification));
+    assert.match(text, /true to my knowledge/);
+    assert.match(text, /\(2014\) 8 SCC 273/);
+    assert.match(text, /https:\/\/indiankanoon\.org\/doc\/322621\//);
+    assert.doesNotMatch(text, /Without prejudice/i);
+    assert.doesNotMatch(text, /Time to comply/i);
+    assert.doesNotMatch(text, /Invented Case/);
+    assert.doesNotMatch(text, /fake ratio/);
+  });
+
+  it("written statement Hindi labels include para-wise reply, prayer, preliminary objections, and verification", () => {
+    const letter = assembleLetter({
+      kind: "writtenStatement",
+      lang: "hi",
+      draft: {
+        ...draft,
+        heading: "लिखित कथन",
+        closing: "याचिका खारिज की जाए।",
+        timeOrStand: "अधिकारिता नहीं है।",
+        verification: "मैं सत्यता की पुष्टि करता हूँ।",
+      },
+      memo,
+    });
+    const text = formatLegalLetter(letter);
+    const hi = t("hi");
+    assert.match(text, new RegExp(hi.letterWsKicker));
+    assert.match(text, new RegExp(hi.letterParaReply));
+    assert.match(text, new RegExp(hi.letterPrayer));
+    assert.match(text, new RegExp(hi.letterPrelim));
+    assert.match(text, new RegExp(hi.letterVerification));
+    assert.match(text, new RegExp(hi.disclaimer.slice(0, 20)));
+  });
 });

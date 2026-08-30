@@ -108,7 +108,7 @@ export type HistoryItem = {
   memo: LegalMemo;
 };
 
-export const LETTER_KINDS = ["notice", "reply", "petition"] as const;
+export const LETTER_KINDS = ["notice", "reply", "petition", "writtenStatement"] as const;
 export type LetterKind = (typeof LETTER_KINDS)[number];
 
 export type LetterGround = {

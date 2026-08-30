@@ -50,6 +50,14 @@ export function letterChrome(kind: LetterKind, c: Copy): LetterChrome {
       followOnHeading: c.letterInterim,
       verificationHeading: c.letterVerification,
     },
+    writtenStatement: {
+      kicker: c.letterWsKicker,
+      withoutPrejudice: false,
+      groundsHeading: c.letterParaReply,
+      closingHeading: c.letterPrayer,
+      followOnHeading: c.letterPrelim,
+      verificationHeading: c.letterVerification,
+    },
   };
   return byKind[kind];
 }
@@ -72,6 +80,7 @@ export function assembleLetter(opts: {
     heading: scrub(ground.heading),
     text: scrub(ground.text),
   }));
+  const chrome = letterChrome(opts.kind, t(opts.lang));
   return {
     kind: opts.kind,
     lang: opts.lang,
@@ -81,7 +90,7 @@ export function assembleLetter(opts: {
     grounds,
     closing: scrub(opts.draft.closing),
     timeOrStand: scrub(opts.draft.timeOrStand),
-    verification: opts.kind === "petition" ? scrub(opts.draft.verification ?? "") : "",
+    verification: chrome.verificationHeading ? scrub(opts.draft.verification ?? "") : "",
     risks: scrub(opts.draft.risks),
   };
 }

@@ -5,7 +5,7 @@ import type { Intake, LegalMemo, LetterKind } from "./types.ts";
 export const LETTER_TIMEOUT_MS = 45_000;
 export const LETTER_MAX_OUTPUT_TOKENS = 4_000;
 
-export const LETTER_SYSTEM = `You are a senior Indian advocate drafting a notice, reply, or court petition for another advocate from an existing research memo.
+export const LETTER_SYSTEM = `You are a senior Indian advocate drafting a notice, reply, court petition, or written statement for another advocate from an existing research memo.
 
 Hard rules:
 - Do not search the web. Do not use tools. Use only the facts, issues, and verified authorities in the user message.
@@ -25,9 +25,9 @@ Hard rules:
     "citation": "reporter cite of a listed verified authority, or empty",
     "url": "exact URL of that listed authority, or empty"
   }],
-  "closing": "notice: the demand. reply: covering para-wise denial. petition: the prayer",
-  "timeOrStand": "notice: time to comply. reply: the stand taken. petition: interim relief, or empty",
-  "verification": "petition: short verification clause. notice/reply: empty",
+  "closing": "notice: the demand. reply: covering para-wise denial. petition: the petitioner prayer. writtenStatement: the prayer to dismiss or contest",
+  "timeOrStand": "notice: time to comply. reply: the stand taken. petition: interim relief, or empty. writtenStatement: preliminary objections, or empty",
+  "verification": "petition or writtenStatement: short verification clause. notice/reply: empty",
   "risks": "one line on litigation risk"
 }`;
 
@@ -59,11 +59,13 @@ export function buildLetterUser(opts: { kind: LetterKind; intake: Intake; memo: 
       : "Output language: English.";
   const kindLine: Record<LetterKind, string> = {
     notice:
-      "Kind: legal notice. Write a demand and a time to comply. Do not use a without-prejudice reply shape, a court petition prayer, or a verification clause.",
+      "Kind: legal notice. Write a demand and a time to comply. Do not use a without-prejudice reply shape, a court petition prayer, a written statement, or a verification clause.",
     reply:
-      "Kind: reply to notice. Write a without prejudice, para-wise reply and the stand taken. Do not write a demand, a time to comply, a petition prayer, or a verification clause.",
+      "Kind: reply to notice. Write a without prejudice, para-wise reply and the stand taken. Do not write a demand, a time to comply, a petition prayer, a written statement, or a verification clause.",
     petition:
-      "Kind: court petition. Write a petition for filing: parties, facts, numbered grounds, prayer, optional interim relief, and a short verification clause. Do not write a legal notice or a without-prejudice reply.",
+      "Kind: court petition. Write a petition for filing: parties, facts, numbered grounds, prayer, optional interim relief, and a short verification clause. Do not write a legal notice, a without-prejudice reply, or a written statement.",
+    writtenStatement:
+      "Kind: written statement for filing. Write a respondent or defendant pleading: parties, additional facts, numbered para-wise reply grounds, optional preliminary objections, a prayer to dismiss or contest, and a short verification clause. Do not write a legal notice, a without-prejudice notice-reply, or a petitioner prayer for primary relief.",
   };
 
   const court = courtById(intake.courtId);
