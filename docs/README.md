@@ -16,12 +16,8 @@ Last matched to `main` on the evening of **30 August 2026** (papers on the file,
 | [data-model.md](data-model.md) | Engineers | SQL tables and JSON fields |
 | [local-development.md](local-development.md) | Engineers | Env vars, auth modes, tests |
 | [from-desk-to-chamber.md](from-desk-to-chamber.md) | Anyone | Points to the live **/story** article |
-<<<<<<< HEAD
-| [social-copy.md](social-copy.md) | Founder | X posts, thread, WhatsApp status |
-=======
 | [social-copy.md](social-copy.md) | Founder | Pointer → [content/](content/) paste bank |
 | [content/](content/) | Founder, agents | Dual-home content system + Notion Content Calendar mirror |
->>>>>>> b53ce04 (docs: database-first CiteBench content calendar mirror)
 
 ## Out of this tree (not shipped)
 
