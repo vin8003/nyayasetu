@@ -103,7 +103,7 @@ export function IntakeForm({
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] lg:gap-10">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] lg:gap-10">
       <form
         className="flex flex-col gap-5"
         onSubmit={(e) => {
@@ -291,8 +291,8 @@ export function IntakeForm({
         </div>
 
         <section>
-          <h2 className="mb-3 text-sm font-medium text-muted">{c.sourcesLabel}</h2>
-          <ul className="space-y-2">
+          <h2 className="mb-2 text-sm font-medium text-muted">{c.sourcesLabel}</h2>
+          <ul>
             {SOURCES.map((src, i) => {
               const Icon = i === 0 ? Landmark : i === 2 ? BookOpen : Scale;
               return (
@@ -301,7 +301,7 @@ export function IntakeForm({
                     href={src.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-2 text-sm text-accent hover:text-fg"
+                    className="link-accent -mx-2 flex min-h-11 items-center gap-2 rounded-md px-2 text-sm"
                   >
                     <Icon className="size-3.5 shrink-0" />
                     {src.name}

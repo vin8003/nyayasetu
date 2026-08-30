@@ -24,7 +24,8 @@
   /* Accent — a cool slate blue, kept restrained */
   --color-accent: #8ab4c8;
   --color-accent-fg: #080c10;
-  --color-accent-dim: #5f8598;
+  /* Accent for use on --color-paper; must clear 4.5:1 against it. */
+  --color-accent-paper: #45687a;
   --color-ring: #8ab4c8;
 
   /* Paper — memos, drafts, the published article */
@@ -503,6 +504,11 @@ button.row:hover {
 
 .control {
   width: 100%;
+  /*
+   * Inputs and textareas carry an intrinsic width (textarea `cols`), which can
+   * force a grid or flex track wider than the viewport. Let them shrink.
+   */
+  min-width: 0;
   border-radius: var(--radius-md);
   background: var(--color-elevated);
   color: var(--color-fg);
@@ -552,7 +558,21 @@ button.row:hover {
 .seg-fill {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: 1fr;
+  /* minmax(0,…) not 1fr: 1fr floors at min-content, so long option labels
+     would push the control past a narrow viewport. */
+  grid-auto-columns: minmax(0, 1fr);
+}
+
+/* Option labels stay fully readable by wrapping rather than being clipped. */
+.seg-fill .seg-btn {
+  height: auto;
+  min-height: 2.125rem;
+  padding-block: 0.3125rem;
+  padding-inline: 0.5rem;
+  white-space: normal;
+  text-align: center;
+  text-wrap: balance;
+  line-height: 1.25;
 }
 
 .seg-btn {
@@ -580,6 +600,32 @@ button.row:hover {
   background: var(--color-accent);
   color: var(--color-accent-fg);
   font-weight: 600;
+}
+
+/*
+ * Touch devices get larger hit areas than the visual size of the control.
+ * Applied by pointer type so desktop keeps its tighter, quieter chrome.
+ */
+@media (pointer: coarse) {
+  .seg .seg-btn,
+  .seg-fill .seg-btn {
+    min-height: 2.75rem;
+  }
+
+  .brand,
+  .nav-link,
+  .link-quiet,
+  .link-accent,
+  .story-brand,
+  .story-lang button,
+  /* Standalone controls in the article chrome — not inline prose links. */
+  .story-mast .story-text-link,
+  .story-toolbar .story-text-link,
+  .story-after .story-text-link {
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+  }
 }
 
 /* ==========================================================================
@@ -957,7 +1003,7 @@ body:has(.story-page) {
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--color-accent-dim);
+  color: var(--color-accent-paper);
 }
 
 .story-title {
@@ -1102,7 +1148,7 @@ body:has(.story-page) {
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-variant-numeric: tabular-nums;
-  color: var(--color-accent-dim);
+  color: var(--color-accent-paper);
   padding-top: 0.2rem;
 }
 

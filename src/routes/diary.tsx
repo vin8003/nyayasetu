@@ -60,7 +60,7 @@ export function DiaryPage() {
 							}),
 							jsx("ol", {
 								className: "row-list",
-								children: rows.map((h) => jsx("li", { children: jsx(Link, {
+								children: rows.map((h) => jsx("li", { children: jsxs(Link, {
 									to: "/matters/$id",
 									params: { id: h.matterId },
 									hash: h.id,
