@@ -199,6 +199,12 @@ export const startSubscription = createServerFn({ method: "POST" })
 
     if (snap.status === "active") return { kind: "active", snap };
 
+    // Dummy Subscribe left a paid window and no Razorpay id. Keep it until it
+    // lapses — do not open Checkout on top of days they already have.
+    if (snap.status === "cancelled" && snap.canUseAi && !row.razorpay_subscription_id) {
+      return { kind: "covered", snap };
+    }
+
     if (row.razorpay_subscription_id) {
       try {
         const existing = await fetchSubscription(row.razorpay_subscription_id);

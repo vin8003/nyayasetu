@@ -64,6 +64,12 @@ export function BillingPage() {
         toast.success(c.subscribed);
         return;
       }
+      if (result.kind === "covered") {
+        writeEntitlementCache(result.snap);
+        setSnap(result.snap);
+        toast.message(c.leftoverHint);
+        return;
+      }
       const paid = await openRazorpayCheckout(result.checkout);
       if (!paid) {
         toast.message(c.checkoutDismissed);
@@ -149,12 +155,18 @@ export function BillingPage() {
                 <Button variant="paper" onClick={() => void cancel()} disabled={busy}>
                   {c.cancelPlan}
                 </Button>
-              ) : (
+              ) : snap.status === "cancelled" && snap.canUseAi ? null : (
                 <Button variant="paper" size="lg" onClick={() => void subscribe()} disabled={busy}>
                   {busy ? c.subscribing : c.subscribe}
                 </Button>
               )}
-              <p className="text-xs leading-relaxed text-paper-muted">{live ? c.confirmHintLive : c.confirmHint}</p>
+              <p className="text-xs leading-relaxed text-paper-muted">
+                {snap.status === "cancelled" && snap.canUseAi
+                  ? c.leftoverHint
+                  : live
+                    ? c.confirmHintLive
+                    : c.confirmHint}
+              </p>
             </div>
           </div>
           <p className="mt-8">

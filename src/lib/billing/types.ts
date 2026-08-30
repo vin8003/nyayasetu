@@ -12,5 +12,6 @@ export type CheckoutSession = {
 export type SubscribeResult =
   | { kind: "preview"; snap: BillingSnapshot }
   | { kind: "active"; snap: BillingSnapshot }
+  | { kind: "covered"; snap: BillingSnapshot }
   | { kind: "unset"; snap: BillingSnapshot }
   | { kind: "checkout"; snap: BillingSnapshot; checkout: CheckoutSession };

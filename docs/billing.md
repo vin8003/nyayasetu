@@ -60,6 +60,21 @@ Live path:
 
 The browser is never trusted to flip `status = active`.
 
+## Dummy Subscribe already on the books
+
+Accounts that used the old preview button have `status` active or cancelled, a `period_end`, and **no** Razorpay id. They were never a customer.
+
+When live keys go on:
+
+| They are | What happens |
+|---|---|
+| Dummy **active**, period still open | Desk stays open. Cancel only stops the local row. **No charge. No auto-renew.** When the date lapses they expire; the next Subscribe is real Checkout. |
+| Dummy **cancelled**, period still open | Same leftover days. Subscribe is hidden until that date. Clicking it anyway does not open Checkout. |
+| Trial only, never dummy-subscribed | Unchanged. First Subscribe after keys is Checkout. |
+| Dummy grant already expired | Next Subscribe is Checkout. |
+
+Nobody is enrolled into a Razorpay subscription behind their back. Leftover dummy days are not pulled back, and they are not billed again for those days.
+
 ## Going live — individual account, no company
 
 Razorpay onboard **individuals**. You do not need a Pvt Ltd, LLP, GSTIN, or CIN.
