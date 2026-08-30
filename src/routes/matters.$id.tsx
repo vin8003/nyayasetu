@@ -153,6 +153,9 @@ export function MatterDetailPage() {
         return;
       }
       setBrief(result.brief);
+    } catch (err) {
+      if (/unauthorized/i.test(String(err))) navigate({ to: "/login" });
+      else toast.error(c.failedAi);
     } finally {
       setBriefing(false);
     }

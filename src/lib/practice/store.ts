@@ -60,42 +60,42 @@ export const listMatters = createServerFn({ method: "GET" }).middleware([authMid
       order by coalesce(m.next_hearing_on, '9999-12-31') asc, m.updated_at desc
     `).map(mapMatter);
 });
-export const getMatterBundle = createServerFn({ method: "GET" }).middleware([authMiddleware]).validator((id) => z.string().min(1).parse(id)).handler(async ({ context, data: id }) => {
+export async function loadMatterBundle(userId, id) {
 	const sql = await getSql();
 	const matters = await sql`
       select m.*, coalesce(c.name, '') as client_name
       from matters m
       left join clients c on c.id = m.client_id
-      where m.id = ${id} and m.user_id = ${context.userId}
+      where m.id = ${id} and m.user_id = ${userId}
     `;
 	if (!matters[0]) return null;
 	const matter = mapMatter(matters[0]);
 	const hearings = await sql`
       select h.*, m.title as matter_title, m.court_name
       from hearings h join matters m on m.id = h.matter_id
-      where h.matter_id = ${id} and h.user_id = ${context.userId}
+      where h.matter_id = ${id} and h.user_id = ${userId}
       order by h.listed_on desc
     `;
 	const documents = await sql`
-      select * from matter_documents where matter_id = ${id} and user_id = ${context.userId} order by created_at desc
+      select * from matter_documents where matter_id = ${id} and user_id = ${userId} order by created_at desc
     `;
 	const orders = await sql`
-      select * from matter_orders where matter_id = ${id} and user_id = ${context.userId} order by created_at desc
+      select * from matter_orders where matter_id = ${id} and user_id = ${userId} order by created_at desc
     `;
 	const tasks = await sql`
       select t.*, coalesce(m.title, '') as matter_title
       from tasks t left join matters m on m.id = t.matter_id
-      where t.matter_id = ${id} and t.user_id = ${context.userId}
+      where t.matter_id = ${id} and t.user_id = ${userId}
       order by t.status asc, coalesce(t.due_on, '9999-12-31') asc
     `;
 	const deadlines = await sql`
       select d.*, coalesce(m.title, '') as matter_title
       from deadlines d left join matters m on m.id = d.matter_id
-      where d.matter_id = ${id} and d.user_id = ${context.userId}
+      where d.matter_id = ${id} and d.user_id = ${userId}
       order by d.due_on asc
     `;
 	const timeline = await sql`
-      select * from timeline_events where matter_id = ${id} and user_id = ${context.userId}
+      select * from timeline_events where matter_id = ${id} and user_id = ${userId}
       order by happened_on desc, created_at desc
       limit 80
     `;
@@ -108,6 +108,9 @@ export const getMatterBundle = createServerFn({ method: "GET" }).middleware([aut
 		deadlines: deadlines.map(mapDeadline),
 		timeline: timeline.map(mapEvent)
 	};
+}
+export const getMatterBundle = createServerFn({ method: "GET" }).middleware([authMiddleware]).validator((id) => z.string().min(1).parse(id)).handler(async ({ context, data: id }) => {
+	return loadMatterBundle(context.userId, id);
 });
 export function mapHearing(row) {
 	return {

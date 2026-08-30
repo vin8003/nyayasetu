@@ -55,7 +55,7 @@ export const extractOrder = createServerFn({ method: "POST" }).middleware([authM
 			},
 			signal: controller.signal,
 			body: JSON.stringify({
-				model: "grok-4.5",
+				model: "grok-4.20-0309-non-reasoning",
 				temperature: .1,
 				max_tokens: 1800,
 				response_format: { type: "json_object" },
