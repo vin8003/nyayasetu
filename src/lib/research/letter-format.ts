@@ -22,6 +22,7 @@ export type LetterChrome = {
   closingHeading: string;
   followOnHeading: string;
   verificationHeading: string;
+  followOnFirst: boolean;
 };
 
 export function letterChrome(kind: LetterKind, c: Copy): LetterChrome {
@@ -33,6 +34,7 @@ export function letterChrome(kind: LetterKind, c: Copy): LetterChrome {
       closingHeading: c.letterDemand,
       followOnHeading: c.letterTime,
       verificationHeading: "",
+      followOnFirst: false,
     },
     reply: {
       kicker: c.letterReplyKicker,
@@ -41,6 +43,7 @@ export function letterChrome(kind: LetterKind, c: Copy): LetterChrome {
       closingHeading: "",
       followOnHeading: c.letterStand,
       verificationHeading: "",
+      followOnFirst: false,
     },
     petition: {
       kicker: c.letterPetitionKicker,
@@ -49,6 +52,7 @@ export function letterChrome(kind: LetterKind, c: Copy): LetterChrome {
       closingHeading: c.letterPrayer,
       followOnHeading: c.letterInterim,
       verificationHeading: c.letterVerification,
+      followOnFirst: false,
     },
     writtenStatement: {
       kicker: c.letterWsKicker,
@@ -57,6 +61,7 @@ export function letterChrome(kind: LetterKind, c: Copy): LetterChrome {
       closingHeading: c.letterPrayer,
       followOnHeading: c.letterPrelim,
       verificationHeading: c.letterVerification,
+      followOnFirst: true,
     },
   };
   return byKind[kind];
@@ -105,6 +110,13 @@ export function formatLegalLetter(letter: LegalLetter): string {
     return i === letter.grounds.length - 1 ? block : [...block, ""];
   });
 
+  const followOnBlock = letter.timeOrStand ? ["", chrome.followOnHeading, letter.timeOrStand] : [];
+  const groundsBlock = ["", chrome.groundsHeading, ...groundLines];
+  const closingBlock = letter.closing ? ["", chrome.closingHeading, letter.closing] : [];
+  const bodyOrder = chrome.followOnFirst
+    ? [...followOnBlock, ...groundsBlock, ...closingBlock]
+    : [...groundsBlock, ...closingBlock, ...followOnBlock];
+
   return compact([
     `NyayaSetu · ${chrome.kicker}`,
     letter.heading,
@@ -115,15 +127,7 @@ export function formatLegalLetter(letter: LegalLetter): string {
     "",
     c.letterFacts,
     letter.facts,
-    "",
-    chrome.groundsHeading,
-    ...groundLines,
-    "",
-    letter.closing ? chrome.closingHeading : "",
-    letter.closing,
-    "",
-    letter.timeOrStand ? chrome.followOnHeading : "",
-    letter.timeOrStand,
+    ...bodyOrder,
     "",
     letter.verification && chrome.verificationHeading ? chrome.verificationHeading : "",
     letter.verification && chrome.verificationHeading ? letter.verification : "",

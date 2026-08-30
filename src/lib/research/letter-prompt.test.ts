@@ -113,12 +113,12 @@ describe("buildLetterUser", () => {
       intake: { ...intake, side: "respondent" },
       memo,
     });
-    assert.match(user, /written statement|लिखित कथन/i);
+    assert.match(user, /written statement/i);
     assert.match(user, /preliminary|verification|para-wise|prayer/i);
     assert.doesNotMatch(user, /time to comply/i);
     assert.match(user, /Arnesh Kumar/);
     assert.doesNotMatch(user, /Invented Case/);
-    assert.match(user, /respondent/);
+    assert.match(user, /Side: respondent/);
   });
 
   it("asks for a reply shape when kind is reply, in the memo language", () => {
@@ -150,6 +150,37 @@ describe("buildLetterUser", () => {
     assert.match(user, /Vivek v\. State \(Rajasthan HC\)/);
     assert.match(user, /BNSS/);
     assert.match(user, /482/);
+    assert.match(user, /Anticipatory bail/);
+    assert.match(user, /Statutes the memo relied on \(do not treat these as case authorities\):/);
     assert.doesNotMatch(user, /web_search/);
+  });
+
+  it("does not treat the All Indian courts intake default as a named forum", () => {
+    const user = buildLetterUser({
+      kind: "writtenStatement",
+      intake: { ...intake, courtId: "all", side: "respondent" },
+      memo,
+    });
+    assert.match(user, /Forum: not specified — take the court from the cause title; do not invent one/);
+    assert.match(user, /Side: respondent/);
+    assert.doesNotMatch(user, /All Indian courts/);
+  });
+
+  it("skips blank statute rows so the prompt does not emit empty dashes", () => {
+    const user = buildLetterUser({
+      kind: "petition",
+      intake,
+      memo: {
+        ...memo,
+        statutes: [
+          { name: "", sections: "", why: "", url: "" },
+          { name: "   ", sections: "482", why: "noise", url: "" },
+          { name: "BNSS", sections: "482", why: "Anticipatory bail.", url: "" },
+        ],
+      },
+    });
+    assert.doesNotMatch(user, /^- :/m);
+    assert.doesNotMatch(user, /- {2,}482/);
+    assert.match(user, /- BNSS 482: Anticipatory bail\./);
   });
 });

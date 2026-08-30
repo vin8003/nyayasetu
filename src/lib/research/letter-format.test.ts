@@ -267,16 +267,22 @@ describe("assembleLetter / formatLegalLetter", () => {
     const notice = letterChrome("notice", en);
     const reply = letterChrome("reply", en);
     const petition = letterChrome("petition", en);
+    const writtenStatement = letterChrome("writtenStatement", en);
     assert.equal(notice.closingHeading, en.letterDemand);
     assert.equal(notice.followOnHeading, en.letterTime);
     assert.equal(notice.verificationHeading, "");
+    assert.equal(notice.followOnFirst, false);
     assert.equal(reply.withoutPrejudice, true);
     assert.equal(reply.groundsHeading, en.letterParaReply);
     assert.equal(reply.closingHeading, "");
     assert.equal(reply.followOnHeading, en.letterStand);
+    assert.equal(reply.followOnFirst, false);
     assert.equal(petition.closingHeading, en.letterPrayer);
     assert.equal(petition.followOnHeading, en.letterInterim);
     assert.equal(petition.verificationHeading, en.letterVerification);
+    assert.equal(petition.followOnFirst, false);
+    assert.equal(writtenStatement.followOnHeading, en.letterPrelim);
+    assert.equal(writtenStatement.followOnFirst, true);
   });
 
   it("written statement is a court pleading with para-wise reply, prayer, preliminary objections, and verification", () => {
@@ -307,6 +313,9 @@ describe("assembleLetter / formatLegalLetter", () => {
     assert.match(text, /true to my knowledge/);
     assert.match(text, /\(2014\) 8 SCC 273/);
     assert.match(text, /https:\/\/indiankanoon\.org\/doc\/322621\//);
+    assert.ok(text.indexOf(en.letterPrelim) < text.indexOf(en.letterParaReply));
+    assert.ok(text.indexOf(en.letterPrelim) < text.indexOf(en.letterPrayer));
+    assert.ok(text.indexOf(en.letterParaReply) < text.indexOf(en.letterPrayer));
     assert.doesNotMatch(text, /Without prejudice/i);
     assert.doesNotMatch(text, /Time to comply/i);
     assert.doesNotMatch(text, /Invented Case/);
