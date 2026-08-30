@@ -1,6 +1,7 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
+import { ScrollMemory } from "@/components/scroll-memory";
 import { ClientToaster } from "@/components/client-toaster";
 import appCss from "../styles.css?url";
 
@@ -39,6 +40,7 @@ export const Route = createRootRoute({
       </head>
       <body className="antialiased">
         <PreviewHostBridge />
+        <ScrollMemory />
         <AuthProvider>
           <Outlet />
           <ClientToaster />

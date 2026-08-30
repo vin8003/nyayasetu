@@ -13,6 +13,7 @@ import { clearSampleChamber, getTodayBoard, seedSampleChamber, setTaskStatus } f
 import type { TodayBoard } from "@/lib/practice/types";
 import { stageDef } from "@/lib/practice/workflow";
 import { classifyTaskDraft } from "@/lib/practice/task-draft-class";
+import { readScroll } from "@/lib/scroll-memory";
 
 export const Route = createFileRoute("/")({ component: TodayPage });
 
@@ -57,6 +58,7 @@ export function TodayPage() {
 
   useEffect(() => {
     if (!board) return;
+    if (readScroll(window.location.pathname) > 0) return;
     const id = window.location.hash.replace(/^#/, "");
     if (!id) return;
     window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 40);

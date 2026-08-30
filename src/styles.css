@@ -688,6 +688,7 @@
      ========================================================================== */
 
   .shell {
+    isolation: isolate;
     min-height: 100dvh;
     background: var(--color-bg);
     color: var(--color-fg);
@@ -701,17 +702,12 @@
     inset-inline: 0;
     height: 80vh;
     pointer-events: none;
-    z-index: 0;
+    z-index: -1;
     background: radial-gradient(
       50% 50% at 50% 50%,
       color-mix(in oklab, var(--color-accent) 9%, transparent) 0%,
       transparent 70%
     );
-  }
-
-  .shell > :not(.topbar):not(.tabbar):not(.banner) {
-    position: relative;
-    z-index: 1;
   }
 
   .topbar {
@@ -919,6 +915,76 @@
     .banner-inner {
       padding-inline: 1.5rem;
     }
+  }
+
+  /*
+   * Record sheet. Must sit above sticky/fixed chrome — those create their own
+   * stacking contexts, so a z-index inside main cannot win.
+   */
+  .sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgb(0 0 0 / 0.55);
+  }
+
+  .sheet-panel {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    height: 100%;
+    width: 100%;
+    max-width: 32rem;
+    flex-direction: column;
+    background: var(--color-bg);
+    box-shadow: var(--shadow-e3);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .sheet-head {
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--color-border);
+    padding: 0.5rem 1.25rem 1rem;
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+
+  .sheet-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    min-height: 2.75rem;
+    margin-inline-start: -0.45rem;
+    padding-inline: 0.2rem 0.6rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--color-accent);
+  }
+
+  .sheet-back:hover {
+    color: var(--color-fg);
+  }
+
+  .sheet-body {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 1.25rem 1.25rem 2.5rem;
+  }
+
+  .sheet-foot {
+    flex-shrink: 0;
+    border-top: 1px solid var(--color-border);
+    padding: 0.75rem 1.25rem;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   }
 
   .link-accent {

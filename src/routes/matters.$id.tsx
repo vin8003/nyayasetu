@@ -1,7 +1,8 @@
 // @ts-nocheck
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { ChevronLeft } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { StagePanel } from "@/components/stage-panel";
 import { TrustChip } from "@/components/trust-chip";
@@ -60,6 +61,8 @@ export function MatterDetailPage() {
   const [paperBusy, setPaperBusy] = useState(false);
   const c = p(lang);
 
+  const landedOnHash = useRef(false);
+
   async function reload() {
     try {
       const [next, memos] = await Promise.all([
@@ -78,6 +81,7 @@ export function MatterDetailPage() {
   }
 
   useEffect(() => {
+    landedOnHash.current = Boolean(window.location.hash);
     reload();
   }, [id]);
 
@@ -89,7 +93,6 @@ export function MatterDetailPage() {
     const hid = (hash || "").replace(/^#/, "");
     if (!hid || !bundle) return;
     setOpenId(findInBundle(bundle, hid) || isExtraRecord(hid) ? hid : null);
-    window.setTimeout(() => document.getElementById(hid)?.scrollIntoView({ behavior: "smooth", block: "center" }), 40);
   }
 
   useEffect(() => {
@@ -99,14 +102,16 @@ export function MatterDetailPage() {
 
   function openRecord(recordId) {
     if (!recordId) return;
-    history.replaceState(null, "", `#${recordId}`);
     setOpenId(findInBundle(bundle, recordId) || isExtraRecord(recordId) ? recordId : null);
-    window.setTimeout(() => document.getElementById(recordId)?.scrollIntoView({ behavior: "smooth", block: "center" }), 20);
   }
 
   function closeRecord() {
+    if (landedOnHash.current && window.history.length > 1) {
+      landedOnHash.current = false;
+      window.history.back();
+      return;
+    }
     setOpenId(null);
-    history.replaceState(null, "", window.location.pathname + window.location.search);
   }
 
   if (!bundle) {
@@ -345,8 +350,9 @@ export function MatterDetailPage() {
     <AppShell lang={lang} onLang={onLang} active="matters">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Link to="/matters" className="text-sm text-muted hover:text-fg">
-            {c.back}
+          <Link to="/matters" className="sheet-back -ms-2">
+            <ChevronLeft className="size-5 shrink-0" aria-hidden />
+            {c.matters}
           </Link>
           <h1 className="mt-2 font-display text-3xl tracking-tight sm:text-4xl">{matter.title}</h1>
           <p className="mt-2 text-sm text-muted">

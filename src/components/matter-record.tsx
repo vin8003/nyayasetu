@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronLeft } from "lucide-react";
 import { TrustChip } from "@/components/trust-chip";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Label, Select, Textarea } from "@/components/ui/field";
@@ -69,40 +70,53 @@ export function MatterSheet({
   children: ReactNode;
 }) {
   const c = p(lang);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   useEffect(() => {
     if (!open) return;
+    const y = window.scrollY;
+    const body = document.body;
+    const prev = {
+      overflow: body.style.overflow,
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width,
+    };
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${y}px`;
+    body.style.width = "100%";
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") onCloseRef.current();
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+    return () => {
+      body.style.overflow = prev.overflow;
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.width = prev.width;
+      window.removeEventListener("keydown", onKey);
+      window.scrollTo(0, y);
+    };
+  }, [open]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-40 flex items-stretch justify-end">
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/55"
-        aria-label={c.cancel}
-        onClick={onClose}
-      />
-      <aside
-        role="dialog"
-        aria-modal="true"
-        className="relative z-10 flex h-full w-full max-w-lg flex-col bg-bg shadow-[0_0_40px_rgb(0_0_0/0.45)]"
-      >
-        <div className="flex items-start justify-between gap-3 border-b border-border/80 px-5 py-4">
-          <div className="min-w-0">
-            {kicker ? <div className="text-xs uppercase tracking-[0.18em] text-accent">{kicker}</div> : null}
-            <h2 className="mt-1 section-title leading-tight">{title}</h2>
-          </div>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            {c.cancel}
-          </Button>
+    <div className="sheet">
+      <button type="button" className="sheet-backdrop" aria-label={c.back} onClick={onClose} />
+      <aside role="dialog" aria-modal="true" aria-labelledby="sheet-title" className="sheet-panel">
+        <div className="sheet-head">
+          <button type="button" className="sheet-back" onClick={onClose}>
+            <ChevronLeft className="size-5 shrink-0" aria-hidden />
+            {c.back}
+          </button>
+          {kicker ? <p className="eyebrow mt-2">{kicker}</p> : null}
+          <h2 id="sheet-title" className="section-title mt-1 leading-tight text-pretty">
+            {title}
+          </h2>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">{children}</div>
+        <div className="sheet-body">{children}</div>
         {linkedLabel && onOpenLinked ? (
-          <div className="border-t border-border/80 px-5 py-3">
+          <div className="sheet-foot">
             <Button variant="outline" className="w-full" onClick={onOpenLinked}>
               {c.openLinked}: {linkedLabel}
             </Button>
@@ -167,7 +181,12 @@ export function HearingBody({
       </Field>
       <Field>
         <Label htmlFor="h-purpose">{c.purpose}</Label>
-        <Input id="h-purpose" value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })} />
+        <Textarea
+          id="h-purpose"
+          className="min-h-20"
+          value={form.purpose}
+          onChange={(e) => setForm({ ...form, purpose: e.target.value })}
+        />
       </Field>
       <Field>
         <Label htmlFor="h-room">{c.courtroom}</Label>

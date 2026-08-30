@@ -24,7 +24,7 @@ export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElem
   return (
     <input
       suppressHydrationWarning
-      className={cn("control h-11 px-3.5 text-sm", className)}
+      className={cn("control h-11 min-w-0 px-3.5 text-sm", className)}
       {...props}
     />
   );
