@@ -1,27 +1,38 @@
 # CiteBench content system (repo mirror)
 
-Dual home with the Notion pack. **Notion Content Calendar is the drafting surface** for posts. This tree is the committed mirror for engineers and Cloud Agents.
+**English only** for all docs and posts.
 
-Notion hub: [Citebench — content source pack](https://app.notion.com/p/3ccf4949ea14818d9c1ce3892ee0580a)  
-Calendar DB: [Citebench — Content Calendar](https://app.notion.com/p/3ff4d2ce24974c32a8a528aefab436cd)
+Dual home with Notion. **Content Calendar** is the drafting/runtime queue. This tree is the committed mirror.
 
-Voice does **not** post without Vineet’s yes.
+- Pack: https://app.notion.com/p/3ccf4949ea14818d9c1ce3892ee0580a  
+- Calendar: https://app.notion.com/p/3ff4d2ce24974c32a8a528aefab436cd  
+- Marketing plan (Notion): https://app.notion.com/p/3ccf4949ea14817b8492c5bbd9540d3b  
+- Bot workflow (Notion): https://app.notion.com/p/3ccf4949ea1481daad34f14be601e81d  
+
+Voice/bot does **not** publish without Approved + Preflight OK (see bot-workflow).
 
 ## Files
 
 | File | Role |
 |---|---|
-| [voice-and-claims.md](voice-and-claims.md) | Claim levels, voice, may/must-not facts |
-| [marketing-strategy.md](marketing-strategy.md) | Positioning, audiences, cadence, live vs VISION |
-| [format-guides.md](format-guides.md) | Per-channel guidelines + approve checklist |
-| [paste-bank.md](paste-bank.md) | Ready-to-paste copy (all formats) |
-| [calendar.md](calendar.md) | DB schema + seeded row index |
-| [../social-copy.md](../social-copy.md) | Thin pointer — use paste-bank |
+| [marketing-plan.md](marketing-plan.md) | Full marketing plan (strategy, campaigns, cadence) |
+| [bot-workflow.md](bot-workflow.md) | Autonomous queue state machine + SQL |
+| [paste-bank.md](paste-bank.md) | Post-ready Exact paste bodies (PB-*) |
+| [voice-and-claims.md](voice-and-claims.md) | Claim levels + kill list |
+| [format-guides.md](format-guides.md) | Channel rules |
+| [calendar.md](calendar.md) | DB schema + row index |
+| [marketing-strategy.md](marketing-strategy.md) | Short pointer → marketing-plan |
+| [../social-copy.md](../social-copy.md) | Pointer → paste-bank |
 
-## Sync rule
+## How to post (human)
 
-1. Draft and schedule in Notion Calendar (Status, Channel, Claim level, Pipeline).
-2. When a batch is approved or structure changes, mirror into this folder.
-3. Never invent metrics. Prefer Source of truth over memory. Label VISION for discovery-plan content.
+1. Open paste-bank → copy fenced Exact paste  
+2. Or open Calendar row → copy **Exact paste**  
+3. Publish on Channel  
+4. Mark Pipeline=Posted, fill Posted URL, Approved remains yes  
+
+## How a bot posts
+
+See [bot-workflow.md](bot-workflow.md). Only `Bot may post` + CONFIRMED + Approved + Preflight OK + EN.
 
 Last mirrored: **30 Aug 2026**.

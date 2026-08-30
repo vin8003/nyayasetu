@@ -1,19 +1,11 @@
 # Social copy
 
-**Moved.** Paste-ready posts, threads, WhatsApp, replies, DMs, and outreach emails live in the dual-home content system:
+**English only.** Post-ready Exact paste bodies:
 
 → **[content/paste-bank.md](content/paste-bank.md)**
 
-Supporting docs:
+Marketing plan: [content/marketing-plan.md](content/marketing-plan.md)  
+Bot workflow: [content/bot-workflow.md](content/bot-workflow.md)  
+Calendar: https://app.notion.com/p/3ff4d2ce24974c32a8a528aefab436cd  
 
-- [content/README.md](content/README.md) — hub + sync rules
-- [content/voice-and-claims.md](content/voice-and-claims.md)
-- [content/marketing-strategy.md](content/marketing-strategy.md)
-- [content/format-guides.md](content/format-guides.md)
-- [content/calendar.md](content/calendar.md) — Notion DB schema + seeded index
-
-Notion Content Calendar (Status, Channel, Claim level):  
-https://app.notion.com/p/3ff4d2ce24974c32a8a528aefab436cd
-
-Published article: https://citebench.ordereasy.win/story  
-Hindi: https://citebench.ordereasy.win/story?lang=hi
+Story: https://citebench.ordereasy.win/story
