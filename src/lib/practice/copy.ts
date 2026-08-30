@@ -136,6 +136,13 @@ export const appCopy = {
 		draftSaved: "ड्राफ्ट कागज़ों पर सेव हो गया। फाइल करने से पहले जाँचें।",
 		copyDraft: "ड्राफ्ट कॉपी",
 		draftCopied: "कॉपी हो गया",
+		researchOnFile: "इस फ़ाइल का शोध",
+		emptyResearch: "इस मामले पर अभी कोई मेमो नहीं। शोध चलाएँ।",
+		statuteMap: "लागू कानून",
+		emptyStatutes: "मेमो सेव होने पर धाराएँ यहाँ दिखेंगी।",
+		openMemo: "पूरा मेमो खोलें",
+		copyDoc: "कॉपी",
+		wordBrief: "वर्ड",
 	},
 	en: {
 		app: "CiteBench",
@@ -270,6 +277,13 @@ export const appCopy = {
 		draftSaved: "Draft saved on the papers. Check it before you file.",
 		copyDraft: "Copy draft",
 		draftCopied: "Copied",
+		researchOnFile: "Research on this file",
+		emptyResearch: "No memo on this matter yet. Run research from the file.",
+		statuteMap: "Statutes on the file",
+		emptyStatutes: "Statutes from saved memos will land here.",
+		openMemo: "Open full memo",
+		copyDoc: "Copy",
+		wordBrief: "Word",
 	}
 };
 export function p(lang: OutputLang) {

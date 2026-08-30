@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { p } from "@/lib/practice/copy";
 import { classifyTaskDraft } from "@/lib/practice/task-draft-class";
+import { downloadWordFile, slugFilename, textAsWordHtml } from "@/lib/research/word-file";
 import type { OutputLang } from "@/lib/research/types";
+import type { StatuteRef } from "@/lib/research/types";
 import type {
   Deadline,
   Hearing,
@@ -122,13 +124,40 @@ export function HearingBody({ h, lang }: { h: Hearing; lang: OutputLang }) {
   );
 }
 
-export function DocumentBody({ d }: { d: MatterDocument }) {
+export function DocumentBody({ d, lang }: { d: MatterDocument; lang: OutputLang }) {
+  const c = p(lang);
+  const text = d.text || "";
   return (
     <div>
       <div className="text-xs uppercase tracking-wide text-muted">
         {d.kind} · {d.sourceKind}
       </div>
-      <pre className="mt-4 whitespace-pre-wrap font-sans text-sm leading-relaxed text-fg/90">{d.text}</pre>
+      <pre className="mt-4 whitespace-pre-wrap font-sans text-sm leading-relaxed text-fg/90">{text}</pre>
+      {text.trim().length > 0 ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={async () => {
+              await navigator.clipboard.writeText(text);
+              toast.success(c.draftCopied);
+            }}
+          >
+            {c.copyDoc}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              downloadWordFile(`${slugFilename(d.title, "citebench-paper")}.doc`, textAsWordHtml(d.title, text))
+            }
+          >
+            {c.wordBrief}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -273,6 +302,16 @@ function WorkDraftActions({
             >
               {c.copyDraft}
             </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                downloadWordFile(`${slugFilename("citebench-draft")}.doc`, textAsWordHtml("CiteBench draft", draftText))
+              }
+            >
+              {c.wordBrief}
+            </Button>
             {showDone && onMarkDone ? (
               <Button type="button" size="sm" variant="ghost" onClick={onMarkDone}>
                 {c.markDone}
@@ -291,6 +330,56 @@ export function EventBody({ e, lang }: { e: TimelineEvent; lang: OutputLang }) {
       <div className="text-xs tabular-nums text-accent">{e.happenedOn}</div>
       <TrustChip origin={e.origin} lang={lang} />
       {e.detail ? <p className="leading-relaxed">{e.detail}</p> : null}
+    </div>
+  );
+}
+
+export function MemoFileBody({
+  title,
+  createdAt,
+  facts,
+  issues,
+  lang,
+  onOpenFull,
+}: {
+  title: string;
+  createdAt: string;
+  facts: string;
+  issues: string[];
+  lang: OutputLang;
+  onOpenFull?: () => void;
+}) {
+  const c = p(lang);
+  return (
+    <div className="space-y-4 text-sm">
+      <div className="text-xs tabular-nums text-muted">{createdAt.slice(0, 10)}</div>
+      {facts ? <p className="leading-relaxed">{facts}</p> : <p className="text-muted">{title}</p>}
+      {issues.length ? (
+        <ol className="list-decimal space-y-1 pl-4">
+          {issues.map((issue) => (
+            <li key={issue}>{issue}</li>
+          ))}
+        </ol>
+      ) : null}
+      {onOpenFull ? (
+        <Button type="button" size="sm" onClick={onOpenFull}>
+          {c.openMemo}
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
+export function StatuteFileBody({ s }: { s: StatuteRef }) {
+  return (
+    <div className="space-y-3 text-sm">
+      {s.sections ? <div className="text-xs uppercase tracking-wide text-muted">{s.sections}</div> : null}
+      {s.why ? <p className="leading-relaxed">{s.why}</p> : null}
+      {s.url ? (
+        <a href={s.url} target="_blank" rel="noreferrer" className="text-accent hover:underline">
+          {s.url}
+        </a>
+      ) : null}
     </div>
   );
 }

@@ -450,12 +450,21 @@ export async function saveAiDraftDocument(userId, matterId, title, kind, body) {
 		matterId,
 		"document",
 		title,
-		"Drafted from a task or deadline. Review before filing.",
+		"Drafted by CiteBench. Review before filing.",
 		"ai_suggestion",
 		id,
 	);
 	return id;
 }
+export const attachDraftToMatter = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => z.object({
+	matterId: z.string().min(1),
+	title: z.string().trim().min(1).max(240),
+	kind: z.string().trim().min(1).max(40),
+	body: z.string().trim().min(20).max(40000)
+}).parse(input)).handler(async ({ context, data }) => {
+	const id = await saveAiDraftDocument(context.userId, data.matterId, data.title, data.kind, data.body);
+	return { id };
+});
 export const saveUnconfirmedOrder = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => z.object({
 	matterId: z.string().min(1),
 	body: z.string().min(1).max(40000),

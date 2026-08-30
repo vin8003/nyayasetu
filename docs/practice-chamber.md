@@ -65,6 +65,10 @@ The draft is built from the **file only** (notes, last order, parties, papers on
 
 This is not `draftLetter`. Memo letters reuse stamped cites and stay on screen. Task drafts do not load a memo.
 
+## Research and statutes on the file
+
+Memos saved from `/research?matter=<id>` list on the matter. Their statutes are de-duplicated into a map on the same record. Notice / reply / petition / written statement drafted from that desk are stored as papers (`ai_draft`). Copy and Word work on those papers.
+
 ## Sample chamber
 
 `buildSampleChamber()` in `src/lib/practice/sample.ts` seeds three files:

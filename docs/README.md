@@ -20,8 +20,7 @@ CiteBench is a practice assistant for Indian advocates. These pages describe **w
 
 These exist as later work, not as product on `main`:
 
-- Persisting **research-desk** letters (notice / reply / petition / written statement from the memo stay on screen). **Draft this** from a task or deadline *is* saved on the matter papers (`source_kind = ai_draft`).
-- Linking a saved memo to `memos.matter_id` (the column exists; save/list do not write it)
+- A separate letters table (research-desk drafts from a matter now save on the papers; standalone desk drafts stay on screen)
 - Vakalatnama as a filled form
 - OCR for scanned, image-only PDFs
 - Live card capture on `/billing`

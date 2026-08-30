@@ -13,8 +13,10 @@ import {
   EventBody,
   HearingBody,
   MatterSheet,
+  MemoFileBody,
   OrderBody,
   RecordButton,
+  StatuteFileBody,
   TaskBody,
   matterRowClass,
 } from "@/components/matter-record";
@@ -26,6 +28,8 @@ import { useChamberLang } from "@/lib/practice/use-lang";
 import { prepareHearingBrief } from "@/lib/practice/hearing-brief";
 import { classifyTaskDraft } from "@/lib/practice/task-draft-class";
 import { draftForWork } from "@/lib/practice/task-draft";
+import { listMemos } from "@/lib/research/store";
+import { statutesFromMemos } from "@/lib/practice/statute-map";
 import { intakeFromMatter } from "@/lib/practice/intake-from-matter";
 import { isSampleTitle } from "@/lib/practice/sample";
 import { DRAFT_KEY } from "@/lib/research/draft";
@@ -47,16 +51,21 @@ export function MatterDetailPage() {
   const [exiting, setExiting] = useState(false);
   const [draftingId, setDraftingId] = useState("");
   const [workDrafts, setWorkDrafts] = useState({});
+  const [fileMemos, setFileMemos] = useState([]);
   const c = p(lang);
 
   async function reload() {
     try {
-      const next = await getMatterBundle({ data: id });
+      const [next, memos] = await Promise.all([
+        getMatterBundle({ data: id }),
+        listMemos({ data: { matterId: id } }).catch(() => []),
+      ]);
       if (!next) {
         navigate({ to: "/matters" });
         return;
       }
       setBundle(next);
+      setFileMemos(memos);
     } catch (err) {
       if (/unauthorized/i.test(String(err))) navigate({ to: "/login" });
     }
@@ -66,10 +75,14 @@ export function MatterDetailPage() {
     reload();
   }, [id]);
 
+  function isExtraRecord(recordId) {
+    return typeof recordId === "string" && (recordId.startsWith("memo:") || recordId.startsWith("stat:"));
+  }
+
   function applyHash(hash) {
     const hid = (hash || "").replace(/^#/, "");
     if (!hid || !bundle) return;
-    setOpenId(findInBundle(bundle, hid) ? hid : null);
+    setOpenId(findInBundle(bundle, hid) || isExtraRecord(hid) ? hid : null);
     window.setTimeout(() => document.getElementById(hid)?.scrollIntoView({ behavior: "smooth", block: "center" }), 40);
   }
 
@@ -81,7 +94,7 @@ export function MatterDetailPage() {
   function openRecord(recordId) {
     if (!recordId) return;
     history.replaceState(null, "", `#${recordId}`);
-    setOpenId(findInBundle(bundle, recordId) ? recordId : null);
+    setOpenId(findInBundle(bundle, recordId) || isExtraRecord(recordId) ? recordId : null);
     window.setTimeout(() => document.getElementById(recordId)?.scrollIntoView({ behavior: "smooth", block: "center" }), 20);
   }
 
@@ -169,12 +182,14 @@ export function MatterDetailPage() {
       setDraftingId("");
     }
   }
-  const sheet = sheetContent(bundle, located, lang, c, {
+  const sheetBase = sheetContent(bundle, located, lang, c, {
     draftingId,
     workDrafts,
     onDraftWork,
     onMarkDone: (itemId) => void setTaskStatus({ data: { id: itemId, status: "done" } }).then(reload),
   });
+  const statutes = statutesFromMemos(fileMemos);
+  const sheet = extraSheet(sheetBase, openId, fileMemos, statutes, lang, c, navigate);
   async function onBrief() {
     setBriefing(true);
     try {
@@ -211,6 +226,8 @@ export function MatterDetailPage() {
 
   const jumps = [
     ["notes", c.jumpNotes],
+    ["research-file", c.researchOnFile],
+    ["statutes", c.statuteMap],
     ["hearings", c.diary],
     ["documents", c.documents],
     ["orders", c.orders],
@@ -327,6 +344,49 @@ export function MatterDetailPage() {
               </RecordButton>
             </section>
           ) : null}
+
+          <section id="research-file" className="scroll-mt-20">
+            <h2 className="font-display text-2xl">{c.researchOnFile}</h2>
+            {fileMemos.length === 0 ? (
+              <p className="mt-3 text-sm text-muted">{c.emptyResearch}</p>
+            ) : (
+              <ul className="mt-3 space-y-2">
+                {fileMemos.map((item) => (
+                  <li key={item.id}>
+                    <RecordButton
+                      id={`memo:${item.id}`}
+                      active={openId === `memo:${item.id}`}
+                      onOpen={openRecord}
+                    >
+                      <div className="text-sm font-medium">{item.title}</div>
+                      <div className="mt-1 text-xs text-muted">{String(item.createdAt || "").slice(0, 10)}</div>
+                    </RecordButton>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section id="statutes" className="scroll-mt-20">
+            <h2 className="font-display text-2xl">{c.statuteMap}</h2>
+            {statutes.length === 0 ? (
+              <p className="mt-3 text-sm text-muted">{c.emptyStatutes}</p>
+            ) : (
+              <ul className="mt-3 space-y-2">
+                {statutes.map((s, i) => {
+                  const sid = `stat:${i}`;
+                  return (
+                    <li key={sid}>
+                      <RecordButton id={sid} active={openId === sid} onOpen={openRecord}>
+                        <div className="text-sm font-medium">{s.name}</div>
+                        {s.sections ? <div className="mt-1 text-xs text-muted">{s.sections}</div> : null}
+                      </RecordButton>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
 
           {brief ? (
             <section className="rounded-xl bg-paper p-5 text-paper-ink shadow-paper">
@@ -615,7 +675,7 @@ function sheetContent(bundle, located, lang, c, work = {}) {
     return {
       title: d.title,
       kicker: c.documents,
-      body: <DocumentBody d={d} />,
+      body: <DocumentBody d={d} lang={lang} />,
       linkedId: linkedOrder?.id,
       linkedLabel: linkedOrder ? c.orders : null,
     };
@@ -681,3 +741,38 @@ function sheetContent(bundle, located, lang, c, work = {}) {
   }
   return null;
 }
+
+function extraSheet(base, openId, fileMemos, statutes, lang, c, navigate) {
+  if (base) return base;
+  if (typeof openId === "string" && openId.startsWith("memo:")) {
+    const item = fileMemos.find((m) => m.id === openId.slice(5));
+    if (!item) return null;
+    const issues = (item.memo?.issues ?? []).map((row) => row.issue).filter(Boolean);
+    return {
+      title: item.title,
+      kicker: c.researchOnFile,
+      body: (
+        <MemoFileBody
+          title={item.title}
+          createdAt={item.createdAt}
+          facts={item.memo?.factsSummary || ""}
+          issues={issues}
+          lang={lang}
+          onOpenFull={() =>
+            navigate({
+              to: "/research",
+              search: { matter: item.matterId || undefined, memo: item.id },
+            })
+          }
+        />
+      ),
+    };
+  }
+  if (typeof openId === "string" && openId.startsWith("stat:")) {
+    const s = statutes[Number(openId.slice(5))];
+    if (!s) return null;
+    return { title: s.name, kicker: c.statuteMap, body: <StatuteFileBody s={s} /> };
+  }
+  return null;
+}
+

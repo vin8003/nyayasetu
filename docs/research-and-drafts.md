@@ -36,7 +36,7 @@ OCR is paywalled like other AI (`gateAi`). Missing `XAI_API_KEY` returns a place
 
 Memo shape (high level): title, cause title, courts consulted, facts summary, issues, statutes, doctrines, precedents, points for court, arguments for/against, counters, strategy, risks, full memo, sources, unverified list, searched queries, citation URLs.
 
-Saved memos: `memos` table (`user_id`, `intake_json`, `memo_json`, `parent_id`). `matter_id` exists (`0003_practice.sql`) but save/list in `research/store.ts` do not write it. Research-desk letters are **not** stored.
+Saved memos: `memos` table (`user_id`, `intake_json`, `memo_json`, `parent_id`, `matter_id`). Research from `/research?matter=` writes `matter_id`. Follow-ups inherit it. Drafts of letters from a matter are saved as `matter_documents` (`source_kind = ai_draft`). Standalone desk drafts stay session-only.
 
 Past memos (`listMemos`): last **80** for the user when unfiltered; a search (`q`, min useful length 2) seeds **40** matches on `title` / `intake_json` / `memo_json` then hydrates parent and child rows so a hit is not shown without its thread. Client-side `threadsMatchingQuery` / `groupMemoHistory` (`src/lib/research/history-search.ts`) nest follow-ups under the original memo (newest thread first). An orphan follow-up (missing parent) stays its own root.
 
@@ -71,7 +71,7 @@ Prompt (`LETTER_SYSTEM` + `kindLine`): no tools, cite only the verified list, ke
 
 After parse: `filterLetterGrounds` + `scrubUnverifiedText`. `LetterView` renders chrome headings; ground URLs use `httpHref`. Copy / print / Word HTML (`formatLegalLetterHtml`) use the same formatted text.
 
-These drafts stay in client state. They are a different path from **Draft this** on a chamber task, which is file-only and saved as a `matter_documents` row — see [practice-chamber.md](practice-chamber.md).
+From a matter, these drafts also save as `matter_documents`. Standalone desk drafts stay in client state. **Draft this** on a chamber task is file-only — see [practice-chamber.md](practice-chamber.md).
 
 ## Models (as of this tree)
 

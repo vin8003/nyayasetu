@@ -38,7 +38,7 @@ tasks              id, user_id, matter_id?, title, origin, status, due_on, sourc
 deadlines          id, user_id, matter_id?, title, due_on, origin, source_quote, status
 timeline_events    id, user_id, matter_id, happened_on, kind, title, detail, origin, ref_id
 
-memos.matter_id    nullable (column added; research/store does not set it yet)
+memos.matter_id    nullable — set when research is run from a matter
 ```
 
 `parties_json` and `directions_json` are JSON text. Booleans and dates follow the pg/PGLite normalizers in `src/lib/db.ts` (dates as `YYYY-MM-DD` strings).
@@ -61,9 +61,9 @@ Access is **computed** from timestamps (`computeSnapshot`), not from trusting `s
 
 `LegalMemo` fields that matter for trust: `precedents[].url`, `precedents[].verified` (overwritten), `citationUrls` (retrieved), `unverified[]`.
 
-`LegalLetter` from the research desk is in-memory / client state only.
+`LegalLetter` from the research desk is session state; from a matter it is also stored as `matter_documents` (`source_kind = ai_draft`). Standalone desk drafts stay on screen.
 
-`TaskDraft` from **Draft this** is formatted text stored in `matter_documents` (`source_kind = ai_draft`, `kind` = writtenStatement | reply | notice | petition | application | affidavit | note). Timeline origin is `ai_suggestion`.
+`TaskDraft` from **Draft this** is formatted text stored in `matter_documents` (`kind` = writtenStatement | reply | notice | petition | application | affidavit | note). Timeline origin is `ai_suggestion`.
 
 ## Practice JSON
 

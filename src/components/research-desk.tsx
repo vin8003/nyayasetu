@@ -19,10 +19,11 @@ import { runFollowUp } from "@/lib/research/follow-up";
 import { followUpIntake } from "@/lib/research/follow-up-prompt";
 import { draftLetter } from "@/lib/research/letter";
 import { extractUploads } from "@/lib/research/files";
-import { deleteMemoRecord, listMemos, saveMemoRecord } from "@/lib/research/store";
+import { deleteMemoRecord, getMemoRecord, listMemos, saveMemoRecord } from "@/lib/research/store";
 import { Button } from "@/components/ui/button";
-import { getMatterBundle } from "@/lib/practice/store";
+import { attachDraftToMatter, getMatterBundle } from "@/lib/practice/store";
 import { intakeFromMatter } from "@/lib/practice/intake-from-matter";
+import { formatLegalLetter } from "@/lib/research/letter-format";
 
 function readDraftIntake(lang) {
 	if (typeof window === "undefined") return emptyIntake(lang);
@@ -53,7 +54,7 @@ export function fileToBase64(file) {
 		reader.readAsDataURL(file);
 	});
 }
-export function ResearchDesk({ lang, matterId }) {
+export function ResearchDesk({ lang, matterId, memoId }) {
 	const navigate = useNavigate();
 	const { user, isPending } = useCurrentUserState();
 	const [intake, setIntake] = useState<Intake>(() => readDraftIntake(lang));
@@ -67,6 +68,7 @@ export function ResearchDesk({ lang, matterId }) {
 	const [historyQuery, setHistoryQuery] = useState("");
 	const [savedId, setSavedId] = useState(null);
 	const [parentTitle, setParentTitle] = useState("");
+	const [letterOnFile, setLetterOnFile] = useState(false);
 	const [runMode, setRunMode] = useState("research");
 	const [memoLang, setMemoLang] = useState(lang);
 	const runSeq = useRef(0);
@@ -83,6 +85,29 @@ export function ResearchDesk({ lang, matterId }) {
 	useEffect(() => {
 		let cancelled = false;
 		async function hydrate() {
+			const fromMemo = memoId || (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("memo") : "") || "";
+			if (fromMemo && userId && appliedMatter.current !== `memo:${fromMemo}`) {
+				try {
+					const item = await getMemoRecord({ data: fromMemo });
+					if (cancelled) return;
+					if (item) {
+						appliedMatter.current = `memo:${fromMemo}`;
+						setIntake({ ...item.intake, lang });
+						setMemo(item.memo);
+						setSavedId(item.id);
+						setMemoLang(item.intake.lang || lang);
+						setLetter(null);
+						setLetterOnFile(false);
+						setView("memo");
+						return;
+					}
+				} catch (err) {
+					if (isUnauthorized(err)) {
+						navigate({ to: "/login" });
+						return;
+					}
+				}
+			}
 			const fromUrl = matterId || (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("matter") : "") || "";
 			if (fromUrl && userId && appliedMatter.current !== fromUrl) {
 				try {
@@ -119,7 +144,7 @@ export function ResearchDesk({ lang, matterId }) {
 		return () => {
 			cancelled = true;
 		};
-	}, [lang, matterId, userId, navigate]);
+	}, [lang, matterId, memoId, userId, navigate]);
 	useEffect(() => {
 		if (!userId) {
 			setHistory([]);
@@ -179,7 +204,8 @@ export function ResearchDesk({ lang, matterId }) {
 		const item = await saveMemoRecord({ data: {
 			intake: currentIntake,
 			memo: currentMemo,
-			parentId
+			parentId,
+			matterId: matterId || null
 		} });
 		setSavedId(item.id);
 		setHistory((prev) => [item, ...prev.filter((h) => h.id !== item.id)]);
@@ -329,7 +355,24 @@ export function ResearchDesk({ lang, matterId }) {
 				return;
 			}
 			setLetter(result.letter);
+			setLetterOnFile(false);
 			setView("letter");
+			if (matterId) {
+				try {
+					await attachDraftToMatter({
+						data: {
+							matterId,
+							title: (result.letter.heading || result.letter.kind).slice(0, 240),
+							kind: result.letter.kind,
+							body: formatLegalLetter(result.letter),
+						},
+					});
+					setLetterOnFile(true);
+					toast.success(c.savedOnFile);
+				} catch (err) {
+					if (bounceIfUnauthorized(err)) return;
+				}
+			}
 		} catch (err) {
 			if (token !== runSeq.current) return;
 			if (bounceIfUnauthorized(err)) return;
@@ -452,6 +495,7 @@ export function ResearchDesk({ lang, matterId }) {
 		view === "letter" && letter ? jsx(LetterView, {
 			lang,
 			letter,
+			onFile: letterOnFile,
 			onBack: () => {
 				setView("memo");
 				setError(null);

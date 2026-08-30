@@ -10,10 +10,12 @@ export function LetterView({
   lang,
   letter,
   onBack,
+  onFile = false,
 }: {
   lang: OutputLang;
   letter: LegalLetter;
   onBack: () => void;
+  onFile?: boolean;
 }) {
   const c = t(lang);
   const doc = t(letter.lang);
@@ -57,6 +59,7 @@ export function LetterView({
             {letter.heading || kicker}
           </h1>
           {chrome.withoutPrejudice ? <p className="mt-1 text-sm text-muted">{doc.withoutPrejudice}</p> : null}
+          {onFile ? <p className="mt-2 text-xs text-accent">{c.onFile}</p> : null}
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => void copyLetter()}>

@@ -46,7 +46,8 @@ A date-ordered list of hearings. Each row links to `/matters/$id`. Empty copy: n
 - Tasks and deadlines, each tagged with an **origin** (court / AI / lawyer / statute / system). Open items that need a filing get **Draft this** — written statement, affidavit, application, petition, or a court note — saved on the papers. Appearance / gather work is left for the lawyer.
 - Timeline
 - **Hearing brief** (AI, gated) — a structured note from the file, not a new search
-- **Research from this matter** — opens `/research?matter=<id>` with facts and issues prefilled from the file
+- **Research from this matter** — opens `/research?matter=<id>` with facts and issues prefilled from the file. Saved memos and their statutes show on the record.
+- Copy / Word on papers and AI drafts.
 
 Origins stay visible as chips. A CiteBench suggestion is never relabelled as a court direction.
 
@@ -57,9 +58,9 @@ The original NyayaSetu desk, now a chamber tab.
 1. Paste facts (and optional legal question). Pick forum, practice area, side, language.
 2. Optionally attach up to three files: images (OCR), text-layer PDFs, plain text. Scanned image-only PDFs are still weak.
 3. Run research → structured memo (issues, statutes, doctrines, precedents with verified flags, arguments both ways, risks).
-4. Save to **Past memos** (per account). Search by cause title, party, court, or a phrase from the facts. Follow-ups stay grouped under the parent. Memos are stored; court drafts are not.
+4. Save to **Past memos** (per account). Research run from a matter is stored on that file. Search by cause title, party, court, or a phrase from the facts. Follow-ups stay grouped under the parent.
 5. **Follow-up** on the memo: another issue or “what if” — same facts and verified cites, saved as a new memo, not an overwrite.
-6. From the memo toolbar: **Notice**, **Reply**, **Petition**, or **Written statement**. Same language as the memo. Drafts reuse only verified cites.
+6. From the memo toolbar: **Notice**, **Reply**, **Petition**, or **Written statement**. Same language as the memo. Drafts reuse only verified cites. If the desk was opened from a matter, the draft is also saved on the papers.
 
 Sample-matter facts do not start the trial clock. Your own facts do.
 
@@ -95,5 +96,4 @@ Nothing hits the diary until you **Confirm**. Reject discards the pending extrac
 - File on eCourts or CIS
 - Fetch Indian Kanoon HTML to “prove” a cite
 - Treat a model `verified: true` as truth
-- Persist notice / reply / petition / written statement **from the research memo** to the database (those stay on screen). Drafts started with **Draft this** on a task or deadline *are* saved as matter papers.
 - Bill a card in this preview
