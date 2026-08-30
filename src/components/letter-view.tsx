@@ -90,6 +90,12 @@ export function LetterView({
             <h2 className="font-medium">{doc.letterFacts}</h2>
             <p className="mt-2 whitespace-pre-wrap">{letter.facts}</p>
           </div>
+          {chrome.followOnFirst && letter.timeOrStand ? (
+            <div>
+              <h2 className="font-medium">{chrome.followOnHeading}</h2>
+              <p className="mt-2 whitespace-pre-wrap">{letter.timeOrStand}</p>
+            </div>
+          ) : null}
           <div>
             <h2 className="font-medium">{chrome.groundsHeading}</h2>
             <ol className="mt-3 space-y-4">
@@ -127,7 +133,7 @@ export function LetterView({
               </p>
             </div>
           ) : null}
-          {letter.timeOrStand ? (
+          {!chrome.followOnFirst && letter.timeOrStand ? (
             <div>
               <h2 className="font-medium">{chrome.followOnHeading}</h2>
               <p className="mt-2 whitespace-pre-wrap">{letter.timeOrStand}</p>
