@@ -124,7 +124,15 @@ export function HearingBody({ h, lang }: { h: Hearing; lang: OutputLang }) {
   );
 }
 
-export function DocumentBody({ d, lang }: { d: MatterDocument; lang: OutputLang }) {
+export function DocumentBody({
+  d,
+  lang,
+  onReadOrder,
+}: {
+  d: MatterDocument;
+  lang: OutputLang;
+  onReadOrder?: () => void;
+}) {
   const c = p(lang);
   const text = d.text || "";
   return (
@@ -156,6 +164,11 @@ export function DocumentBody({ d, lang }: { d: MatterDocument; lang: OutputLang 
           >
             {c.wordBrief}
           </Button>
+          {onReadOrder && text.trim().length >= 40 ? (
+            <Button type="button" size="sm" onClick={onReadOrder}>
+              {c.readAsOrder}
+            </Button>
+          ) : null}
         </div>
       ) : null}
     </div>

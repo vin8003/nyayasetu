@@ -8,7 +8,7 @@ Fields (`src/lib/research/types.ts`):
 
 - Facts (required for a useful memo)
 - Optional legal question
-- Forum (`COURTS` in `src/lib/research/courts.ts` — Supreme Court, High Courts, NCLAT/NCLT, ITAT, CAT, or “all”)
+- Forum (`COURTS` in `src/lib/research/courts.ts` — Supreme Court, High Courts, NCLAT/NCLT, ITAT, CAT, NCDRC, SAT, DRT/DRAT, NGT, or “all”)
 - Practice area, side (petitioner / respondent / neutral), language (`en` / `hi`)
 
 From a matter, `intakeFromMatter` fills facts, question, court id (name heuristics), area (from proceeding), and side. Query param: `/research?matter=<id>`.

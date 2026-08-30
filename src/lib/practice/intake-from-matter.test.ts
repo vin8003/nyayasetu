@@ -37,6 +37,10 @@ describe("intakeFromMatter", () => {
     assert.equal(mapCourtId("Sessions Court, Jaipur"), "rajasthan");
     assert.equal(mapCourtId("Rajasthan High Court, Jaipur Bench"), "rajasthan");
     assert.equal(mapCourtId("Supreme Court of India"), "sc");
+    assert.equal(mapCourtId("NCDRC, New Delhi"), "ncdrc");
+    assert.equal(mapCourtId("Securities Appellate Tribunal"), "sat");
+    assert.equal(mapCourtId("DRT Jaipur"), "drt");
+    assert.equal(mapCourtId("National Green Tribunal, Principal Bench"), "ngt");
     assert.equal(mapPracticeArea("criminal"), "criminal");
     assert.equal(mapPracticeArea("writ"), "writ");
     assert.equal(mapPracticeArea("commercial"), "civil");

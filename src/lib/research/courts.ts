@@ -36,6 +36,10 @@ export const COURTS: CourtOption[] = [
   { id: "nclat", name: "NCLAT / NCLT", nameHi: "एनसीएलएटी / एनसीएलटी", kind: "tribunal" },
   { id: "itat", name: "ITAT", nameHi: "आईटीएटी", kind: "tribunal" },
   { id: "cat", name: "Central Administrative Tribunal", nameHi: "केंद्रीय प्रशासनिक अधिकरण", kind: "tribunal" },
+  { id: "ncdrc", name: "NCDRC", nameHi: "एनसीडीआरसी", kind: "tribunal" },
+  { id: "sat", name: "Securities Appellate Tribunal", nameHi: "प्रतिभूति अपील अधिकरण", kind: "tribunal" },
+  { id: "drt", name: "DRT / DRAT", nameHi: "डीआरटी / डीआरएटी", kind: "tribunal" },
+  { id: "ngt", name: "National Green Tribunal", nameHi: "राष्ट्रीय हरित अधिकरण", kind: "tribunal" },
 ];
 
 export function courtById(id: string): CourtOption {

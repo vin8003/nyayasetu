@@ -11,16 +11,25 @@ import { Field, Hint, Label, Select, Textarea } from "@/components/ui/field";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { p } from "@/lib/practice/copy";
 import { extractOrder } from "@/lib/practice/extract-order";
+import { readInboxDraft } from "@/lib/practice/inbox-draft";
 import { addHearing, addTask, confirmOrder, discardOrder, listMatters, listUnconfirmedOrders, savePastedDocument, saveUnconfirmedOrder } from "@/lib/practice/store";
 import type { Matter, MatterOrder, OrderExtract } from "@/lib/practice/types";
 import { useChamberLang } from "@/lib/practice/use-lang";
+import { extractUploads } from "@/lib/research/files";
+import { fileToBase64 } from "@/components/research-desk";
 
-export const Route = createFileRoute("/inbox")({ component: InboxPage });
+export const Route = createFileRoute("/inbox")({
+	validateSearch: (search: Record<string, unknown>): { matter?: string } => ({
+		matter: typeof search.matter === "string" && search.matter.length > 0 ? search.matter : undefined,
+	}),
+	component: InboxPage,
+});
 
 export function InboxPage() {
 	const { lang, onLang } = useChamberLang();
 	const { user, isPending } = useCurrentUserState();
 	const navigate = useNavigate();
+	const { matter: matterFromUrl } = Route.useSearch();
 	const c = p(lang);
 	const [matters, setMatters] = useState([]);
 	const [matterId, setMatterId] = useState("");
@@ -41,14 +50,55 @@ export function InboxPage() {
 	}
 	useEffect(() => {
 		if (!user) return;
+		const draft = readInboxDraft();
+		if (draft) {
+			setMatterId(draft.matterId);
+			setBody(draft.body);
+		} else if (matterFromUrl) setMatterId(matterFromUrl);
 		listMatters().then((rows) => {
 			setMatters(rows);
-			if (!matterId && rows[0]) setMatterId(rows[0].id);
+			setMatterId((current) => current || draft?.matterId || matterFromUrl || rows[0]?.id || "");
 		}).catch((err) => {
 			if (/unauthorized/i.test(String(err))) navigate({ to: "/login" });
 		});
 		reloadQueue().catch(() => undefined);
-	}, [user, navigate]);
+	}, [user, navigate, matterFromUrl]);
+	async function onInboxFiles(list) {
+		const files = [...(list ?? [])].slice(0, 3);
+		if (!files.length) return;
+		setBusy(true);
+		try {
+			const extracted = await extractUploads({
+				data: {
+					files: await Promise.all(files.map(async (f) => ({
+						name: f.name,
+						mime: f.type,
+						base64: await fileToBase64(f)
+					})))
+				}
+			});
+			if (!extracted.ok) {
+				if (extracted.error === "PAYWALL") {
+					toast.error(c.paywall);
+					navigate({ to: "/billing" });
+					return;
+				}
+				toast.error(c.failedAi);
+				return;
+			}
+			const text = String(extracted.combined || "").trim();
+			if (text.length < 20) {
+				toast.error(c.parseErr);
+				return;
+			}
+			setBody(text);
+		} catch (err) {
+			if (/unauthorized/i.test(String(err))) navigate({ to: "/login" });
+			else toast.error(c.parseErr);
+		} finally {
+			setBusy(false);
+		}
+	}
 	const matter = matters.find((m) => m.id === matterId);
 	async function onAnalyse(e) {
 		e.preventDefault();
@@ -194,6 +244,19 @@ export function InboxPage() {
 							}),
 							jsx(Hint, { children: c.inboxHint })
 						] }),
+						jsxs("label", {
+							className: "inline-flex h-10 cursor-pointer items-center text-sm text-accent hover:underline",
+							children: [c.uploadPaper, jsx("input", {
+								type: "file",
+								className: "sr-only",
+								accept: ".pdf,.txt,.png,.jpg,.jpeg,.webp,application/pdf,image/*",
+								multiple: true,
+								onChange: (e) => {
+									void onInboxFiles(e.target.files);
+									e.target.value = "";
+								}
+							})]
+						}),
 						jsx(Button, {
 							type: "submit",
 							disabled: busy,

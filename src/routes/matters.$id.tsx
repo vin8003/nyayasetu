@@ -21,7 +21,7 @@ import {
   matterRowClass,
 } from "@/components/matter-record";
 import { p } from "@/lib/practice/copy";
-import { addHearing, addTask, clearSampleChamber, getMatterBundle, recordHearing, setMatterStage, setTaskStatus } from "@/lib/practice/store";
+import { addHearing, addTask, clearSampleChamber, getMatterBundle, recordHearing, savePastedDocument, setMatterStage, setTaskStatus } from "@/lib/practice/store";
 import { proceedingDef } from "@/lib/practice/workflow";
 import { findInBundle, lastOrderId, nextHearingId, relatedIdForEvent } from "@/lib/practice/record-links";
 import { useChamberLang } from "@/lib/practice/use-lang";
@@ -33,6 +33,9 @@ import { statutesFromMemos } from "@/lib/practice/statute-map";
 import { intakeFromMatter } from "@/lib/practice/intake-from-matter";
 import { isSampleTitle } from "@/lib/practice/sample";
 import { DRAFT_KEY } from "@/lib/research/draft";
+import { extractUploads } from "@/lib/research/files";
+import { fileToBase64 } from "@/components/research-desk";
+import { writeInboxDraft } from "@/lib/practice/inbox-draft";
 
 export const Route = createFileRoute("/matters/$id")({ component: MatterDetailPage });
 
@@ -52,6 +55,8 @@ export function MatterDetailPage() {
   const [draftingId, setDraftingId] = useState("");
   const [workDrafts, setWorkDrafts] = useState({});
   const [fileMemos, setFileMemos] = useState([]);
+  const [paper, setPaper] = useState({ title: "", kind: "order", body: "" });
+  const [paperBusy, setPaperBusy] = useState(false);
   const c = p(lang);
 
   async function reload() {
@@ -154,6 +159,79 @@ export function MatterDetailPage() {
     await addTask({ data: { matterId: matter.id, title: taskTitle.trim() } });
     setTaskTitle("");
     await reload();
+  }
+  async function onPastePaper(e) {
+    e.preventDefault();
+    if (paper.body.trim().length < 20) {
+      toast.error(c.parseErr);
+      return;
+    }
+    setPaperBusy(true);
+    try {
+      await savePastedDocument({
+        data: {
+          matterId: matter.id,
+          title: paper.title.trim() || paper.kind,
+          body: paper.body.trim(),
+          kind: paper.kind,
+          sourceKind: "paste",
+        },
+      });
+      setPaper({ title: "", kind: paper.kind, body: "" });
+      toast.success(c.paperSaved);
+      await reload();
+    } catch (err) {
+      if (/unauthorized/i.test(String(err))) navigate({ to: "/login" });
+      else toast.error(c.parseErr);
+    } finally {
+      setPaperBusy(false);
+    }
+  }
+  async function onUploadPaper(list) {
+    const files = [...(list ?? [])].slice(0, 3);
+    if (!files.length) return;
+    setPaperBusy(true);
+    try {
+      const extracted = await extractUploads({
+        data: {
+          files: await Promise.all(
+            files.map(async (f) => ({ name: f.name, mime: f.type, base64: await fileToBase64(f) })),
+          ),
+        },
+      });
+      if (!extracted.ok) {
+        if (extracted.error === "PAYWALL") {
+          toast.error(c.paywall);
+          navigate({ to: "/billing" });
+          return;
+        }
+        toast.error(c.failedAi);
+        return;
+      }
+      let saved = 0;
+      for (const part of extracted.parts ?? []) {
+        const text = String(part.text || "").trim();
+        if (text.length < 20) continue;
+        await savePastedDocument({
+          data: {
+            matterId: matter.id,
+            title: String(part.name || paper.kind).slice(0, 240),
+            body: text.slice(0, 40000),
+            kind: paper.kind,
+            sourceKind: "upload",
+          },
+        });
+        saved += 1;
+      }
+      if (!saved) toast.error(c.parseErr);
+      else toast.success(c.paperSaved);
+      await reload();
+    } catch (err) {
+      if (/unauthorized/i.test(String(err))) navigate({ to: "/login" });
+      else toast.error(c.parseErr);
+    } finally {
+      setPaperBusy(false);
+    }
   }
   async function onDraftWork(itemKind, itemId) {
     setDraftingId(itemId);
@@ -508,6 +586,57 @@ export function MatterDetailPage() {
                 ))}
               </ul>
             )}
+            <form onSubmit={onPastePaper} className="mt-4 space-y-3 rounded-lg bg-elevated p-4">
+              <h3 className="text-sm font-medium">{c.addPaper}</h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field>
+                  <Label htmlFor="pt">{c.paperTitle}</Label>
+                  <Input
+                    id="pt"
+                    value={paper.title}
+                    onChange={(e) => setPaper({ ...paper, title: e.target.value })}
+                  />
+                </Field>
+                <Field>
+                  <Label htmlFor="pk">{c.documents}</Label>
+                  <Select
+                    id="pk"
+                    value={paper.kind}
+                    onChange={(e) => setPaper({ ...paper, kind: e.target.value })}
+                  >
+                    <option value="order">{c.kindOrder}</option>
+                    <option value="pleading">{c.kindPleading}</option>
+                    <option value="evidence">{c.kindEvidence}</option>
+                    <option value="notice">{c.kindNotice}</option>
+                    <option value="other">{c.kindOther}</option>
+                  </Select>
+                </Field>
+              </div>
+              <Textarea
+                className="min-h-28"
+                placeholder={c.pasteOrder}
+                value={paper.body}
+                onChange={(e) => setPaper({ ...paper, body: e.target.value })}
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <Button type="submit" disabled={paperBusy}>
+                  {paperBusy ? c.uploadingPapers : c.addPaper}
+                </Button>
+                <label className="inline-flex h-10 cursor-pointer items-center rounded-md px-3 text-sm text-muted hover:text-fg">
+                  {c.uploadPaper}
+                  <input
+                    type="file"
+                    className="sr-only"
+                    accept=".pdf,.txt,.png,.jpg,.jpeg,.webp,application/pdf,image/*"
+                    multiple
+                    onChange={(e) => {
+                      void onUploadPaper(e.target.files);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              </div>
+            </form>
           </section>
 
           <section id="orders" className="scroll-mt-20">
@@ -589,18 +718,30 @@ export function MatterDetailPage() {
                       <TrustChip origin={d.origin} lang={lang} />
                     </div>
                   </RecordButton>
-                  {d.status === "open" && classifyTaskDraft(d.title, d.sourceQuote).draftable ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="self-center"
-                      onClick={() => {
-                        openRecord(d.id);
-                        void onDraftWork("deadline", d.id);
-                      }}
-                    >
-                      {c.draftForTask}
-                    </Button>
+                  {d.status === "open" ? (
+                    <div className="flex flex-col justify-center gap-1">
+                      {classifyTaskDraft(d.title, d.sourceQuote).draftable ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="self-center"
+                          onClick={() => {
+                            openRecord(d.id);
+                            void onDraftWork("deadline", d.id);
+                          }}
+                        >
+                          {c.draftForTask}
+                        </Button>
+                      ) : null}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="self-center"
+                        onClick={() => void setTaskStatus({ data: { id: d.id, status: "done" } }).then(reload)}
+                      >
+                        {c.markDone}
+                      </Button>
+                    </div>
                   ) : null}
                 </li>
               ))}
@@ -675,7 +816,16 @@ function sheetContent(bundle, located, lang, c, work = {}) {
     return {
       title: d.title,
       kicker: c.documents,
-      body: <DocumentBody d={d} lang={lang} />,
+      body: (
+        <DocumentBody
+          d={d}
+          lang={lang}
+          onReadOrder={() => {
+            writeInboxDraft({ matterId: bundle.matter.id, body: d.text, title: d.title });
+            navigate({ to: "/inbox", search: { matter: bundle.matter.id } });
+          }}
+        />
+      ),
       linkedId: linkedOrder?.id,
       linkedLabel: linkedOrder ? c.orders : null,
     };

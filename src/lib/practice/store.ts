@@ -426,13 +426,14 @@ export const savePastedDocument = createServerFn({ method: "POST" }).middleware(
 	matterId: z.string().min(1),
 	title: z.string().trim().min(1).max(240),
 	body: z.string().trim().min(20).max(40000),
-	kind: z.string().optional()
+	kind: z.string().optional(),
+	sourceKind: z.string().optional()
 }).parse(input)).handler(async ({ context, data }) => {
 	const sql = await getSql();
 	const id = newId("dc");
 	await sql`
       insert into matter_documents (id, user_id, matter_id, kind, title, body, source_kind)
-      values (${id}, ${context.userId}, ${data.matterId}, ${data.kind ?? "order"}, ${data.title}, ${data.body}, ${"paste"})
+      values (${id}, ${context.userId}, ${data.matterId}, ${data.kind ?? "order"}, ${data.title}, ${data.body}, ${data.sourceKind ?? "paste"})
     `;
 	await addEvent(sql, context.userId, data.matterId, "document", data.title, "", "lawyer", id);
 	return { id };

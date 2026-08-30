@@ -42,7 +42,7 @@ A date-ordered list of hearings. Each row links to `/matters/$id`. Empty copy: n
 - What the lawyer does vs what the court does at this stage
 - What AI **may** help with vs what a **human must decide**
 - Hearings (add listing, outcome, next date)
-- Documents and pasted orders
+- Documents and pasted orders — paste or upload PDF / photo / text on the file. **Read as order** sends a paper to Inbox.
 - Tasks and deadlines, each tagged with an **origin** (court / AI / lawyer / statute / system). Open items that need a filing get **Draft this** — written statement, affidavit, application, petition, or a court note — saved on the papers. Appearance / gather work is left for the lawyer.
 - Timeline
 - **Hearing brief** (AI, gated) — a structured note from the file, not a new search
@@ -66,7 +66,7 @@ Sample-matter facts do not start the trial clock. Your own facts do.
 
 ## Inbox — `/inbox`
 
-Paste order or notice text, pick a matter, **Read order**.
+Paste order or notice text, or upload a PDF / photo, pick a matter, **Read order**.
 
 The model returns:
 

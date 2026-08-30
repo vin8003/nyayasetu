@@ -250,6 +250,16 @@ export function TodayPage() {
                         </Button>
                       </Link>
                     ) : null}
+                    {d.status === "open" ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="self-center"
+                        onClick={() => void setTaskStatus({ data: { id: d.id, status: "done" } }).then(reload)}
+                      >
+                        {c.markDone}
+                      </Button>
+                    ) : null}
                   </li>
                 ))}
               </ul>

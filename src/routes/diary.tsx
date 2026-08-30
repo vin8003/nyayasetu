@@ -45,34 +45,53 @@ export function DiaryPage() {
 				hearings.length === 0 ? jsx("p", {
 					className: "mt-8 text-sm text-muted",
 					children: c.emptyDiary
-				}) : jsx("ol", {
-					className: "mt-8 space-y-2",
-					children: hearings.map((h) => jsx("li", { children: jsx(Link, {
-						to: "/matters/$id",
-						params: { id: h.matterId },
-						hash: h.id,
-						className: "flex items-start justify-between gap-3 rounded-lg bg-surface px-4 py-3 shadow-[0_0_0_1px_rgb(255_255_255/0.08)] hover:bg-elevated",
-						children: jsxs("div", { children: [
-							jsx("div", {
-								className: "text-xs tabular-nums text-accent",
-								children: h.listedOn === today ? c.today : h.listedOn
+				}) : jsxs("div", {
+					className: "mt-8 space-y-8",
+					children: [
+						["today", hearings.filter((h) => h.listedOn === today)],
+						["upcoming", hearings.filter((h) => h.listedOn > today)],
+						["past", hearings.filter((h) => h.listedOn < today)]
+					].filter(([, rows]) => rows.length > 0).map(([bucket, rows]) => jsxs("section", {
+						children: [
+							jsx("h2", {
+								className: "font-display text-2xl",
+								children: bucket === "today" ? c.today : bucket === "upcoming" ? c.upcoming : c.diary
 							}),
-							jsx("div", {
-								className: "mt-1 font-medium",
-								children: h.matterTitle
-							}),
-							jsxs("div", {
-								className: "mt-1 text-sm text-muted",
-								children: [
-									h.listedAt,
-									" ",
-									h.courtName,
-									" ",
-									h.purpose
-								]
+							jsx("ol", {
+								className: "mt-3 space-y-2",
+								children: rows.map((h) => jsx("li", { children: jsx(Link, {
+									to: "/matters/$id",
+									params: { id: h.matterId },
+									hash: h.id,
+									className: "flex items-start justify-between gap-3 rounded-lg bg-surface px-4 py-3 shadow-[0_0_0_1px_rgb(255_255_255/0.08)] hover:bg-elevated",
+									children: jsxs("div", { children: [
+										jsx("div", {
+											className: "text-xs tabular-nums text-accent",
+											children: h.listedOn === today ? c.today : h.listedOn
+										}),
+										jsx("div", {
+											className: "mt-1 font-medium",
+											children: h.matterTitle
+										}),
+										jsxs("div", {
+											className: "mt-1 text-sm text-muted",
+											children: [
+												h.listedAt,
+												" ",
+												h.courtName,
+												" ",
+												h.purpose
+											]
+										}),
+										h.outcome ? jsx("div", {
+											className: "mt-1 text-xs text-subtle",
+											children: h.outcome
+										}) : null
+									] })
+								}) }, h.id))
 							})
-						] })
-					}) }, h.id))
+						]
+					}, bucket))
 				})
 			] }) : null
 		]

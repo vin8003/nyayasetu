@@ -29,7 +29,7 @@ See [data-model.md](data-model.md). In product language:
 - **Client** — name + notes
 - **Matter** — caption, proceeding, stage, court, case number, CNR, our side, parties JSON, status, next/last hearing dates
 - **Hearing** — listed on/at, room, bench, purpose, outcome, next date
-- **Document** — pasted body (orders, notes)
+- **Document** — pasted or uploaded body (order, pleading, evidence, notice)
 - **Order** — body + `directions_json` + `confirmed`
 - **Task / deadline** — title, due, **origin**, source quote
 - **Timeline event** — what happened, origin, optional ref
@@ -38,7 +38,7 @@ All rows are `user_id`-scoped. Deletes cascade from matter where the FK is set.
 
 ## Inbox confirm path
 
-1. Paste ≥ 40 characters of order text, choose a matter.
+1. Paste ≥ 40 characters of order text, **or upload** a PDF / photo / text, choose a matter. A paper on the file can send its text here via **Read as order**.
 2. `extractOrder` (AI). Directions vs suggested tasks are separate arrays in the prompt **and** the schema.
 3. Save document + **unconfirmed** order.
 4. Lawyer reviews chips (court vs AI).

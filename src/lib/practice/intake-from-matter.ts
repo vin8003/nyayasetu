@@ -26,6 +26,13 @@ export function mapCourtId(courtName: string): string {
   if (!n.trim()) return "all";
   if (/\bsupreme\b/.test(n)) return "sc";
   const aliases: Array<[RegExp, string]> = [
+    [/nclat|nclt/, "nclat"],
+    [/\bitat\b/, "itat"],
+    [/\bcat\b|administrative tribunal/, "cat"],
+    [/ncdrc|consumer (disputes|commission)/, "ncdrc"],
+    [/\bsat\b|securities appellate/, "sat"],
+    [/\bdrt\b|\bdrat\b|debt recovery/, "drt"],
+    [/\bngt\b|green tribunal/, "ngt"],
     [/delhi/, "delhi"],
     [/bombay|mumbai/, "bombay"],
     [/calcutta|kolkata/, "calcutta"],
@@ -51,9 +58,6 @@ export function mapCourtId(courtName: string): string {
     [/meghalaya/, "meghalaya"],
     [/tripura/, "tripura"],
     [/sikkim/, "sikkim"],
-    [/nclat|nclt/, "nclat"],
-    [/\bitat\b/, "itat"],
-    [/\bcat\b|administrative tribunal/, "cat"],
   ];
   for (const [re, id] of aliases) {
     if (re.test(n) && COURTS.some((c) => c.id === id)) return id;
