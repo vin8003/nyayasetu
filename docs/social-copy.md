@@ -2,9 +2,10 @@
 
 Ready to paste. Counts are characters including spaces and newlines. X limit is 280 per post.
 
-**Published article (share this URL after deploy):** `/story`
+**Published article:** [https://citebench.ordereasy.win/story](https://citebench.ordereasy.win/story)
+Hindi: [https://citebench.ordereasy.win/story?lang=hi](https://citebench.ordereasy.win/story?lang=hi)
 
-Do not claim written statement, live card payments, or eCourts filing. Those are not on `main`.
+Do not claim live card payments or eCourts filing. Court drafts (notice, reply, petition, written statement) are a first cut on screen — not stored with the matter.
 
 ---
 
@@ -12,7 +13,7 @@ Do not claim written statement, live card payments, or eCourts filing. Those are
 
 Last night this was a paste-facts research desk.
 
-This morning it’s a chamber: diary, matters, order inbox, citation-gated Indian case-law, and notice/reply/petition from the memo.
+This morning it’s a chamber: diary, matters, order inbox, citation-gated Indian case-law, and notice/reply/petition/written statement from the memo.
 
 CiteBench. Under 16 hours. Not legal advice.
 
@@ -22,7 +23,7 @@ CiteBench. Under 16 hours. Not legal advice.
 
 कल रात: तथ्य चिपकाओ, मेमो लो।
 
-आज सुबह: डायरी, मामले, आदेश इनबॉक्स, जाँचे हुए उद्धरण, नोटिस/जवाब/याचिका।
+आज सुबह: डायरी, मामले, आदेश इनबॉक्स, जाँचे हुए उद्धरण, नोटिस/जवाब/याचिका/लिखित कथन।
 
 CiteBench. 16 घंटे से कम। कानूनी सलाह नहीं।
 
@@ -41,7 +42,7 @@ The first merge wasn’t a new screen. It was a rule.
 A case is “verified” only if we actually retrieved an http(s) URL on Indian Kanoon, LiveLaw, CaseMine, eSCR, or SCI. The model does not get to tick its own box.
 
 **3/5**
-From that memo, notice / reply / petition. No web search on the draft. Invented names get stripped. A proposition with no case can stay. A fake cite cannot.
+From that memo, notice / reply / petition / written statement. No web search on the draft. Invented names get stripped. A proposition with no case can stay. A fake cite cannot.
 
 **4/5**
 Then the desk grew a practice around it.
@@ -68,7 +69,7 @@ Not legal advice. Check the original record before you file.
 साइटेशन तभी “सत्यापित” जब असल में http(s) लिंक मिला हो — Indian Kanoon, LiveLaw, CaseMine, eSCR, SCI। मॉडल खुद का टिक नहीं लगा सकता।
 
 **3/5**
-उसी मेमो से नोटिस / जवाब / याचिका। ड्राफ्ट पर वेब सर्च नहीं। गढ़े नाम कटते हैं। बिना केस की दलील रह सकती है। नकली साइटेशन नहीं।
+उसी मेमो से नोटिस / जवाब / याचिका / लिखित कथन। ड्राफ्ट पर वेब सर्च नहीं। गढ़े नाम कटते हैं। बिना केस की दलील रह सकती है। नकली साइटेशन नहीं।
 
 **4/5**
 फिर डेस्क के इर्द-गिर्द प्रैक्टिस आ गई।
@@ -97,7 +98,7 @@ Under 16 hours. Not legal advice.
 
 Started last night with paste-facts → memo.
 
-This morning: Today board, diary, matter files, order inbox (you confirm), notice/reply/petition from a citation-gated memo.
+This morning: Today board, diary, matter files, order inbox (you confirm), notice/reply/petition/written statement from a citation-gated memo.
 
 Sample chamber is free. Trial starts on your own work.
 

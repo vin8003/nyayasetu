@@ -1,7 +1,9 @@
 # From a research desk to a chamber
 
-**Published:** the formatted article is a public page on the product.
+The live article is a public page, not this file:
 
-**[/story](/story)** — paper layout, Hindi/English, then/now, hour-by-hour.
+**https://citebench.ordereasy.win/story**
 
-Do not treat this markdown file as the live post. Edit `src/lib/story/copy.ts` and `src/routes/story.tsx` if the story changes.
+Hindi: **https://citebench.ordereasy.win/story?lang=hi**
+
+Paper layout, Newsreader / Noto Serif Devanagari, Open Graph image at `/og.jpg`. Edit `src/lib/story/copy.ts` and `src/routes/story.tsx` if the story changes.
