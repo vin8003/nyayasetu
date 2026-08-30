@@ -8,7 +8,7 @@ CiteBench is a practice assistant for Indian advocates. These pages describe **w
 | [product.md](product.md) | Advocates, PMs | What each screen is for |
 | [architecture.md](architecture.md) | Engineers | How the app is wired |
 | [practice-chamber.md](practice-chamber.md) | Engineers, PMs | Diary, matters, workflow, sample, inbox |
-| [research-and-drafts.md](research-and-drafts.md) | Engineers | Memo generation and notice / reply / petition |
+| [research-and-drafts.md](research-and-drafts.md) | Engineers | Memo generation, follow-ups, and court drafts |
 | [trust-and-citations.md](trust-and-citations.md) | Engineers, reviewers | Why a cite is “verified” |
 | [billing.md](billing.md) | Product, engineers | Trial clock and the ₹500 chamber |
 | [data-model.md](data-model.md) | Engineers | SQL tables and JSON fields |
@@ -20,7 +20,8 @@ CiteBench is a practice assistant for Indian advocates. These pages describe **w
 
 These exist as later work, not as product on `main`:
 
-- Persisting court drafts (letters are session-only)
+- Persisting **research-desk** letters (notice / reply / petition / written statement from the memo stay on screen). **Draft this** from a task or deadline *is* saved on the matter papers (`source_kind = ai_draft`).
+- Linking a saved memo to `memos.matter_id` (the column exists; save/list do not write it)
 - Vakalatnama as a filled form
 - OCR for scanned, image-only PDFs
 - Live card capture on `/billing`

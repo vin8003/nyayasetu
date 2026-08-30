@@ -21,7 +21,7 @@ Copy `.env.example` to `.env` if you need secrets. Do not commit `.env`.
 
 | Variable | Required for | Notes |
 |---|---|---|
-| `XAI_API_KEY` | Research, drafts, OCR, order extract, hearing brief | Fail-closed as `AI_UNAVAILABLE` when unset |
+| `XAI_API_KEY` | Research, follow-up, drafts, OCR, order extract, hearing brief, Draft this | Fail-closed as `AI_UNAVAILABLE` when unset |
 | `DATABASE_URL` | Persistent Postgres | Unset → in-memory PGLite (preview/dev). Empty string counts as unset |
 | `VITE_AUTH_ENABLED` | `"false"` disables providers | Default (unset) shows sign-in. `"false"` + `DATABASE_URL` is forbidden |
 | `GROK_AUTH_ISSUER` | Federated Google/X | Defaults to the shared broker |
@@ -35,7 +35,7 @@ Username/password is on (`src/lib/auth/email-password.ts` → `emailAndPasswordE
 
 ## Database
 
-**No `DATABASE_URL`:** PGLite in process. `migrations/0001_auth.sql` … `0004_billing.sql` apply on boot. Restarting the dev server **wipes** the chamber.
+**No `DATABASE_URL`:** PGLite in process. `migrations/0001_auth.sql` … `0005_memo_parent.sql` apply on boot. Restarting the dev server **wipes** the chamber.
 
 **With `DATABASE_URL`:** `pg` pool. Pending `migrations/*.sql` apply on first `getSql()` (and at the end of `npm run build` via `db:migrate`).
 
@@ -59,7 +59,7 @@ node --experimental-strip-types --test \
   src/lib/practice/*.test.ts
 ```
 
-Useful files: `src/lib/billing/plan.test.ts`, `src/lib/research/verify.test.ts`, `src/lib/research/letter-*.test.ts`, `src/lib/practice/sample.test.ts`, `src/lib/practice/intake-from-matter.test.ts`.
+Useful files: `src/lib/billing/plan.test.ts`, `src/lib/research/verify.test.ts`, `src/lib/research/letter-*.test.ts`, `src/lib/research/follow-up.test.ts`, `src/lib/research/history-search.test.ts`, `src/lib/practice/sample.test.ts`, `src/lib/practice/task-draft.test.ts`, `src/lib/practice/intake-from-matter.test.ts`.
 
 ## Auth in local vs deploy
 
@@ -76,7 +76,7 @@ You can still:
 - Create matters and hearings
 - Open workflow copy on a matter record
 
-You cannot run research, drafts, order extract, or hearing brief until `XAI_API_KEY` is set.
+You cannot run research, follow-ups, memo letters, **Draft this** (except the sample skeleton), order extract, or hearing brief until `XAI_API_KEY` is set.
 
 ## Build
 
@@ -90,5 +90,5 @@ Vite production build, then migrate if `DATABASE_URL` is set. `VITE_*` must matc
 
 - New copy: both `hi` and `en` (`src/lib/practice/copy.ts`, `src/lib/research/copy.ts`, `src/lib/billing/copy.ts`).
 - New letter kind: extend `LETTER_KINDS`, `letterChrome`, and `kindLine` together (`Record<LetterKind, …>`).
-- New AI: `authMiddleware` + `gateAi` + no `web_search` unless you are `run.ts`.
+- New AI: `authMiddleware` + `gateAi` + no `web_search` unless you are `run.ts` or `follow-up.ts`.
 - User-visible dates and cites: keep court vs AI origins separate.

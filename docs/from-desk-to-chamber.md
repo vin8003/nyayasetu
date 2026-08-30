@@ -1,7 +1,9 @@
 # From a research desk to a chamber
 
-**Published:** the formatted article is a public page on the product.
+The live article is a public page, not this file:
 
-**[/story](/story)** — paper layout, Hindi/English, then/now, hour-by-hour.
+**https://citebench.ordereasy.win/story** — also **`/story`** on any deploy of this app.
+
+Paper layout, Hindi/English, then/now, hour-by-hour. Guests can open it from Today (“How we got here”).
 
 Do not treat this markdown file as the live post. Edit `src/lib/story/copy.ts` and `src/routes/story.tsx` if the story changes.

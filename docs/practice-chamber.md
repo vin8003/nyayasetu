@@ -53,7 +53,17 @@ Unconfirmed orders also appear on Today until handled.
 
 ## Draft from a task or deadline
 
-`draftForWork` classifies the item (`classifyTaskDraft`). Filings (written statement, reply, notice, petition, application, affidavit, court note) are drafted from the file with no web search and saved as `matter_documents` (`source_kind = ai_draft`). Gather / appearance tasks are not drafted. Sample chamber uses a deterministic skeleton if the model is down. Gated like other AI. The lawyer still marks the task done.
+Open items on Today and on the matter record that look like a filing get **Draft this** (`draftForWork`).
+
+`classifyTaskDraft(title, sourceQuote)` (`src/lib/practice/task-draft-class.ts`):
+
+| Draftable kinds | Left for the lawyer |
+|---|---|
+| written statement, reply, notice, petition, application, affidavit, court note | Gather / diary / appearance / “compile the papers” |
+
+The draft is built from the **file only** (notes, last order, parties, papers on file). No `web_search`. Chat Completions JSON, 45s abort, model `grok-4.20-0309-non-reasoning`. Saved as `matter_documents` with `source_kind = ai_draft` and a timeline event (`ai_suggestion`). Sample chamber uses `draftFromBundle` if the model is down. The lawyer still marks the task done — the draft does not close the item.
+
+This is not `draftLetter`. Memo letters reuse stamped cites and stay on screen. Task drafts do not load a memo.
 
 ## Sample chamber
 
@@ -71,7 +81,7 @@ Detection (`looksLikeSample` / `isSampleMatter`): exact titles or case numbers `
 
 ## Today board
 
-`getTodayBoard` aggregates for the user: hearings today, upcoming, open deadlines, open tasks, unconfirmed orders, stale matters, `sampleLoaded` flag, counts. The home page is this board plus Load sample.
+`getTodayBoard` aggregates for the user: hearings today, upcoming, open deadlines, open tasks, unconfirmed orders, stale matters, `sampleLoaded` flag, counts. The home page is this board plus Load sample. Draftable tasks and deadlines also show **Draft this**, which jumps to `/matters/$id#<itemId>`.
 
 ## Trust in the file
 
