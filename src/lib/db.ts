@@ -50,6 +50,14 @@ const globalRef = globalThis as typeof globalThis & {
   __pgliteMigrateChain__?: Promise<void>;
 };
 
+function migrationFiles(): Record<string, string> {
+  return import.meta.glob("/migrations/*.sql", {
+    query: "?raw",
+    import: "default",
+    eager: true,
+  }) as Record<string, string>;
+}
+
 /**
  * Result-type parity: Postgres sends every value as text plus a type OID — the
  * JS value is the DRIVER's parsing choice, and pg and PGLite disagree (pg:
@@ -94,6 +102,38 @@ function createNeonSql(): Promise<Sql> {
     types.setTypeParser(OID_DATE, identity);
     types.setTypeParser(OID_INTERVAL, identity);
     const pool = new Pool({ connectionString: databaseUrl });
+
+    // Deployed DBs used to migrate only during `npm run build`. A hot preview
+    // or a missed migrate left `memos` without later columns (parent_id). Apply
+    // pending files here too — same `_migrations` bookkeeping as migrate.mjs.
+    const client = await pool.connect();
+    try {
+      await client.query(
+        "create table if not exists _migrations (name text primary key, applied_at timestamptz not null default now())",
+      );
+      const applied = (await client.query("select name from _migrations")).rows.map(
+        (r: { name: string }) => r.name,
+      );
+      const files = migrationFiles();
+      for (const { name, path } of pendingMigrations(Object.keys(files), applied)) {
+        try {
+          await client.query("BEGIN");
+          await client.query(files[path]);
+          await client.query("insert into _migrations (name) values ($1)", [name]);
+          await client.query("COMMIT");
+        } catch (err) {
+          try {
+            await client.query("ROLLBACK");
+          } catch {
+            /* keep original error */
+          }
+          throw err;
+        }
+      }
+    } finally {
+      client.release();
+    }
+
     return toSql(async <T>(text: string, params: unknown[]) => {
       const res = await pool.query(text, params);
       return res.rows as T[];
@@ -137,11 +177,7 @@ async function createPgliteSql(): Promise<Sql> {
   // passes serialized on a global chain so concurrent callers never
   // double-apply.
   const migrate = async (): Promise<void> => {
-    const migrations = import.meta.glob("/migrations/*.sql", {
-      query: "?raw",
-      import: "default",
-      eager: true,
-    }) as Record<string, string>;
+    const migrations = migrationFiles();
     const doneRows = await pg.query<{ name: string }>(
       "select name from _migrations",
     );
@@ -214,25 +250,25 @@ export async function getPglite(): Promise<import("@electric-sql/pglite").PGlite
  *
  * - **PGLite** (preview / no `DATABASE_URL`): open the in-memory DB and apply
  *   `migrations/*.sql`. Idempotent — concurrent callers share one promise.
- * - **Neon**: no-op (pool is created lazily on first query).
+ * - **Neon**: open the pool and apply any pending `migrations/*.sql` (same
+ *   `_migrations` table as `npm run db:migrate`).
  *
  * Vite `configureServer` awaits this at dev startup; production imports of this
  * module kick it off immediately (see bottom of file).
  */
 export function ensureDbReady(): Promise<void> {
-  if (dbSource !== "pglite") return Promise.resolve();
   return getSql().then(() => undefined);
 }
 
-// Server-only eager start: kick PGLite bootstrap as soon as this module loads in
+// Server-only eager start: kick DB bootstrap as soon as this module loads in
 // Node. Client bundles never hit this path (`getSql` throws in the browser).
 const globalBoot = globalThis as typeof globalThis & {
   __pgBootstrapPromise__?: Promise<void>;
 };
-if (typeof window === "undefined" && dbSource === "pglite") {
+if (typeof window === "undefined") {
   globalBoot.__pgBootstrapPromise__ ??= ensureDbReady().catch((err) => {
     globalBoot.__pgBootstrapPromise__ = undefined;
-    console.error("[db] PGLite bootstrap failed:", err);
+    console.error("[db] bootstrap failed:", err);
     throw err;
   });
 }

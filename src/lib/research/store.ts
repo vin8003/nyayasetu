@@ -4,9 +4,20 @@ import { authMiddleware } from "@/lib/auth/middleware";
 import { intakeSchema } from "./schema";
 import type { HistoryItem, Intake, LegalMemo } from "./types";
 
+let parentColumnReady = false;
+
+async function ensureParentColumn() {
+  if (parentColumnReady) return;
+  const sql = await getSql();
+  await sql.query("alter table memos add column if not exists parent_id text");
+  await sql.query("create index if not exists memos_parent_id_idx on memos (parent_id)");
+  parentColumnReady = true;
+}
+
 export const listMemos = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
+    await ensureParentColumn();
     const sql = await getSql();
     const rows = await sql<{
       id: string;
@@ -47,6 +58,7 @@ export const saveMemoRecord = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ context, data }) => {
+    await ensureParentColumn();
     const sql = await getSql();
     const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     const title = data.memo.title || "Legal research memo";

@@ -1,6 +1,6 @@
 # Data model
 
-Schema is **only** `migrations/*.sql`. PGLite applies those files on first `getSql()`; production uses `npm run db:migrate` against `DATABASE_URL`. Auth Better Auth tables live in `migrations/0001_auth.sql` (and the unused opt-in copy under `migrations/auth/` is not auto-applied).
+Schema is **only** `migrations/*.sql`. PGLite applies those files on first `getSql()`. Production Neon applies the same files on first connect **and** via `npm run db:migrate` at build. Both record applied files in `_migrations`. Auth Better Auth tables live in `migrations/0001_auth.sql` (and the unused opt-in copy under `migrations/auth/` is not auto-applied).
 
 ## `0002_memos.sql`
 

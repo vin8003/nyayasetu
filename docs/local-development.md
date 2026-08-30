@@ -37,7 +37,7 @@ Username/password is on (`src/lib/auth/email-password.ts` → `emailAndPasswordE
 
 **No `DATABASE_URL`:** PGLite in process. `migrations/0001_auth.sql` … `0004_billing.sql` apply on boot. Restarting the dev server **wipes** the chamber.
 
-**With `DATABASE_URL`:** `pg` pool. Run `npm run db:migrate` (also runs at the end of `npm run build`).
+**With `DATABASE_URL`:** `pg` pool. Pending `migrations/*.sql` apply on first `getSql()` (and at the end of `npm run build` via `db:migrate`).
 
 Never create tables in `createServerFn` handlers.
 
