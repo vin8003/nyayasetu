@@ -107,6 +107,20 @@ describe("buildLetterUser", () => {
     assert.doesNotMatch(user, /Invented Case/);
   });
 
+  it("asks for a written statement shape when kind is writtenStatement, without a notice demand", () => {
+    const user = buildLetterUser({
+      kind: "writtenStatement",
+      intake: { ...intake, side: "respondent" },
+      memo,
+    });
+    assert.match(user, /written statement|लिखित कथन/i);
+    assert.match(user, /preliminary|verification|para-wise|prayer/i);
+    assert.doesNotMatch(user, /time to comply/i);
+    assert.match(user, /Arnesh Kumar/);
+    assert.doesNotMatch(user, /Invented Case/);
+    assert.match(user, /respondent/);
+  });
+
   it("asks for a reply shape when kind is reply, in the memo language", () => {
     const user = buildLetterUser({
       kind: "reply",
