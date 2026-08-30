@@ -150,13 +150,13 @@ export function MattersIndexPage() {
 									onClick: () => void exitSample(),
 									children: c.clearSampleYes
 								}, "remove")
-							] : jsx(Button, {
+							] : [jsx(Button, {
 								type: "button",
 								variant: "outline",
 								disabled: busy,
 								onClick: () => setConfirmExit(true),
 								children: c.clearSample
-							})
+							}, "exit")]
 						})
 					]
 				}) : jsxs("div", {
