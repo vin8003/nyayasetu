@@ -17,7 +17,7 @@ Last matched to `main` on the evening of **30 August 2026** (papers on the file,
 | [local-development.md](local-development.md) | Engineers | Env vars, auth modes, tests |
 | [from-desk-to-chamber.md](from-desk-to-chamber.md) | Anyone | Points to the live **/story** article |
 | [social-copy.md](social-copy.md) | Founder | Pointer → [content/](content/) paste bank |
-| [content/](content/) | Founder, agents | Dual-home content system + Notion Content Calendar mirror |
+| [content/](content/) | Founder, agents | EN dual-home: marketing plan, bot workflow, Exact paste bank |
 
 ## Out of this tree (not shipped)
 

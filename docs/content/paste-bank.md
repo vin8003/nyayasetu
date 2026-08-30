@@ -1,225 +1,475 @@
-# Paste bank
+# Paste bank (English only — copy / paste)
 
-Ready to paste. Counts for X posts include spaces and newlines (limit 280).
+**Policy:** English only. No Hindi marketing copy.
 
-**Published article:** https://citebench.ordereasy.win/story  
-Hindi: https://citebench.ordereasy.win/story?lang=hi
+Each block is **post-ready**. Copy the text inside the fence. Do not invent metrics. Voice/bot does not post without `Approved` + `Preflight OK` (see [bot-workflow.md](bot-workflow.md)).
 
-Do not claim live card payments or eCourts filing. Court drafts from a matter save on the papers. Standalone desk drafts stay on screen.
+Live: https://citebench.ordereasy.win  
+Story: https://citebench.ordereasy.win/story  
+Repo: https://github.com/vin8003/nyayasetu  
 
-Voice does not post without Vineet’s yes.
+Photo: `public/og.jpg` (no fake memo screenshots).
+
+Metadata line under each ID is for the Calendar row / bot — not part of the paste.
 
 ---
 
-## X — single post (English)
+## PB-X-01 — Chamber launch (single)
 
+```
+meta: Channel=X | Claim=CONFIRMED | Campaign=Chamber launch | Bot mode=Queue for bot | chars≈178
+```
+
+```
 Last night this was a paste-facts research desk.
 
 By morning: diary, matters, order inbox, citation-gated Indian case-law.
 
-By night: papers on the file, Hindi that wraps, Back that means back.
+By night: papers on the file, and Back that means back.
 
 CiteBench. Not legal advice.
+https://citebench.ordereasy.win
+```
 
 ---
 
-## X — single post (Hindi)
+## PB-X-02a — Trust thread 1/5
 
-कल रात: तथ्य चिपकाओ, मेमो लो।
+```
+meta: Channel=X | Claim=CONFIRMED | Campaign=Trust rules | Bot mode=Queue for bot | chars≈156
+```
 
-सुबह: डायरी, मामले, आदेश इनबॉक्स, जाँचे हुए उद्धरण।
-
-रात: कागज़ फाइल पर, हिंदी कटती नहीं, वापस का मतलब वापस।
-
-CiteBench. कानूनी सलाह नहीं।
-
----
-
-## X — thread (English)
-
-**1/5**  
+```
+1/5
 Last night CiteBench was one job: paste facts, get an Indian case-law memo.
 
 By morning it was a chamber. By night the file opened on a phone, and Back meant back.
+```
 
-**2/5**  
+---
+
+## PB-X-02b — Trust thread 2/5
+
+```
+meta: Channel=X | Claim=CONFIRMED | Campaign=Trust rules | Bot mode=Queue for bot | chars≈214
+```
+
+```
+2/5
 The first merge wasn’t a new screen. It was a rule.
 
 A case is “verified” only if we actually retrieved an http(s) URL on Indian Kanoon, LiveLaw, CaseMine, eSCR, or SCI. The model does not get to tick its own box.
+```
 
-**3/5**  
-From that memo, notice / reply / petition / written statement. No web search on the draft. Invented names get stripped. From a matter, the draft saves on the papers.
+---
 
-**4/5**  
+## PB-X-02c — Trust thread 3/5
+
+```
+meta: Channel=X | Claim=CONFIRMED | Campaign=Trust rules | Bot mode=Queue for bot | chars≈198
+```
+
+```
+3/5
+From that memo: notice / reply / petition / written statement.
+
+No web search on the draft. Invented names get stripped. From a matter, the draft saves on the papers.
+```
+
+---
+
+## PB-X-02d — Trust thread 4/5
+
+```
+meta: Channel=X | Claim=CONFIRMED | Campaign=Trust rules | Bot mode=Queue for bot | chars≈248
+```
+
+```
+4/5
 Then the desk grew a practice around it.
 
-Today board. Hearings in today / upcoming / earlier. Matter file with stages. Paste an order — the model extracts; you confirm. Court directions and AI suggestions stay different colours. You can correct a listing, a paper, a task.
+Today board. Hearings in today / upcoming / earlier. Matter file with stages. Paste an order — the model extracts; you confirm. Court directions and AI suggestions stay different colours.
+```
 
-**5/5**  
+---
+
+## PB-X-02e — Trust thread 5/5
+
+```
+meta: Channel=X | Claim=CONFIRMED | Campaign=Trust rules | Bot mode=Queue for bot | chars≈214
+```
+
+```
+5/5
 Sample chamber is free and does not start the trial. Your own research does. 30 days, then ₹500/month. Card not live yet.
 
 Not legal advice. Check the original record before you file.
+https://citebench.ordereasy.win/story
+```
 
 ---
 
-## X — thread (Hindi)
+## PB-X-03 — Rename (ready rewrite of SAMPLE)
 
-**1/5**  
-कल रात CiteBench एक काम था: तथ्य चिपकाओ, भारतीय केस-लॉ मेमो लो।
+```
+meta: Channel=X | Claim=CONFIRMED | Campaign=Rename | Bot mode=Queue for bot | chars≈246
+```
 
-सुबह यह एक चैंबर था। रात तक फाइल फ़ोन पर खुलती है, और वापस का मतलब वापस है।
+```
+I renamed it.
 
-**2/5**  
-पहला मर्ज नई स्क्रीन नहीं था। एक नियम था।
+NyayaSetu is already a Government of India brand (DoJ citizen chatbot on nyayasetu.doj.gov.in, plus an MHA/NIC police dashboard).
 
-साइटेशन तभी “सत्यापित” जब असल में http(s) लिंक मिला हो — Indian Kanoon, LiveLaw, CaseMine, eSCR, SCI। मॉडल खुद का टिक नहीं लगा सकता।
+Mine is CiteBench: a private chamber for Indian advocates — not a citizen chatbot.
 
-**3/5**  
-उसी मेमो से नोटिस / जवाब / याचिका / लिखित कथन। ड्राफ्ट पर वेब सर्च नहीं। गढ़े नाम कटते हैं। मामले से निकले ड्राफ्ट कागज़ों पर सहेजते हैं।
-
-**4/5**  
-फिर डेस्क के इर्द-गिर्द प्रैक्टिस आ गई।
-
-आज की बोर्ड। पेशियाँ — आज / आगे / पहले। मामले की फाइल। आदेश चिपकाओ — मॉडल निकाले, आप पुष्टि करो। अदालत का निर्देश और AI सुझाव अलग रंग। पेशी, कागज़, कार्य सुधारे जा सकते हैं।
-
-**5/5**  
-नमूना चैंबर मुफ़्त है, आज़माइश नहीं चलती। अपना शोध चलने पर 30 दिन, फिर ₹500/महीना। कार्ड अभी नहीं।
-
-कानूनी सलाह नहीं। फाइल करने से पहले मूल रिकॉर्ड देखें।
+https://citebench.ordereasy.win
+```
 
 ---
 
-## Rename talking point {#rename-talking-point}
+## PB-X-04 — Lawyer feedback ask
 
-SAMPLE ONLY — rewrite before posting.
+```
+meta: Channel=X | Claim=CONFIRMED | Campaign=Lawyer discovery | Bot mode=Queue for bot | chars≈178
+```
 
-I had to rename it. NyayaSetu is already a Government of India app (DoJ chatbot on nyayasetu.doj.gov.in, plus an MHA police dashboard). Mine is CiteBench: an advocate’s chamber, not a citizen chatbot.
+```
+If you file in a High Court or the Supreme Court:
 
----
+What would you need to see before you trusted a research memo that was not typed by a junior?
 
-## Build in public {#build-in-public}
-
-CLAIM — phone/speed is Vineet’s claim; git log is public.
-
-Repo is still called nyayasetu. The app is CiteBench. First commit 29 Aug 2026. Grok app builder + Cursor Cloud Agent. The phone part is my claim; the git log is public.
-
----
-
-## Lawyer feedback ask {#lawyer-feedback-ask}
-
-If you file in a High Court or the Supreme Court: what would you need to see before you trusted a research memo that was not typed by a junior?
+CiteBench is practice assistance, not legal advice.
+https://citebench.ordereasy.win
+```
 
 ---
 
-## Vision tease (X) {#vision-tease-x}
+## PB-X-05 — Build in public (CLAIM)
 
-VISION — must lead with *building toward*.
+```
+meta: Channel=X | Claim=CLAIM | Campaign=Build in public | Bot mode=Human only | chars≈236
+```
 
-Building toward: a lawyer opens CiteBench and asks “what do I need to do today?”
+```
+Repo is still called nyayasetu. The app is CiteBench.
+
+First commit: 29 Aug 2026 (public git log). Built with Grok app builder + Cursor Cloud Agent.
+
+“Entirely from a phone” is my claim. The trust rules are the product point — not the stopwatch.
+
+https://github.com/vin8003/nyayasetu
+```
+
+---
+
+## PB-X-06 — Vision tease (VISION)
+
+```
+meta: Channel=X | Claim=VISION | Campaign=Vision tease | Bot mode=Human only | chars≈278
+```
+
+```
+Building toward (not shipped): a lawyer opens CiteBench and asks “what do I need to do today?”
 
 What ships now: court diary, matters, order inbox (you confirm), citation-gated research.
 
-What is still discovery: full proceeding workflow engine, order→action pipeline as the default morning loop.
+Still discovery: full proceeding engine + order→action as the default morning loop.
 
 CiteBench. Not legal advice.
+```
 
 ---
 
-## Article — /story {#article--story}
+## PB-X-07 — Five surfaces
 
-First-day record: from paste-facts desk to chamber — diary, matters, order inbox, citation-gated research. Speed is the wrong headline. The trust rules are the point.
+```
+meta: Channel=X | Claim=CONFIRMED | Campaign=Chamber launch | Bot mode=Queue for bot | chars≈236
+```
+
+```
+CiteBench chamber (live):
+
+Today — hearings, deadlines, tasks
+Diary — listings
+Matters — the file
+Research — facts → memo → drafts
+Inbox — paste an order; you confirm
+
+Not legal advice.
+https://citebench.ordereasy.win
+```
+
+---
+
+## PB-X-08 — Verified means retrieved
+
+```
+meta: Channel=X | Claim=CONFIRMED | Campaign=Trust rules | Bot mode=Queue for bot | chars≈214
+```
+
+```
+In CiteBench, “verified” is not a vibe.
+
+A cite is verified only if we retrieved an http(s) URL on Indian Kanoon, LiveLaw, CaseMine, eSCR, or SCI.
+
+If we didn’t retrieve it, it stays unverified.
+
+Not legal advice.
+https://citebench.ordereasy.win
+```
+
+---
+
+## PB-X-09 — Human confirm on orders
+
+```
+meta: Channel=X | Claim=CONFIRMED | Campaign=Trust rules | Bot mode=Queue for bot | chars≈198
+```
+
+```
+Paste a court order into CiteBench Inbox.
+
+The model extracts directions and suggests tasks.
+You confirm before the chamber updates.
+
+Court directions and AI suggestions stay different colours on purpose.
+
+Not legal advice.
+```
+
+---
+
+## PB-X-10 — Sample chamber
+
+```
+meta: Channel=X | Claim=CONFIRMED | Campaign=Chamber launch | Bot mode=Queue for bot | chars≈188
+```
+
+```
+Sample chamber is free. It does not start the trial.
+
+The clock starts when you run AI on your own matter.
+30 days, then ₹500/month. Card collection is not live yet.
+
+CiteBench. Not legal advice.
+https://citebench.ordereasy.win
+```
+
+---
+
+## PB-ART-01 — Share /story
+
+```
+meta: Channel=Article | Claim=CONFIRMED | Campaign=Chamber launch | Bot mode=Queue for bot
+```
+
+```
+First-day record: from paste-facts desk to chamber — diary, matters, order inbox, citation-gated research.
+
+Speed is the wrong headline. The trust rules are the point.
 
 https://citebench.ordereasy.win/story
+```
 
 ---
 
-## Marketing — pitch blurb {#marketing--pitch-blurb}
+## PB-WA-01 — WhatsApp status (short)
 
+```
+meta: Channel=WhatsApp status | Claim=CONFIRMED | Campaign=Chamber launch | Bot mode=Human only
+```
+
+```
+Last night: a research desk.
+By morning: a chamber.
+By night: the file on a phone, and Back that means back.
+
+CiteBench. Not legal advice.
+https://citebench.ordereasy.win
+```
+
+---
+
+## PB-WA-02 — WhatsApp status (longer)
+
+```
+meta: Channel=WhatsApp status | Claim=CONFIRMED | Campaign=Chamber launch | Bot mode=Human only
+```
+
+```
+Started with paste-facts → memo.
+
+Now: Today board, diary, matter files, order inbox (you confirm), notice/reply/petition/written statement from a citation-gated memo.
+
+Sample chamber is free. Trial starts on your own work. Card not live yet.
+
+CiteBench. Not legal advice.
+https://citebench.ordereasy.win
+```
+
+---
+
+## PB-MKT-01 — Pitch blurb (bio / LinkedIn / landing)
+
+```
+meta: Channel=Marketing | Claim=CONFIRMED | Campaign=Chamber launch | Bot mode=Queue for bot
+```
+
+```
 CiteBench is a practice assistant for Indian advocates: court diary, matter files, order inbox, and an Indian case-law research desk in one chamber.
-
-English and Hindi. Not legal advice.
 
 Verified cites require an allowlisted URL we actually retrieved. Court directions and AI suggestions stay separate until you confirm.
 
 Sample chamber is free. Trial starts on your own work — 30 days, then ₹500/month. Card collection is not live yet.
 
+Not legal advice.
 https://citebench.ordereasy.win
+```
 
 ---
 
-## WhatsApp status (English) {#whatsapp-status-english}
+## PB-MKT-02 — Short bio (≤160)
 
-### Short
+```
+meta: Channel=Marketing | Claim=CONFIRMED | Campaign=Chamber launch | Bot mode=Queue for bot | chars≈148
+```
 
-Last night: a research desk.  
-By morning: a chamber.  
-By night: the file on a phone, and Back that means back.
-
-CiteBench. Not legal advice.
-
-### Longer
-
-Started last night with paste-facts → memo.
-
-Morning: Today board, diary, matter files, order inbox (you confirm), notice/reply/petition/written statement from a citation-gated memo.
-
-Night: papers on the file, Hindi that wraps, a listing you can leave.
-
-Sample chamber is free. Trial starts on your own work.
-
-CiteBench. Not legal advice.
+```
+CiteBench — practice assistant for Indian advocates. Diary, matters, order inbox, citation-gated research. Not legal advice. citebench.ordereasy.win
+```
 
 ---
 
-## WhatsApp status (Hindi) {#whatsapp-status-hindi}
+## PB-RPL-01 — Reply: “Is this Nyaya Setu?”
 
-कल रात: शोध डेस्क।  
-सुबह: पूरा चैंबर।  
-रात: फाइल फ़ोन पर, वापस का मतलब वापस।
+```
+meta: Channel=Reply | Claim=CONFIRMED | Campaign=Rename | Bot mode=Queue for bot
+```
 
-CiteBench — डायरी, मामले, आदेश, जाँचे हुए उद्धरण।
+```
+Different product.
 
-कानूनी सलाह नहीं।
+Nyaya Setu on doj.gov.in is a Government of India citizen chatbot. CiteBench is a private chamber for Indian advocates — diary, matters, order inbox, case-law research.
+
+Same old GitHub repo name; the app is CiteBench.
+https://citebench.ordereasy.win
+```
 
 ---
 
-## Reply bank {#reply-bank}
+## PB-RPL-02 — Reply: “AI lawyer?”
 
-### “Is this Nyaya Setu?”
+```
+meta: Channel=Reply | Claim=CONFIRMED | Campaign=Trust rules | Bot mode=Queue for bot
+```
 
-Different product. Nyaya Setu on doj.gov.in is a Government of India citizen chatbot. CiteBench is a private chamber for Indian advocates — diary, matters, order inbox, case-law research. Same old GitHub repo name; the app is CiteBench.
+```
+No — practice assistance, not legal advice.
+
+You confirm orders before the file updates. A cite is verified only if we retrieved an allowlisted URL. You still check the original record before filing.
 
 https://citebench.ordereasy.win
-
-### “AI lawyer?”
-
-No — practice assistance, not legal advice. You confirm orders before the file updates. A cite is verified only if we retrieved an allowlisted URL. You still check the original record before filing.
-
-### Speed / phone build
-
-First commit 29 Aug 2026 — public git log. Grok app builder + Cursor Cloud Agent fingerprints are in the repo. “Entirely from a phone” is my claim; the trust rules are the product point, not the stopwatch.
+```
 
 ---
 
-## Personal DM — advocate {#personal-dm-advocate}
+## PB-RPL-03 — Reply: speed / phone
 
-Hi — building CiteBench for Indian advocates (not a citizen chatbot).
+```
+meta: Channel=Reply | Claim=CLAIM | Campaign=Build in public | Bot mode=Human only
+```
+
+```
+First commit 29 Aug 2026 — public git log. Grok app builder + Cursor Cloud Agent fingerprints are in the repo.
+
+“Entirely from a phone” is my claim. The trust rules are the product point, not the stopwatch.
+
+https://github.com/vin8003/nyayasetu
+```
+
+---
+
+## PB-RPL-04 — Reply: “Does it file on eCourts?”
+
+```
+meta: Channel=Reply | Claim=CONFIRMED | Campaign=Trust rules | Bot mode=Queue for bot
+```
+
+```
+No. CiteBench does not file on eCourts.
+
+It helps with diary, matters, order intake (you confirm), and citation-gated research. Not legal advice.
+
+https://citebench.ordereasy.win
+```
+
+---
+
+## PB-RPL-05 — Reply: “Are payments live?”
+
+```
+meta: Channel=Reply | Claim=CONFIRMED | Campaign=Chamber launch | Bot mode=Queue for bot
+```
+
+```
+Card collection is not live yet.
+
+Sample chamber is free and does not start the trial. Plan copy: 30 days on your own work, then ₹500/month (GST extra) when billing goes live.
+
+https://citebench.ordereasy.win
+```
+
+---
+
+## PB-DM-01 — Personal message (advocate)
+
+```
+meta: Channel=Personal message | Claim=CONFIRMED | Campaign=Lawyer discovery | Bot mode=Human only
+Replace {Name} and optionally add court/city.
+```
+
+```
+Hi {Name} — building CiteBench for Indian advocates (not a citizen chatbot).
 
 What it does today: court diary, matter files, paste-an-order inbox (you confirm), and facts→memo research with citation gating.
 
 Curious what you would refuse to trust in a research memo that wasn’t typed by a junior. Happy to walk you through the sample chamber — free, doesn’t start the trial.
 
 https://citebench.ordereasy.win
+```
 
 ---
 
-## Outreach email — advocate intro {#outreach-email-advocate}
+## PB-DM-02 — Personal message (follow-up)
 
-**Subject:** CiteBench — chamber for Indian advocates (not the GoI chatbot)
+```
+meta: Channel=Personal message | Claim=CONFIRMED | Campaign=Lawyer discovery | Bot mode=Human only
+```
+
+```
+Hi {Name} — quick follow-up on CiteBench.
+
+If useful, the free sample chamber is the fastest way to see diary + matters + inbox + research without starting the trial clock.
+
+Still keen on one answer: what would you not trust in a research memo?
+
+https://citebench.ordereasy.win
+```
+
+---
+
+## PB-EM-01 — Outreach email (advocate intro)
+
+```
+meta: Channel=Outreach email | Claim=CONFIRMED | Campaign=Outreach | Bot mode=Human only
+```
+
+```
+Subject: CiteBench — chamber for Indian advocates (not the GoI chatbot)
 
 Hi {Name},
 
-I’m Vineet. CiteBench is a practice assistant for Indian advocates: court diary, matter files, order inbox, and Indian case-law research in one chamber (English + Hindi).
+I’m Vineet. CiteBench is a practice assistant for Indian advocates: court diary, matter files, order inbox, and Indian case-law research in one chamber.
 
 Important distinctions:
 - Not the Government Nyaya Setu chatbot / police dashboard
@@ -231,17 +481,23 @@ Sample chamber is free and does not start the trial. Trial starts when you run A
 
 If useful, I’d value 15 minutes on what you would not trust in a research memo.
 
-Product: https://citebench.ordereasy.win  
+Product: https://citebench.ordereasy.win
 Story: https://citebench.ordereasy.win/story
 
-Thanks,  
+Thanks,
 Vineet
+```
 
 ---
 
-## Outreach email — senior chamber {#outreach-email-senior}
+## PB-EM-02 — Outreach email (senior chamber)
 
-**Subject:** Would your juniors trust a citation-gated memo?
+```
+meta: Channel=Outreach email | Claim=CONFIRMED | Campaign=Outreach | Bot mode=Human only
+```
+
+```
+Subject: Would your juniors trust a citation-gated memo?
 
 Hi {Name},
 
@@ -256,12 +512,18 @@ Not asking you to file from it. Asking what would make a memo safe enough for a 
 https://citebench.ordereasy.win
 
 Vineet
+```
 
 ---
 
-## Outreach email — rename clarification {#outreach-email-rename}
+## PB-EM-03 — Outreach email (rename clarification)
 
-**Subject:** Quick clarification: CiteBench ≠ Nyaya Setu (GoI)
+```
+meta: Channel=Outreach email | Claim=CONFIRMED | Campaign=Rename | Bot mode=Human only
+```
+
+```
+Subject: Quick clarification: CiteBench ≠ Nyaya Setu (GoI)
 
 Hi {Name},
 
@@ -269,12 +531,55 @@ If you saw “NyayaSetu” on GitHub — that’s the old repo name. The product
 
 Nyaya Setu on nyayasetu.doj.gov.in is a Government of India citizen AI legal assistant (separate from an MHA/NIC police ICJS dashboard also using that brand). CiteBench is none of those: a private practice chamber for Indian advocates.
 
-Happy to share the live app: https://citebench.ordereasy.win
+Live app: https://citebench.ordereasy.win
 
 Vineet
+```
 
 ---
 
-## Photo for status / X
+## PB-EM-04 — Outreach email (builder / peer)
 
-Use `public/og.jpg` (CiteBench mark). Do not use a fake screenshot of a memo.
+```
+meta: Channel=Outreach email | Claim=CONFIRMED | Campaign=Build in public | Bot mode=Human only
+```
+
+```
+Subject: CiteBench — chamber product, citation gate first
+
+Hi {Name},
+
+Sharing CiteBench in case the trust model is interesting: allowlisted retrieval before a cite can be “verified,” human confirm before an order updates the file, and a five-surface chamber (Today / Diary / Matters / Research / Inbox).
+
+Story: https://citebench.ordereasy.win/story
+App: https://citebench.ordereasy.win
+Repo (historical name): https://github.com/vin8003/nyayasetu
+
+Not legal advice. Card not live yet.
+
+Vineet
+```
+
+---
+
+## Index for bots
+
+| ID | Channel | Claim | Default Bot mode |
+|---|---|---|---|
+| PB-X-01 | X | CONFIRMED | Queue for bot |
+| PB-X-02a–e | X | CONFIRMED | Queue for bot |
+| PB-X-03 | X | CONFIRMED | Queue for bot |
+| PB-X-04 | X | CONFIRMED | Queue for bot |
+| PB-X-05 | X | CLAIM | Human only |
+| PB-X-06 | X | VISION | Human only |
+| PB-X-07 | X | CONFIRMED | Queue for bot |
+| PB-X-08 | X | CONFIRMED | Queue for bot |
+| PB-X-09 | X | CONFIRMED | Queue for bot |
+| PB-X-10 | X | CONFIRMED | Queue for bot |
+| PB-ART-01 | Article | CONFIRMED | Queue for bot |
+| PB-WA-01/02 | WhatsApp status | CONFIRMED | Human only |
+| PB-MKT-01/02 | Marketing | CONFIRMED | Queue for bot |
+| PB-RPL-01/02/04/05 | Reply | CONFIRMED | Queue for bot |
+| PB-RPL-03 | Reply | CLAIM | Human only |
+| PB-DM-01/02 | Personal message | CONFIRMED | Human only |
+| PB-EM-01–04 | Outreach email | CONFIRMED | Human only |
