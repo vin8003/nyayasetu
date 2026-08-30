@@ -12,11 +12,11 @@ export function AuthChip({ lang }: { lang: OutputLang }) {
   const c = t(lang);
 
   if (isPending) {
-    return <div className="h-8 w-16 animate-pulse rounded-md bg-elevated" />;
+    return <div className="skeleton h-9 w-16" />;
   }
   if (!user) {
     return (
-      <a href="/login" className="inline-flex h-10 items-center px-2.5 text-sm text-muted hover:text-fg">
+      <a href="/login" className="link-accent inline-flex h-10 items-center px-2 text-sm">
         {c.signIn}
       </a>
     );
@@ -24,9 +24,12 @@ export function AuthChip({ lang }: { lang: OutputLang }) {
 
   const label = user.displayName ?? user.primaryEmail ?? "Account";
   return (
-    <div className="flex items-center gap-2">
-      <span className="max-w-[7.5rem] truncate text-xs text-muted">{label}</span>
-      <Link to="/billing" className="hidden h-10 items-center px-2 text-xs text-muted hover:text-fg sm:inline-flex">
+    <div className="flex items-center gap-1">
+      <span className="hidden max-w-[7.5rem] truncate text-xs text-muted lg:inline">{label}</span>
+      <Link
+        to="/billing"
+        className="link-quiet hidden h-10 items-center px-2 text-xs sm:inline-flex"
+      >
         {b(lang).plan}
       </Link>
       <button
@@ -36,7 +39,7 @@ export function AuthChip({ lang }: { lang: OutputLang }) {
           setSigningOut(true);
           void signOut().catch(() => setSigningOut(false));
         }}
-        className="h-10 px-2 text-xs text-muted hover:text-fg disabled:opacity-50"
+        className="link-quiet h-10 px-2 text-xs disabled:opacity-50"
       >
         {signingOut ? c.signingOut : c.signOut}
       </button>

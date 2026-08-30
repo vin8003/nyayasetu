@@ -32,8 +32,8 @@ export function BillingBanner({ lang }: { lang: OutputLang }) {
 
   if (snap.status === "trial") {
     return (
-      <div className="no-print border-b border-border/80 bg-elevated/80">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm">
+      <div className="banner no-print">
+        <div className="banner-inner">
           <p>
             {snap.trialStarted ? (
               <>
@@ -47,7 +47,7 @@ export function BillingBanner({ lang }: { lang: OutputLang }) {
               <span className="text-muted">{c.bannerIdle}</span>
             )}
           </p>
-          <Link to="/billing" className="text-sm text-accent hover:text-fg">
+          <Link to="/billing" className="link-accent text-sm">
             {c.seePlan}
           </Link>
         </div>
@@ -56,10 +56,10 @@ export function BillingBanner({ lang }: { lang: OutputLang }) {
   }
 
   return (
-    <div className="no-print border-b border-border/80 bg-elevated">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm">
+    <div className="banner banner-strong no-print">
+      <div className="banner-inner">
         <p className="font-medium">{c.bannerExpired}</p>
-        <Link to="/billing" className="text-sm text-accent hover:text-fg">
+        <Link to="/billing" className="link-accent text-sm">
           {c.subscribe}
         </Link>
       </div>

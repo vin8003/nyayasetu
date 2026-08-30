@@ -55,7 +55,7 @@ export function LetterView({
             <ArrowLeft className="size-4" />
             {c.backToMemo}
           </button>
-          <h1 className="font-display text-2xl font-medium tracking-tight sm:text-3xl">
+          <h1 className="section-title font-medium tracking-tight sm:text-3xl">
             {letter.heading || kicker}
           </h1>
           {chrome.withoutPrejudice ? <p className="mt-1 text-sm text-muted">{doc.withoutPrejudice}</p> : null}

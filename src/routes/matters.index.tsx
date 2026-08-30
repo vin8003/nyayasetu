@@ -105,16 +105,16 @@ export function MattersIndexPage() {
 		onLang,
 		active: "matters",
 		children: [
-			isPending ? jsx("div", { className: "h-40 animate-pulse rounded-xl bg-elevated" }) : null,
+			isPending ? jsx("div", { className: "skeleton h-40" }) : null,
 			!isPending && !user ? jsx(GuestPanel, { lang }) : null,
 			!isPending && user ? jsxs("div", { children: [
 				jsxs("div", {
 					className: "flex flex-wrap items-end justify-between gap-3",
 					children: [jsxs("div", { children: [jsx("h1", {
-						className: "font-display text-4xl tracking-tight",
+						className: "page-title",
 						children: c.matters
 					}), jsx("p", {
-						className: "mt-2 text-muted",
+						className: "page-lead",
 						children: c.modelNote
 					})] }), jsx(Button, {
 						onClick: () => setOpen((v) => !v),
@@ -122,13 +122,13 @@ export function MattersIndexPage() {
 					})]
 				}),
 				sampleOn ? jsxs("div", {
-					className: "mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-elevated px-4 py-3 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]",
+					className: "panel panel-split stack-tight",
 					children: [
 						jsxs("div", {
 							children: [
 								jsx("div", { className: "text-sm font-medium", children: c.sampleBanner }),
 								jsx("p", {
-									className: "mt-1 text-xs text-muted",
+									className: "row-meta",
 									children: confirmExit ? c.clearSampleConfirm : c.clearSampleHint
 								})
 							]
@@ -150,22 +150,22 @@ export function MattersIndexPage() {
 									onClick: () => void exitSample(),
 									children: c.clearSampleYes
 								}, "remove")
-							] : jsx(Button, {
+							] : [jsx(Button, {
 								type: "button",
 								variant: "outline",
 								disabled: busy,
 								onClick: () => setConfirmExit(true),
 								children: c.clearSample
-							})
+							}, "exit")]
 						})
 					]
 				}) : jsxs("div", {
-					className: "mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-elevated px-4 py-3 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]",
+					className: "panel panel-split stack-tight",
 					children: [
 						jsxs("div", {
 							children: [
 								jsx("div", { className: "text-sm font-medium", children: c.loadSample }),
-								jsx("p", { className: "mt-1 text-xs text-muted", children: c.sampleHint })
+								jsx("p", { className: "row-meta", children: c.sampleHint })
 							]
 						}),
 						jsx(Button, {
@@ -178,7 +178,7 @@ export function MattersIndexPage() {
 				}),
 				open ? jsxs("form", {
 					onSubmit,
-					className: "mt-8 grid gap-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]",
+					className: "mt-8 grid gap-4 card card-pad",
 					children: [
 						jsxs(Field, { children: [jsx(Label, {
 							htmlFor: "title",
@@ -341,7 +341,7 @@ export function MattersIndexPage() {
 					]
 				}) : null,
 				matters.length === 0 && !open ? jsx("p", {
-					className: "mt-8 text-sm text-muted",
+					className: "section-note stack-tight",
 					children: c.emptyMatters
 				}) : null,
 				jsx("ul", {
@@ -353,12 +353,12 @@ export function MattersIndexPage() {
 							children: [jsxs(Link, {
 							to: "/matters/$id",
 							params: { id: m.id },
-							className: "block min-w-0 flex-1 rounded-lg bg-surface px-4 py-3 shadow-[0_0_0_1px_rgb(255_255_255/0.08)] hover:shadow-[0_0_0_1px_rgb(255_255_255/0.14)]",
+							className: "row min-w-0",
 							children: [jsx("div", {
 								className: "font-medium",
 								children: m.title
 							}), jsxs("div", {
-								className: "mt-1 text-xs text-muted",
+								className: "row-meta",
 								children: [
 									m.courtName || m.caseNumber,
 									" · ",

@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { p } from "@/lib/practice/copy";
 import { storyCopy } from "@/lib/story/copy";
@@ -8,30 +9,38 @@ export function GuestPanel({ lang }: { lang: OutputLang }) {
   const c = p(lang);
   const story = storyCopy[lang];
   return (
-    <div className="stagger-in max-w-xl">
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent">{c.kicker}</p>
-      <h1 className="mt-3 font-display text-4xl font-medium tracking-tight sm:text-5xl">{c.hero}</h1>
-      <p className="mt-3 text-base text-muted sm:text-lg">{c.tagline}</p>
-      <p className="mt-6 text-sm leading-relaxed text-muted">{c.signInNeed}</p>
+    <div className="stagger-in mx-auto max-w-2xl py-6 sm:py-12">
+      <p className="eyebrow">{c.kicker}</p>
+      <h1 className="page-title">{c.hero}</h1>
+      <p className="page-lead text-lg">{c.tagline}</p>
+      <p className="section-note max-w-lg">{c.signInNeed}</p>
+
       <div className="mt-8 flex flex-wrap gap-3">
-        <Button asChild>
+        <Button asChild size="lg">
           <a href="/login">{c.signIn}</a>
         </Button>
-        <Button asChild variant="outline">
-          <Link to="/research" search={{ matter: undefined }}>{c.research}</Link>
+        <Button asChild variant="outline" size="lg">
+          <Link to="/research" search={{ matter: undefined }}>
+            {c.research}
+          </Link>
         </Button>
       </div>
+
       <Link
         to="/story"
         search={{ lang: lang === "hi" ? "hi" : undefined }}
-        className="mt-12 block rounded-xl bg-paper px-6 py-6 text-paper-ink shadow-paper transition-[transform,box-shadow] duration-150 hover:-translate-y-0.5"
+        className="paper paper-link group mt-12 px-6 py-6"
       >
-        <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-accent">{story.kicker}</p>
-        <h2 className="mt-2 font-display text-2xl font-medium tracking-tight">{story.title}</h2>
+        <p className="story-kicker">{story.kicker}</p>
+        <h2 className="mt-2 section-title font-medium tracking-tight">{story.title}</h2>
         <p className="mt-2 text-sm leading-relaxed text-paper-muted">{story.dek}</p>
-        <span className="mt-4 inline-block text-sm font-medium">{c.readStory} →</span>
+        <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium">
+          {c.readStory}
+          <ArrowRight className="size-4 transition-transform duration-150 group-hover:translate-x-0.5" />
+        </span>
       </Link>
-      <p className="mt-10 text-xs leading-relaxed text-subtle">{c.trustNote}</p>
+
+      <p className="fineprint mt-12">{c.trustNote}</p>
     </div>
   );
 }

@@ -9,6 +9,7 @@ export const copy = {
     facts: "केस के तथ्य",
     factsHint:
       "जो हुआ, साफ लिखें — पक्षकार, तारीखें, दस्तावेज़, विवाद, और जो राहत चाहिए। हिंदी या अंग्रेज़ी, दोनों चलेंगे।",
+    factsPlaceholder: "जैसे — 12 मार्च 2024 को वादी ने…",
     query: "खास कानूनी सवाल",
     queryHint: "जैसे — क्या अग्रिम ज़मानत बनती है? क्या रिट चलेगी?",
     court: "अदालत",
@@ -150,6 +151,7 @@ export const copy = {
     facts: "Facts of the case",
     factsHint:
       "Write what happened — parties, dates, documents, the dispute, and the relief sought. Hindi or English is fine.",
+    factsPlaceholder: "e.g. On 12 March 2024 the plaintiff…",
     query: "Specific legal question",
     queryHint: "e.g. Does anticipatory bail lie? Will a writ be maintainable?",
     court: "Court",

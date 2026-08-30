@@ -112,7 +112,7 @@ export function MatterDetailPage() {
   if (!bundle) {
     return (
       <AppShell lang={lang} onLang={onLang} active="matters">
-        <div className="h-40 animate-pulse rounded-xl bg-elevated" />
+        <div className="skeleton h-40" />
       </AppShell>
     );
   }
@@ -433,7 +433,7 @@ export function MatterDetailPage() {
 
           {matter.parties?.length ? (
             <section>
-              <h2 className="font-display text-2xl">{c.parties}</h2>
+              <h2 className="section-title">{c.parties}</h2>
               <ul className="mt-3 space-y-1 text-sm">
                 {matter.parties.map((party, i) => (
                   <li key={i} className="text-muted">
@@ -445,7 +445,7 @@ export function MatterDetailPage() {
           ) : null}
 
           <section className="scroll-mt-20">
-            <h2 className="font-display text-2xl">{c.notes}</h2>
+            <h2 className="section-title">{c.notes}</h2>
             <RecordButton id="notes" active={openId === "notes"} onOpen={openRecord} className="mt-3">
               <div className="line-clamp-5 whitespace-pre-wrap text-sm leading-relaxed text-muted">
                 {matter.notes?.trim() ? matter.notes : c.emptyNotes}
@@ -454,7 +454,7 @@ export function MatterDetailPage() {
           </section>
 
           <section id="research-file" className="scroll-mt-20">
-            <h2 className="font-display text-2xl">{c.researchOnFile}</h2>
+            <h2 className="section-title">{c.researchOnFile}</h2>
             {fileMemos.length === 0 ? (
               <p className="mt-3 text-sm text-muted">{c.emptyResearch}</p>
             ) : (
@@ -476,7 +476,7 @@ export function MatterDetailPage() {
           </section>
 
           <section id="statutes" className="scroll-mt-20">
-            <h2 className="font-display text-2xl">{c.statuteMap}</h2>
+            <h2 className="section-title">{c.statuteMap}</h2>
             {statutes.length === 0 ? (
               <p className="mt-3 text-sm text-muted">{c.emptyStatutes}</p>
             ) : (
@@ -498,7 +498,7 @@ export function MatterDetailPage() {
 
           {brief ? (
             <section className="rounded-xl bg-paper p-5 text-paper-ink shadow-paper">
-              <h2 className="font-display text-2xl">{c.hearingBrief}</h2>
+              <h2 className="section-title">{c.hearingBrief}</h2>
               <dl className="mt-4 space-y-3 text-sm">
                 {[
                   [c.purpose, brief.purpose],
@@ -516,7 +516,7 @@ export function MatterDetailPage() {
           ) : null}
 
           <section id="hearings" className="scroll-mt-20">
-            <h2 className="font-display text-2xl">{c.diary}</h2>
+            <h2 className="section-title">{c.diary}</h2>
             {bundle.hearings.length === 0 ? (
               <p className="mt-3 text-sm text-muted">{c.emptyHearings}</p>
             ) : (
@@ -601,7 +601,7 @@ export function MatterDetailPage() {
           </section>
 
           <section id="documents" className="scroll-mt-20">
-            <h2 className="font-display text-2xl">{c.documents}</h2>
+            <h2 className="section-title">{c.documents}</h2>
             {bundle.documents.length === 0 ? (
               <p className="mt-3 text-sm text-muted">{c.emptyDocs}</p>
             ) : (
@@ -670,7 +670,7 @@ export function MatterDetailPage() {
           </section>
 
           <section id="orders" className="scroll-mt-20">
-            <h2 className="font-display text-2xl">{c.orders}</h2>
+            <h2 className="section-title">{c.orders}</h2>
             {bundle.orders.length === 0 ? (
               <p className="mt-3 text-sm text-muted">{c.emptyOrders}</p>
             ) : (
@@ -688,7 +688,7 @@ export function MatterDetailPage() {
           </section>
 
           <section id="tasks" className="scroll-mt-20">
-            <h2 className="font-display text-2xl">{c.tasks}</h2>
+            <h2 className="section-title">{c.tasks}</h2>
             <ul className="mt-3 space-y-2">
               {bundle.tasks.map((t) => (
                 <li key={t.id} className="flex items-stretch gap-2">
@@ -735,7 +735,7 @@ export function MatterDetailPage() {
           </section>
 
           <section id="deadlines" className="scroll-mt-20">
-            <h2 className="font-display text-2xl">{c.deadlines}</h2>
+            <h2 className="section-title">{c.deadlines}</h2>
             <ul className="mt-3 space-y-2">
               {bundle.deadlines.map((d) => (
                 <li key={d.id} className="flex items-stretch gap-2">
@@ -779,7 +779,7 @@ export function MatterDetailPage() {
           </section>
 
           <section id="timeline" className="scroll-mt-20">
-            <h2 className="font-display text-2xl">{c.timeline}</h2>
+            <h2 className="section-title">{c.timeline}</h2>
             <ol className="mt-3 space-y-2">
               {bundle.timeline.map((e) => {
                 const related = relatedIdForEvent(e, bundle);

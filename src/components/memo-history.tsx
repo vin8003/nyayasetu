@@ -42,12 +42,12 @@ export function MemoHistory({
           <button
             type="button"
             onClick={onBack}
-            className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted hover:text-fg"
+            className="link-quiet mb-3 inline-flex items-center gap-1.5 text-sm"
           >
             <ArrowLeft className="size-4" />
             {c.back}
           </button>
-          <h1 className="font-display text-3xl">{c.history}</h1>
+          <h1 className="section-title text-2xl">{c.history}</h1>
         </div>
         <Button variant="outline" onClick={onBack}>
           {c.newBrief}
@@ -70,13 +70,13 @@ export function MemoHistory({
       ) : null}
 
       {items.length === 0 && !searching ? (
-        <p className="text-sm text-muted">{c.emptyHistory}</p>
+        <p className="section-note">{c.emptyHistory}</p>
       ) : threads.length === 0 ? (
-        <p className="text-sm text-muted">{c.searchHistoryEmpty}</p>
+        <p className="section-note">{c.searchHistoryEmpty}</p>
       ) : (
         <ul className="space-y-3">
           {threads.map((thread) => (
-            <li key={thread.root.id} className="overflow-hidden rounded-lg bg-surface shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
+            <li key={thread.root.id} className="card overflow-hidden">
               <MemoRow
                 item={thread.root}
                 lang={lang}

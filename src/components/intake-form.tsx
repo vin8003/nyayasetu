@@ -59,7 +59,7 @@ function SampleButtons({
             type="button"
             disabled={busy}
             onClick={() => onPick(sample)}
-            className="min-h-11 touch-manipulation rounded-lg bg-surface px-4 py-3 text-left shadow-[0_0_0_1px_rgb(255_255_255/0.08)] transition-[box-shadow,background-color] duration-150 active:bg-elevated lg:hover:shadow-[0_0_0_1px_rgb(255_255_255/0.14)] disabled:opacity-50"
+            className="row touch-manipulation text-left disabled:opacity-50"
           >
             <div className="text-sm font-medium text-fg">{lang === "hi" ? sample.titleHi : sample.titleEn}</div>
             {compact ? null : (
@@ -103,7 +103,7 @@ export function IntakeForm({
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] lg:gap-10">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] lg:gap-10">
       <form
         className="flex flex-col gap-5"
         onSubmit={(e) => {
@@ -120,7 +120,7 @@ export function IntakeForm({
             minLength={files.length === 0 ? 40 : undefined}
             value={intake.facts}
             onChange={(e) => set({ facts: e.target.value })}
-            placeholder={c.factsHint}
+            placeholder={c.factsPlaceholder}
             disabled={busy}
           />
           <Hint>{c.factsHint}</Hint>
@@ -134,7 +134,7 @@ export function IntakeForm({
           <span className="block text-sm font-medium tracking-tight text-fg/90">{c.files}</span>
           <label
             htmlFor="docs"
-            className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md bg-elevated px-3.5 text-sm text-muted shadow-[0_0_0_1px_rgb(255_255_255/0.08)] hover:text-fg"
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md bg-elevated px-3.5 text-sm text-muted shadow-hairline hover:text-fg"
           >
             <Paperclip className="size-4 shrink-0" />
             PDF · JPG · TXT
@@ -166,7 +166,7 @@ export function IntakeForm({
               {files.map((f) => (
                 <li
                   key={f.name + f.size}
-                  className="flex items-center justify-between gap-2 rounded-md bg-surface px-3 py-2 text-sm"
+                  className="flex items-center justify-between gap-2 rounded-md bg-elevated px-3 py-2 text-sm shadow-hairline"
                 >
                   <span className="min-w-0 truncate">
                     {f.name}
@@ -272,7 +272,7 @@ export function IntakeForm({
       </form>
 
       <aside className="flex flex-col gap-6">
-        <section className="rounded-xl bg-surface p-5 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
+        <section className="card card-pad">
           <h2 className="font-display text-lg font-medium tracking-tight">{c.how}</h2>
           <ol className="mt-4 space-y-3 text-sm text-muted">
             {[c.step1, c.step2, c.step3, c.step4].map((step, i) => (
@@ -291,8 +291,8 @@ export function IntakeForm({
         </div>
 
         <section>
-          <h2 className="mb-3 text-sm font-medium text-muted">{c.sourcesLabel}</h2>
-          <ul className="space-y-2">
+          <h2 className="mb-2 text-sm font-medium text-muted">{c.sourcesLabel}</h2>
+          <ul>
             {SOURCES.map((src, i) => {
               const Icon = i === 0 ? Landmark : i === 2 ? BookOpen : Scale;
               return (
@@ -301,7 +301,7 @@ export function IntakeForm({
                     href={src.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-2 text-sm text-accent hover:text-fg"
+                    className="link-accent -mx-2 flex min-h-11 items-center gap-2 rounded-md px-2 text-sm"
                   >
                     <Icon className="size-3.5 shrink-0" />
                     {src.name}

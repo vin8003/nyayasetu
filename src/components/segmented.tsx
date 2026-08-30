@@ -14,29 +14,19 @@ export function Segmented<T extends string>({
   ariaLabel: string;
 }) {
   return (
-    <div
-      role="radiogroup"
-      aria-label={ariaLabel}
-      className="grid auto-cols-fr grid-flow-col gap-1 rounded-lg bg-elevated p-1 shadow-[0_0_0_1px_rgb(255_255_255/0.08)]"
-    >
-      {options.map((opt) => {
-        const active = opt.value === value;
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            onClick={() => onChange(opt.value)}
-            className={cn(
-              "h-9 rounded-md px-2 text-xs font-medium sm:text-sm transition-[background-color,color] duration-150 ease-out",
-              active ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
-            )}
-          >
-            {opt.label}
-          </button>
-        );
-      })}
+    <div role="radiogroup" aria-label={ariaLabel} className="seg seg-fill">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          role="radio"
+          aria-checked={opt.value === value}
+          onClick={() => onChange(opt.value)}
+          className={cn("seg-btn px-2", opt.value === value && "is-on")}
+        >
+          {opt.label}
+        </button>
+      ))}
     </div>
   );
 }
