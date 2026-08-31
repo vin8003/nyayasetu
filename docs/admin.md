@@ -6,7 +6,7 @@ CiteBench has a **login-only** admin desk. There is no `/admin/register` and no 
 
 1. The person already has a Better Auth account (Google, X, or `/login` register).
 2. Their email is listed in `ADMIN_EMAILS` or `ADMIN_EMAIL` (App Secrets / `.env`).
-3. They sign in at `/admin/login` **or** they are already signed in on the chamber and visit `/admin`.
+3. They sign in at `/admin/login`, `/login?desk=1`, **or** they are already signed in on the chamber and visit `/admin`.
 
 If the env list is empty, every admin server function fails closed.
 
@@ -39,4 +39,7 @@ Same Better Auth cookie / bearer token as the chamber. `adminSession` and every 
 
 ## Publish
 
-Set `ADMIN_EMAILS` in Grok App Builder secrets, then republish. After publish, open `https://<host>/admin/login`.
+Set `ADMIN_EMAILS` in Grok App Builder secrets, then republish from the App Builder workspace that contains these files (GitHub `main` alone does not update `citebench.ordereasy.win`). After publish:
+
+- Preferred: `https://<host>/admin/login`
+- Fallback on the existing login route: `https://<host>/login?desk=1`

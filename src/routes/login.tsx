@@ -3,12 +3,20 @@ import { Link, createFileRoute, Navigate } from "@tanstack/react-router";
 import { GROK_PROVIDERS, authClient, authEnabled, signIn } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { chambersAuth } from "@/lib/seed-user";
+import { AdminDesk } from "@/components/admin-desk";
 import { CiteMark } from "@/components/cite-mark";
 import { LangToggle } from "@/components/lang-toggle";
 import { Button } from "@/components/ui/button";
 import { Field, Hint, Input, Label } from "@/components/ui/field";
 
-export const Route = createFileRoute("/login")({ component: Login });
+type LoginSearch = { desk?: "1" };
+
+export const Route = createFileRoute("/login")({
+  validateSearch: (search: Record<string, unknown>): LoginSearch => ({
+    desk: search.desk === "1" || search.desk === 1 || search.desk === true ? "1" : undefined,
+  }),
+  component: Login,
+});
 
 function stashToken(token: string | null | undefined) {
   if (!token || typeof window === "undefined") return;
@@ -38,6 +46,7 @@ function friendlyError(message: string, hi: boolean) {
 }
 
 function Login() {
+  const { desk } = Route.useSearch();
   const { user, isPending } = useCurrentUserState();
   const [mode, setMode] = useState<"in" | "up">("in");
   const [username, setUsername] = useState("");
@@ -47,6 +56,8 @@ function Login() {
   const [lang, setLang] = useState<"hi" | "en">("en");
 
   const hi = lang === "hi";
+
+  if (desk === "1") return <AdminDesk />;
 
   if (isPending) {
     return (
