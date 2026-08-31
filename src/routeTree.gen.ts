@@ -23,6 +23,12 @@ import { Route as MattersIndexRouteImport } from './routes/matters.index'
 import { Route as MattersIdRouteImport } from './routes/matters.$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiBillingRazorpayRouteImport } from './routes/api/billing.razorpay'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminUsersIndexRouteImport } from './routes/admin.users.index'
+import { Route as AdminUsersIdRouteImport } from './routes/admin.users.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -94,6 +100,36 @@ const ApiBillingRazorpayRoute = ApiBillingRazorpayRouteImport.update({
   path: '/api/billing/razorpay',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersIndexRoute = AdminUsersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminUsersRoute,
+} as any)
+const AdminUsersIdRoute = AdminUsersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminUsersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -110,6 +146,12 @@ export interface FileRoutesByFullPath {
   '/matters/': typeof MattersIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/billing/razorpay': typeof ApiBillingRazorpayRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/admin/': typeof AdminIndexRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/users': typeof AdminUsersRouteWithChildren
+  '/admin/users/': typeof AdminUsersIndexRoute
+  '/admin/users/$id': typeof AdminUsersIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -125,6 +167,10 @@ export interface FileRoutesByTo {
   '/matters': typeof MattersIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/billing/razorpay': typeof ApiBillingRazorpayRoute
+  '/admin': typeof AdminIndexRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/users': typeof AdminUsersIndexRoute
+  '/admin/users/$id': typeof AdminUsersIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -142,6 +188,12 @@ export interface FileRoutesById {
   '/matters/': typeof MattersIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/billing/razorpay': typeof ApiBillingRazorpayRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/admin/': typeof AdminIndexRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/users': typeof AdminUsersRouteWithChildren
+  '/admin/users/': typeof AdminUsersIndexRoute
+  '/admin/users/$id': typeof AdminUsersIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -160,6 +212,12 @@ export interface FileRouteTypes {
     | '/matters/'
     | '/api/auth/$'
     | '/api/billing/razorpay'
+    | '/admin'
+    | '/admin/'
+    | '/admin/login'
+    | '/admin/users'
+    | '/admin/users/'
+    | '/admin/users/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -175,6 +233,10 @@ export interface FileRouteTypes {
     | '/matters'
     | '/api/auth/$'
     | '/api/billing/razorpay'
+    | '/admin'
+    | '/admin/login'
+    | '/admin/users'
+    | '/admin/users/$id'
   id:
     | '__root__'
     | '/'
@@ -191,6 +253,12 @@ export interface FileRouteTypes {
     | '/matters/'
     | '/api/auth/$'
     | '/api/billing/razorpay'
+    | '/admin'
+    | '/admin/'
+    | '/admin/login'
+    | '/admin/users'
+    | '/admin/users/'
+    | '/admin/users/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -206,6 +274,7 @@ export interface RootRouteChildren {
   ApiVerifyPaymentRoute: typeof ApiVerifyPaymentRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiBillingRazorpayRoute: typeof ApiBillingRazorpayRoute
+  AdminRoute: typeof AdminRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -308,6 +377,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiBillingRazorpayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users/': {
+      id: '/admin/users/'
+      path: '/'
+      fullPath: '/admin/users/'
+      preLoaderRoute: typeof AdminUsersIndexRouteImport
+      parentRoute: typeof AdminUsersRoute
+    }
+    '/admin/users/$id': {
+      id: '/admin/users/$id'
+      path: '/$id'
+      fullPath: '/admin/users/$id'
+      preLoaderRoute: typeof AdminUsersIdRouteImport
+      parentRoute: typeof AdminUsersRoute
+    }
   }
 }
 
@@ -324,6 +435,33 @@ const MattersRouteChildren: MattersRouteChildren = {
 const MattersRouteWithChildren =
   MattersRoute._addFileChildren(MattersRouteChildren)
 
+interface AdminUsersRouteChildren {
+  AdminUsersIdRoute: typeof AdminUsersIdRoute
+  AdminUsersIndexRoute: typeof AdminUsersIndexRoute
+}
+
+const AdminUsersRouteChildren: AdminUsersRouteChildren = {
+  AdminUsersIdRoute: AdminUsersIdRoute,
+  AdminUsersIndexRoute: AdminUsersIndexRoute,
+}
+
+const AdminUsersRouteWithChildren =
+  AdminUsersRoute._addFileChildren(AdminUsersRouteChildren)
+
+interface AdminRouteChildren {
+  AdminIndexRoute: typeof AdminIndexRoute
+  AdminLoginRoute: typeof AdminLoginRoute
+  AdminUsersRoute: typeof AdminUsersRouteWithChildren
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminIndexRoute: AdminIndexRoute,
+  AdminLoginRoute: AdminLoginRoute,
+  AdminUsersRoute: AdminUsersRouteWithChildren,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BillingRoute: BillingRoute,
@@ -337,6 +475,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVerifyPaymentRoute: ApiVerifyPaymentRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiBillingRazorpayRoute: ApiBillingRazorpayRoute,
+  AdminRoute: AdminRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
