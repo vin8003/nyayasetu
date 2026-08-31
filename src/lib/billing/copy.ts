@@ -40,6 +40,15 @@ export const billingCopy = {
     checkoutDismissed: "भुगतान रद्द। चैंबर नहीं खुला।",
     leftoverHint: "डेस्क इस तारीख तक खुला रहेगा। उसके बाद सब्सक्राइब करने पर भुगतान शुरू होगा।",
     payFailed: "भुगतान नहीं खुल सका।",
+    account: "अकाउंट",
+    deleteAccount: "मेरा अकाउंट हटाएँ",
+    deleteAccountHint:
+      "मामले, मेमो, प्लान और लॉगिन मिट जाएँगे। उसी ईमेल से फिर रजिस्टर कर सकते हैं।",
+    deleteAccountConfirm:
+      "अकाउंट हटाना नहीं आ सकता। सभी मामले और मेमो खत्म। जारी रखें?",
+    deletingAccount: "हटा रहे हैं…",
+    deletedAccount: "अकाउंट हट गया।",
+    deleteFailed: "अकाउंऒ हटा नहीं सका।",
     bannerTrial: "आज़माइश",
     bannerIdle: "नमूना मुफ़्त · आज़माइश बाकी",
     bannerExpired: "आज़माइश खत्म — चैंबर लें",
@@ -84,6 +93,15 @@ export const billingCopy = {
     checkoutDismissed: "Payment cancelled. The chamber did not open.",
     leftoverHint: "The desk stays open until this date. Payment starts the next time you subscribe after it ends.",
     payFailed: "Could not open payment.",
+    account: "Account",
+    deleteAccount: "Delete my account",
+    deleteAccountHint:
+      "Matters, memos, plan, and login are removed. You can register again with the same email.",
+    deleteAccountConfirm:
+      "This cannot be undone. Every matter and memo will be deleted. Continue?",
+    deletingAccount: "Deleting…",
+    deletedAccount: "Account deleted.",
+    deleteFailed: "Could not delete the account.",
     bannerTrial: "Trial",
     bannerIdle: "Sample is free · trial unused",
     bannerExpired: "Trial ended — open the chamber",
