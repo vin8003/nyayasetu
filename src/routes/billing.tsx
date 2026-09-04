@@ -4,8 +4,6 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { GuestPanel } from "@/components/guest-panel";
 import { Button } from "@/components/ui/button";
-import { deleteMyAccount } from "@/lib/account/store";
-import { signOut } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { openRazorpayCheckout } from "@/lib/billing/checkout";
 import { b } from "@/lib/billing/copy";
@@ -39,7 +37,6 @@ export function BillingPage() {
   const c = b(lang);
   const [snap, setSnap] = useState<BillingSnapshot | null>(null);
   const [busy, setBusy] = useState(false);
-  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -108,20 +105,6 @@ export function BillingPage() {
     }
   }
 
-  async function removeAccount() {
-    if (!window.confirm(c.deleteAccountConfirm)) return;
-    setDeleting(true);
-    try {
-      await deleteMyAccount();
-      toast.success(c.deletedAccount);
-      await signOut("/login");
-    } catch (err) {
-      if (/unauthorized/i.test(String(err))) navigate({ to: "/login" });
-      else toast.error(failMessage(err, c.deleteFailed));
-      setDeleting(false);
-    }
-  }
-
   const live = Boolean(snap?.paymentsLive);
 
   return (
@@ -171,11 +154,11 @@ export function BillingPage() {
             </ul>
             <div className="mt-8 flex flex-col gap-3 border-t border-paper-line pt-6">
               {snap.status === "active" ? (
-                <Button variant="paper" onClick={() => void cancel()} disabled={busy || deleting}>
+                <Button variant="paper" onClick={() => void cancel()} disabled={busy}>
                   {c.cancelPlan}
                 </Button>
               ) : snap.status === "cancelled" && snap.canUseAi ? null : (
-                <Button variant="paper" size="lg" onClick={() => void subscribe()} disabled={busy || deleting}>
+                <Button variant="paper" size="lg" onClick={() => void subscribe()} disabled={busy}>
                   {busy ? c.subscribing : c.subscribe}
                 </Button>
               )}
@@ -186,16 +169,6 @@ export function BillingPage() {
                     ? c.confirmHintLive
                     : c.confirmHint}
               </p>
-            </div>
-          </div>
-
-          <div className="paper mt-6 p-6 sm:p-8">
-            <h2 className="font-display text-lg font-medium">{c.account}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-paper-muted">{c.deleteAccountHint}</p>
-            <div className="mt-5">
-              <Button variant="danger" disabled={busy || deleting} onClick={() => void removeAccount()}>
-                {deleting ? c.deletingAccount : c.deleteAccount}
-              </Button>
             </div>
           </div>
 

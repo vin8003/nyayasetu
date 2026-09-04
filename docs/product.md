@@ -36,7 +36,7 @@ On a phone the listing is a sheet with **Back**. After you leave, the diary stay
 
 ## Matters — `/matters` and `/matters/$id`
 
-**List:** title, court, case number, stage, next hearing, status (active / stayed / dormant / closed). New matter form: client, proceeding type, court, CNR, our side, parties.
+**List:** title, court, case number, stage, next hearing, status (active / stayed / dormant / closed). New matter form: client, proceeding type, court, CNR, our side, parties — or **Import from court** (court + case number / CNR). Fetch Case reads the official source; CAPTCHA is completed on the court site, then the status or orders are pasted back. Historical orders land on the file with a chronology and deadlines.
 
 **Record** is the case file. A listing, paper, task, deadline, timeline event, memo or statute opens in a **sheet** above the tab bar, with **Back**. If you arrived from Diary (hash on the URL), Back returns to Diary. Opening and closing a row in-page does not rewrite the address, so the list does not jump.
 

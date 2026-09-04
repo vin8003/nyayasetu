@@ -279,6 +279,16 @@ export function DocumentBody({
           <div className="text-xs uppercase tracking-wide text-muted">
             {d.kind} · {d.sourceKind}
           </div>
+          {d.sourceUrl ? (
+            <a
+              href={d.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-block text-xs text-accent hover:underline"
+            >
+              {d.sourceUrl.replace(/^https?:\/\//, "").slice(0, 64)}
+            </a>
+          ) : null}
           <pre className="mt-4 whitespace-pre-wrap font-sans text-sm leading-relaxed text-fg/90">{text}</pre>
         </>
       )}
@@ -574,10 +584,12 @@ export function EventBody({
   e,
   lang,
   onSave,
+  onVerify,
 }: {
   e: TimelineEvent;
   lang: OutputLang;
   onSave?: (patch: { happenedOn: string; title: string; detail: string }) => Promise<void>;
+  onVerify?: () => Promise<void>;
 }) {
   const c = p(lang);
   const [form, setForm] = useState({ happenedOn: e.happenedOn || "", title: e.title, detail: e.detail || "" });
@@ -586,12 +598,26 @@ export function EventBody({
     () => setForm({ happenedOn: e.happenedOn || "", title: e.title, detail: e.detail || "" }),
     [e.id, e.happenedOn, e.title, e.detail],
   );
+  const verificationLabel =
+    e.verification === "lawyer_verified"
+      ? c.verified
+      : e.verification === "court_imported"
+        ? c.courtImported
+        : e.verification === "ai_inferred"
+          ? c.aiSuggestion
+          : c.unreviewed;
+  const chips = (
+    <div className="flex flex-wrap items-center gap-2">
+      <TrustChip origin={e.origin} lang={lang} />
+      {e.verification ? <span className="text-[11px] uppercase tracking-wide text-muted">{verificationLabel}</span> : null}
+    </div>
+  );
   if (!onSave) {
     return (
       <div className="space-y-3 text-sm">
         <div className="text-xs tabular-nums text-accent">{e.happenedOn}</div>
-        <TrustChip origin={e.origin} lang={lang} />
-        {e.detail ? <p className="leading-relaxed">{e.detail}</p> : null}
+        {chips}
+        {e.detail ? <p className="leading-relaxed whitespace-pre-wrap">{e.detail}</p> : null}
       </div>
     );
   }
@@ -604,7 +630,7 @@ export function EventBody({
         void onSave(form).finally(() => setBusy(false));
       }}
     >
-      <TrustChip origin={e.origin} lang={lang} />
+      {chips}
       <Field>
         <Label htmlFor="e-on">{c.date}</Label>
         <Input id="e-on" type="date" value={form.happenedOn} onChange={(ev) => setForm({ ...form, happenedOn: ev.target.value })} />
@@ -614,9 +640,24 @@ export function EventBody({
         <Input id="e-title" value={form.title} onChange={(ev) => setForm({ ...form, title: ev.target.value })} />
       </Field>
       <Textarea className="min-h-28" value={form.detail} onChange={(ev) => setForm({ ...form, detail: ev.target.value })} />
-      <Button type="submit" disabled={busy}>
-        {busy ? c.savingEntry : c.saveEntry}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" disabled={busy}>
+          {busy ? c.savingEntry : c.saveEntry}
+        </Button>
+        {onVerify && e.verification !== "lawyer_verified" ? (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={busy}
+            onClick={() => {
+              setBusy(true);
+              void onVerify().finally(() => setBusy(false));
+            }}
+          >
+            {c.markVerified}
+          </Button>
+        ) : null}
+      </div>
     </form>
   );
 }

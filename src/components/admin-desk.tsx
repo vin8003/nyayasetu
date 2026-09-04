@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Hint, Input, Label } from "@/components/ui/field";
 import {
   adminSession,
+  deleteAdminUser,
   getAdminStats,
   getAdminUser,
   listAdminUsers,
@@ -346,7 +347,7 @@ function AdminUsersPane({ onOpen }: { onOpen: (id: string) => void }) {
 function AdminUserPane({ id, onBack }: { id: string; onBack: () => void }) {
   const [row, setRow] = useState<AdminUserRow | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<AdminPlanAction | null>(null);
+  const [busy, setBusy] = useState<AdminPlanAction | "delete" | null>(null);
 
   useEffect(() => {
     getAdminUser({ data: { userId: id } })
@@ -362,6 +363,25 @@ function AdminUserPane({ id, onBack }: { id: string; onBack: () => void }) {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Update failed");
     } finally {
+      setBusy(null);
+    }
+  }
+
+  async function remove() {
+    if (
+      !window.confirm(
+        "This cannot be undone. Every matter, memo, plan, and login for this user will be deleted. Continue?",
+      )
+    ) {
+      return;
+    }
+    setBusy("delete");
+    setError(null);
+    try {
+      await deleteAdminUser({ data: { userId: id } });
+      onBack();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete the account");
       setBusy(null);
     }
   }
@@ -427,6 +447,18 @@ function AdminUserPane({ id, onBack }: { id: string; onBack: () => void }) {
         <p className="mt-4 text-xs text-muted">
           Grant adds 30 days from the current end date. It does not charge Razorpay.
         </p>
+      </div>
+      <div className="card card-pad mt-6">
+        <h2 className="font-display text-lg font-medium">Delete account</h2>
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          Removes this user's matters, memos, plan, and login. They can register again with the same
+          email. Chamber users cannot do this themselves.
+        </p>
+        <div className="mt-5">
+          <Button variant="danger" disabled={!!busy} onClick={() => void remove()}>
+            {busy === "delete" ? "Deleting…" : "Delete account"}
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -63,6 +63,9 @@ export type Matter = {
   notes: string;
   createdAt: string;
   updatedAt: string;
+  sourceUrl?: string;
+  courtSourceId?: string;
+  lastSyncedAt?: string | null;
 };
 
 export type Hearing = {
@@ -90,6 +93,9 @@ export type MatterDocument = {
   text: string;
   sourceKind: string;
   createdAt: string;
+  sourceUrl?: string;
+  externalId?: string;
+  contentHash?: string;
 };
 
 export type OrderDirection = {
@@ -145,6 +151,7 @@ export type TimelineEvent = {
   origin: Origin | string;
   refId: string | null;
   createdAt: string;
+  verification?: string;
 };
 
 export type MatterBundle = {

@@ -41,7 +41,20 @@ timeline_events    id, user_id, matter_id, happened_on, kind, title, detail, ori
 memos.matter_id    nullable — set when research is run from a matter
 ```
 
-`parties_json` and `directions_json` are JSON text. Booleans and dates follow the pg/PGLite normalizers in `src/lib/db.ts` (dates as `YYYY-MM-DD` strings).
+```text
+matters            … source_url, court_source_id, last_synced_at, import_status
+matter_documents   … source_url, external_id, content_hash, retrieved_at
+timeline_events    … verification (unreviewed | court_imported | ai_inferred | lawyer_verified)
+
+case_imports       id, user_id, matter_id?, court_id, case_number, cnr, lookup_json,
+                   status, stage_note, summary_json, error, official_url,
+                   captcha_required, demo, created_at, updated_at
+case_import_records id, user_id, import_id, matter_id, kind, external_id, order_date,
+                   title, source_url, content_hash, body, status, document_id?,
+                   order_id?, error, retrieved_at
+```
+
+`0007_case_import.sql` adds those columns and tables. Import jobs are user-scoped. Records cascade from the job and from the matter.
 
 ## `0004_billing.sql` + `0006_payments.sql`
 

@@ -22,7 +22,7 @@ Comma or space separated. Compared case-insensitively.
 |---|---|
 | `/admin` | Users, 7-day / 30-day signups, trial / active / cancelled / expired, paid vs dummy grants, matter + memo totals |
 | `/admin/users` | Search name or email |
-| `/admin/users/$id` | That user's plan, access date, Razorpay id, matter/memo counts |
+| `/admin/users/$id` | That user's plan, access date, Razorpay id, matter/memo counts, and account deletion |
 
 Plan actions on a user (they do **not** charge Razorpay):
 
@@ -32,6 +32,7 @@ Plan actions on a user (they do **not** charge Razorpay):
 | Cancel (keep leftover) | `cancelled`. Access continues until `period_end`. |
 | Reset to trial | Fresh 30-day trial. Clears paid fields. |
 | End access now | `cancelled` with `period_end` and `trial_ends_at` set to now. |
+| Delete account | Wipes matters, memos, plan, sessions, and the login. The person can register again. Chamber users cannot delete themselves. Admins cannot delete their own account. |
 
 ## Session
 

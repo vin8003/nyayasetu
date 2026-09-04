@@ -74,6 +74,7 @@ src/
     db.ts                 Neon vs PGLite, getSql()
     billing/              plan math, entitlements, gateAi()
     practice/             types, store, workflow, sample, extract-order, hearing-brief, task-draft
+    court-import/         court adapters, import jobs, chronology, deadlines
     research/             run, follow-up, verify, letter, files, courts, copy, store, history-search
     scroll-memory.ts      list offsets across in-app navigation
     story/                /story copy (en + hi)

@@ -37,7 +37,10 @@ export function mapMatter(row) {
 		lastOrderOn: row.last_order_on,
 		notes: row.notes,
 		createdAt: row.created_at,
-		updatedAt: row.updated_at
+		updatedAt: row.updated_at,
+		sourceUrl: row.source_url ?? "",
+		courtSourceId: row.court_source_id ?? "",
+		lastSyncedAt: row.last_synced_at ?? null
 	};
 }
 async function touchMatter(sql, userId, matterId, patch) {
@@ -157,7 +160,10 @@ export function mapDoc(row) {
 		title: row.title,
 		text: row.body,
 		sourceKind: row.source_kind,
-		createdAt: row.created_at
+		createdAt: row.created_at,
+		sourceUrl: row.source_url ?? "",
+		externalId: row.external_id ?? "",
+		contentHash: row.content_hash ?? ""
 	};
 }
 export function mapOrder(row) {
@@ -208,7 +214,8 @@ export function mapEvent(row) {
 		detail: row.detail,
 		origin: row.origin,
 		refId: row.ref_id,
-		createdAt: row.created_at
+		createdAt: row.created_at,
+		verification: row.verification ?? "unreviewed"
 	};
 }
 export const getTodayBoard = createServerFn({ method: "GET" }).middleware([authMiddleware]).handler(async ({ context }) => {
@@ -740,6 +747,8 @@ async function deleteOrphanPractice(sql, userId) {
 }
 
 async function wipeUserPractice(sql, userId) {
+	await sql`delete from case_import_records where user_id = ${userId}`;
+	await sql`delete from case_imports where user_id = ${userId}`;
 	await sql`delete from timeline_events where user_id = ${userId}`;
 	await sql`delete from matter_orders where user_id = ${userId}`;
 	await sql`delete from matter_documents where user_id = ${userId}`;
@@ -759,6 +768,8 @@ async function purgeSampleMatters(sql, userId) {
 	const rows = await findSampleMatters(sql, userId);
 	for (const row of rows) {
 		await sql`delete from timeline_events where matter_id = ${row.id} and user_id = ${userId}`;
+		await sql`delete from case_import_records where matter_id = ${row.id} and user_id = ${userId}`;
+		await sql`delete from case_imports where matter_id = ${row.id} and user_id = ${userId}`;
 		await sql`delete from matter_orders where matter_id = ${row.id} and user_id = ${userId}`;
 		await sql`delete from matter_documents where matter_id = ${row.id} and user_id = ${userId}`;
 		await sql`delete from hearings where matter_id = ${row.id} and user_id = ${userId}`;

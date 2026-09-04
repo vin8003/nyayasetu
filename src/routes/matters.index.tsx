@@ -7,6 +7,7 @@ import { AppShell } from "@/components/app-shell";
 import { GuestPanel } from "@/components/guest-panel";
 import { Button } from "@/components/ui/button";
 import { Field, Hint, Input, Label, Select, Textarea } from "@/components/ui/field";
+import { CourtImportPanel, NewMatterModeToggle } from "@/components/court-import";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { p } from "@/lib/practice/copy";
 import { defaultStage, proceedingDef, stageDef } from "@/lib/practice/workflow";
@@ -42,6 +43,7 @@ export function MattersIndexPage() {
 	const [matters, setMatters] = useState([]);
 	const [draft, setDraft] = useState(emptyDraft);
 	const [open, setOpen] = useState(false);
+	const [mode, setMode] = useState("manual");
 	const [busy, setBusy] = useState(false);
 	const [confirmExit, setConfirmExit] = useState(false);
 	const c = p(lang);
@@ -179,9 +181,25 @@ export function MattersIndexPage() {
 						})
 					]
 				}),
-				open ? jsxs("form", {
-					onSubmit,
+				open ? jsxs("div", {
 					className: "mt-8 grid gap-4 card card-pad",
+					children: [
+						jsx(NewMatterModeToggle, {
+							lang,
+							mode,
+							onChange: setMode
+						}),
+						mode === "import" ? jsx(CourtImportPanel, {
+							lang,
+							onComplete: (job) => {
+								if (job.matterId) navigate({
+									to: "/matters/$id",
+									params: { id: job.matterId }
+								});
+							}
+						}) : jsxs("form", {
+					onSubmit,
+					className: "grid gap-4",
 					children: [
 						jsxs(Field, { children: [jsx(Label, {
 							htmlFor: "title",
@@ -341,6 +359,8 @@ export function MattersIndexPage() {
 								children: c.cancel
 							})]
 						})
+					]
+				})
 					]
 				}) : null,
 				matters.length === 0 && !open ? jsx("p", {

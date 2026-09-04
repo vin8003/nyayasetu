@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
+  deleteAdminUser,
   getAdminUser,
   updateAdminPlan,
   type AdminPlanAction,
@@ -25,9 +26,10 @@ function formatDay(iso: string | null) {
 
 export function AdminUserPage() {
   const { id } = Route.useParams();
+  const navigate = useNavigate();
   const [row, setRow] = useState<AdminUserRow | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<AdminPlanAction | null>(null);
+  const [busy, setBusy] = useState<AdminPlanAction | "delete" | null>(null);
 
   useEffect(() => {
     getAdminUser({ data: { userId: id } })
@@ -44,6 +46,25 @@ export function AdminUserPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Update failed");
     } finally {
+      setBusy(null);
+    }
+  }
+
+  async function remove() {
+    if (
+      !window.confirm(
+        "This cannot be undone. Every matter, memo, plan, and login for this user will be deleted. Continue?",
+      )
+    ) {
+      return;
+    }
+    setBusy("delete");
+    setError(null);
+    try {
+      await deleteAdminUser({ data: { userId: id } });
+      navigate({ to: "/admin/users" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete the account");
       setBusy(null);
     }
   }
@@ -109,6 +130,18 @@ export function AdminUserPage() {
         <p className="mt-4 text-xs text-muted">
           Grant adds 30 days from the current end date. It does not charge Razorpay.
         </p>
+      </div>
+      <div className="card card-pad mt-6">
+        <h2 className="font-display text-lg font-medium">Delete account</h2>
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          Removes this user's matters, memos, plan, and login. They can register again with the same
+          email. Chamber users cannot do this themselves.
+        </p>
+        <div className="mt-5">
+          <Button variant="danger" disabled={!!busy} onClick={() => void remove()}>
+            {busy === "delete" ? "Deleting…" : "Delete account"}
+          </Button>
+        </div>
       </div>
     </div>
   );

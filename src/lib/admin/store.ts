@@ -11,6 +11,7 @@ import {
   type BillingSnapshot,
   type EntitlementRow,
 } from "@/lib/billing/plan";
+import { purgeUserAccount } from "@/lib/account/store";
 import { adminConfigured, isAdminEmail } from "./allowlist";
 
 export class ForbiddenError extends Error {
@@ -331,4 +332,15 @@ export const updateAdminPlan = createServerFn({ method: "POST" })
       `;
     }
     return loadUser(data.userId);
+  });
+
+export const deleteAdminUser = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((input: { userId?: string }) => ({ userId: String(input?.userId ?? "").trim() }))
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    const admin = await requireAdmin(context.userId);
+    if (!data.userId) throw new Error("Missing user.");
+    if (data.userId === admin.id) throw new Error("You cannot delete your own admin account.");
+    await purgeUserAccount(data.userId);
+    return { ok: true };
   });

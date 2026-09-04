@@ -1,4 +1,4 @@
-import { readdirSync } from "node:fs";
+import { copyFileSync, existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { Plugin } from "vite";
 import { defineConfig } from "vite";
@@ -46,6 +46,29 @@ function pgliteBootstrapPlugin(): Plugin {
       } catch (err) {
         console.error("[app-builder] DB bootstrap failed:", err);
         throw err;
+      }
+    },
+  };
+}
+
+/** Nitro bundles pglite.js but not the wasm/data sidecars it reads at runtime. */
+function pgliteAssetsPlugin(): Plugin {
+  return {
+    name: "app-builder:pglite-assets",
+    apply: "build",
+    closeBundle() {
+      const srcDir = join(process.cwd(), "node_modules/@electric-sql/pglite/dist");
+      const dests = [
+        join(process.cwd(), ".vercel/output/functions/__server.func/_libs"),
+        join(process.cwd(), ".output/server/_libs"),
+      ];
+      const files = ["pglite.data", "pglite.wasm", "initdb.wasm"];
+      for (const dest of dests) {
+        if (!existsSync(dest)) continue;
+        for (const file of files) {
+          const from = join(srcDir, file);
+          if (existsSync(from)) copyFileSync(from, join(dest, file));
+        }
       }
     },
   };
@@ -159,6 +182,7 @@ export default defineConfig(({ command, isPreview }) => ({
   resolve: { tsconfigPaths: true },
   plugins: [
     pgliteBootstrapPlugin(),
+    pgliteAssetsPlugin(),
     // Before tanstackStart so /auth/popup never falls through to the SPA.
     authPopupPlugin(),
     // Dev-only /__app-env, read by scripts/check-auth-invariant.mjs.

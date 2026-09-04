@@ -38,6 +38,9 @@ import { DRAFT_KEY } from "@/lib/research/draft";
 import { extractUploads } from "@/lib/research/files";
 import { fileToBase64 } from "@/lib/read-file";
 import { writeInboxDraft } from "@/lib/practice/inbox-draft";
+import { CourtImportPanel } from "@/components/court-import";
+import { verifyTimelineEvent } from "@/lib/court-import/store";
+import { lookupFromMatter } from "@/lib/court-import/lookup";
 
 export const Route = createFileRoute("/matters/$id")({ component: MatterDetailPage });
 
@@ -59,6 +62,7 @@ export function MatterDetailPage() {
   const [fileMemos, setFileMemos] = useState([]);
   const [paper, setPaper] = useState({ title: "", kind: "order", body: "" });
   const [paperBusy, setPaperBusy] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const c = p(lang);
 
   const landedOnHash = useRef(false);
@@ -124,6 +128,12 @@ export function MatterDetailPage() {
 
   const { matter } = bundle;
   const proc = proceedingDef(matter.proceeding);
+  const courtLookup = lookupFromMatter({
+    cnr: matter.cnr || "",
+    caseNumber: matter.caseNumber || "",
+    courtName: matter.courtName || "",
+    courtSourceId: matter.courtSourceId || "",
+  });
   const located = findInBundle(bundle, openId);
 
   async function onStage(stage) {
@@ -297,6 +307,7 @@ export function MatterDetailPage() {
     onSaveOrder: (id, patch) => persist(() => updateOrder({ data: { id, ...patch } })),
     onSaveWork: (kind, id, patch) => persist(() => updateWorkItem({ data: { id, kind, ...patch } })),
     onSaveEvent: (id, patch) => persist(() => updateEvent({ data: { id, ...patch } })),
+    onVerifyEvent: (id) => persist(() => verifyTimelineEvent({ data: { id, verification: "lawyer_verified" } })),
   });
   const statutes = statutesFromMemos(fileMemos);
   const sheet = extraSheet(sheetBase, openId, fileMemos, statutes, lang, c, navigate);
@@ -357,6 +368,7 @@ export function MatterDetailPage() {
           <h1 className="mt-2 font-display text-3xl tracking-tight sm:text-4xl">{matter.title}</h1>
           <p className="mt-2 text-sm text-muted">
             {matter.courtName} {matter.caseNumber} {matter.cnr}
+            {matter.lastSyncedAt ? ` · ${c.lastSynced} ${String(matter.lastSyncedAt).slice(0, 10)}` : ""}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -435,6 +447,38 @@ export function MatterDetailPage() {
               <div className="text-xs text-muted">{c.lastOrder}</div>
               <div className="mt-1 font-medium tabular-nums">{matter.lastOrderOn ?? "—"}</div>
             </button>
+          </section>
+
+          <section className="rounded-lg bg-elevated p-4 shadow-hairline">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="section-title">{c.importFromCourt}</h2>
+                {matter.lastSyncedAt ? (
+                  <p className="mt-1 text-xs text-muted">
+                    {c.lastSynced} {String(matter.lastSyncedAt).slice(0, 16).replace("T", " ")}
+                  </p>
+                ) : (
+                  <p className="mt-1 text-xs text-muted">{c.importHint}</p>
+                )}
+              </div>
+              <Button type="button" variant="outline" onClick={() => setShowImport((v) => !v)}>
+                {showImport ? c.cancel : c.syncCase}
+              </Button>
+            </div>
+            {showImport ? (
+              <div className="mt-3">
+                <CourtImportPanel
+                  lang={lang}
+                  matterId={matter.id}
+                  defaultCourtId={courtLookup.courtId}
+                  seed={courtLookup.lookup}
+                  onComplete={() => {
+                    setShowImport(false);
+                    void reload();
+                  }}
+                />
+              </div>
+            ) : null}
           </section>
 
           {matter.parties?.length ? (
@@ -840,6 +884,7 @@ function sheetContent(bundle, located, lang, c, work = {}) {
     onSaveOrder,
     onSaveWork,
     onSaveEvent,
+    onVerifyEvent,
   } = work;
   if (!located) return null;
   if (located.kind === "notes" || located.kind === "file") {
@@ -945,7 +990,7 @@ function sheetContent(bundle, located, lang, c, work = {}) {
     return {
       title: e.title,
       kicker: c.timeline,
-      body: <EventBody e={e} lang={lang} onSave={(patch) => onSaveEvent?.(e.id, patch)} />,
+      body: <EventBody e={e} lang={lang} onSave={(patch) => onSaveEvent?.(e.id, patch)} onVerify={() => onVerifyEvent?.(e.id)} />,
       linkedId: related && related !== e.id ? related : null,
       linkedLabel: related && related !== e.id ? c.openLinked : null,
     };
