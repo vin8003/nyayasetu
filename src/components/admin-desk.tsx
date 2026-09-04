@@ -2,6 +2,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { CiteMark } from "@/components/cite-mark";
 import { AdminProvidersPane } from "@/components/admin-providers";
+import { AdminTrialSettings } from "@/components/admin-trial-settings";
+import { AdminUserLimits } from "@/components/admin-user-limits";
 import { Button } from "@/components/ui/button";
 import { Field, Hint, Input, Label } from "@/components/ui/field";
 import {
@@ -287,6 +289,7 @@ function AdminStatsPane() {
         <Card label="Matters" value={stats.matters} />
         <Card label="Memos" value={stats.memos} />
       </div>
+      <AdminTrialSettings />
     </div>
   );
 }
@@ -430,6 +433,13 @@ function AdminUserPane({ id, onBack }: { id: string; onBack: () => void }) {
             <dd className="mt-1.5 tabular-nums">{formatDay(row.createdAt)}</dd>
           </div>
           <div>
+            <dt className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted">Live CNR fetches</dt>
+            <dd className="mt-1.5 tabular-nums">
+              {row.snap.cnrFetchesUsed} / {row.snap.cnrFetchLimit}
+              {row.snap.cnrFetchesLeft == null ? " · unlimited" : ""}
+            </dd>
+          </div>
+          <div>
             <dt className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted">Matters</dt>
             <dd className="mt-1.5 tabular-nums">{row.matters ?? "—"}</dd>
           </div>
@@ -457,6 +467,7 @@ function AdminUserPane({ id, onBack }: { id: string; onBack: () => void }) {
           Grant adds 30 days from the current end date. It does not charge Razorpay.
         </p>
       </div>
+      <AdminUserLimits row={row} onSaved={setRow} />
       <div className="card card-pad mt-6">
         <h2 className="font-display text-lg font-medium">Delete account</h2>
         <p className="mt-2 text-sm leading-relaxed text-muted">

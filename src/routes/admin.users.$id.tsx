@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { AdminUserLimits } from "@/components/admin-user-limits";
 import {
   deleteAdminUser,
   getAdminUser,
@@ -104,6 +105,13 @@ export function AdminUserPage() {
             <dd className="mt-1.5 tabular-nums">{formatDay(row.createdAt)}</dd>
           </div>
           <div>
+            <dt className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted">Live CNR fetches</dt>
+            <dd className="mt-1.5 tabular-nums">
+              {row.snap.cnrFetchesUsed} / {row.snap.cnrFetchLimit}
+              {row.snap.cnrFetchesLeft == null ? " · unlimited" : ""}
+            </dd>
+          </div>
+          <div>
             <dt className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted">Matters</dt>
             <dd className="mt-1.5 tabular-nums">{row.matters ?? "—"}</dd>
           </div>
@@ -131,6 +139,7 @@ export function AdminUserPage() {
           Grant adds 30 days from the current end date. It does not charge Razorpay.
         </p>
       </div>
+      <AdminUserLimits row={row} onSaved={setRow} />
       <div className="card card-pad mt-6">
         <h2 className="font-display text-lg font-medium">Delete account</h2>
         <p className="mt-2 text-sm leading-relaxed text-muted">

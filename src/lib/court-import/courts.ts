@@ -11,7 +11,7 @@ export const COURT_SOURCES: CourtSource[] = [
     nameHi: "जिला न्यायालय (ई-कोर्ट्स)",
     kind: "district",
     officialUrl: "https://webapi.ecourtsindia.com",
-    officialName: "eCourtsIndia Partner API",
+    officialName: "Court-data API",
     fields: [
       {
         id: "cnr",
@@ -44,8 +44,8 @@ export const COURT_SOURCES: CourtSource[] = [
         placeholder: "2025",
       },
     ],
-    demoHint: "Try CNR DLND010012342025 for a published demo reconstruction. Live cases need a CNR via the eCourtsIndia Partner API — CiteBench does not open the court CAPTCHA page.",
-    demoHintHi: "प्रकाशित डेमो पुनर्रचना के लिए CNR DLND010012342025 आज़माएँ। लाइव केस eCourtsIndia पार्टनर API से CNR से आते हैं — कैप्चा साइट नहीं खुलती।",
+    demoHint: "Try CNR DLND010012342025 for a published demo reconstruction. Live cases need a CNR via the court-data API — CiteBench does not open the court CAPTCHA page.",
+    demoHintHi: "प्रकाशित डेमो पुनर्रचना के लिए CNR DLND010012342025 आज़माएँ। लाइव केस court-data API से CNR से आते हैं — कैप्चा साइट नहीं खुलती।",
   },
   {
     id: DELHI_HC_ID,
@@ -53,7 +53,7 @@ export const COURT_SOURCES: CourtSource[] = [
     nameHi: "दिल्ली उच्च न्यायालय",
     kind: "high_court",
     officialUrl: "https://webapi.ecourtsindia.com",
-    officialName: "eCourtsIndia Partner API",
+    officialName: "Court-data API",
     fields: [
       {
         id: "caseType",
@@ -77,8 +77,8 @@ export const COURT_SOURCES: CourtSource[] = [
         placeholder: "2025",
       },
     ],
-    demoHint: "Try W.P.(C) 3312 / 2025 for the published demo. Live Delhi matters fetch by CNR through the eCourtsIndia Partner API.",
-    demoHintHi: "प्रकाशित डेमो के लिए W.P.(C) 3312 / 2025 आज़माएँ। लाइव दिल्ली मामले CNR से eCourtsIndia पार्टनर API से आते हैं।",
+    demoHint: "Try W.P.(C) 3312 / 2025 for the published demo. Live Delhi matters fetch by CNR through the court-data API.",
+    demoHintHi: "प्रकाशित डेमो के लिए W.P.(C) 3312 / 2025 आज़माएँ। लाइव दिल्ली मामले CNR से court-data API से आते हैं।",
   },
 ];
 

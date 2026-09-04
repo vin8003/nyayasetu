@@ -3,7 +3,7 @@ import { matchDelhiHcDemo, matchDistrictDemo } from "./fixtures.ts";
 import type { AdapterSearchResult, CourtAdapter } from "./types.ts";
 
 const PARTNER_NOTE =
-  "Live CNR fetch uses the eCourtsIndia Partner API. CiteBench does not open the court CAPTCHA page or accept a paste-status handoff from eCourts.gov.in.";
+  "Live CNR fetch uses the connected court-data API. CiteBench does not open the court CAPTCHA page or accept a paste-status handoff from eCourts.gov.in.";
 
 function districtSearch(lookup: Record<string, string>): AdapterSearchResult {
   const demo = matchDistrictDemo(lookup);

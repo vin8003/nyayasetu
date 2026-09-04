@@ -476,7 +476,7 @@ export async function executeSearch(
     const message =
       result.kind === "error"
         ? result.message
-        : "Live CNR fetch uses the eCourtsIndia Partner API. CiteBench does not open the court CAPTCHA page.";
+        : "Live CNR fetch uses the connected court-data API. CiteBench does not open the court CAPTCHA page.";
     await setJob(sql, userId, jobId, {
       status: "FAILED",
       stageNote: message,

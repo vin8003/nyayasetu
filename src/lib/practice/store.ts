@@ -621,8 +621,11 @@ export async function insertPastedDocument(sql, userId, data) {
       insert into matter_documents (id, user_id, matter_id, kind, title, body, source_kind, source_url, external_id, content_hash, retrieved_at)
       values (${id}, ${userId}, ${data.matterId}, ${data.kind ?? "order"}, ${data.title}, ${data.body}, ${data.sourceKind ?? "paste"}, ${data.sourceUrl ?? ""}, ${data.externalId ?? ""}, ${data.contentHash ?? ""}, now())
     `;
-	const origin = data.sourceKind === "eci_partner" ? "system" : "lawyer";
-	const detail = data.sourceKind === "eci_partner" ? "Fetched via eCourtsIndia Partner API. Unconfirmed." : "";
+	const origin = data.sourceKind === "eci_partner" || data.sourceKind === "indiankanoon" ? "system" : "lawyer";
+	const detail =
+		data.sourceKind === "eci_partner" || data.sourceKind === "indiankanoon"
+			? "Fetched via the court-data API. Unconfirmed."
+			: "";
 	await addEvent(sql, userId, data.matterId, "document", data.title, detail, origin, id);
 	return { id };
 }

@@ -40,7 +40,7 @@ describe("court adapter selection", () => {
     const result = searchCourt("district-ecourts", { cnr: "DLND019999992025" });
     assert.equal(result.kind, "error");
     if (result.kind !== "error") return;
-    assert.match(result.message, /Partner API/i);
+    assert.match(result.message, /court-data API/i);
     assert.doesNotMatch(result.message, /Complete it there|upload the orders/i);
   });
 

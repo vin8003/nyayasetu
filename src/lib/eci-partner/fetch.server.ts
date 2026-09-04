@@ -74,7 +74,7 @@ async function ensureMatter(
     const row = rows[0];
     if (!row) return { ok: false, error: "NOT_FOUND", message: "Matter not found." };
     if (shouldSkipSample({ title: row.title, caseNumber: row.case_number })) {
-      return { ok: false, error: "SAMPLE_SKIPPED", message: "Sample chamber matters are not fetched from eCourtsIndia." };
+      return { ok: false, error: "SAMPLE_SKIPPED", message: "Sample chamber matters are not fetched from the court-data API." };
     }
     const nextCnr = String(row.cnr || "").trim() ? row.cnr : cnr;
     const nextCase = String(row.case_number || "").trim() ? row.case_number : preview.caseNumber;
@@ -144,7 +144,7 @@ export async function fetchCnrToInboxImpl(
         ok: false,
         error: "SAMPLE_SKIPPED",
         status: "fetch_error",
-        message: "Sample chamber matters are not fetched from eCourtsIndia.",
+        message: "Sample chamber matters are not fetched from the court-data API.",
       };
     }
     if (!typed.trim()) typed = rows[0].cnr;
@@ -232,7 +232,7 @@ export async function fetchCnrToInboxImpl(
         orderText: order.body.slice(0, 40000),
       });
       if (extracted?.ok) {
-        directions = extracted.extract.directions ?? [];
+        directions = extracted.extract?.directions ?? [];
       } else {
         needsHuman += 1;
         const err = String(extracted?.error ?? "");

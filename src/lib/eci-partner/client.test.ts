@@ -104,7 +104,7 @@ describe("partner HTTP client", () => {
     assert.equal(unauth.ok, false);
     if (unauth.ok) return;
     assert.equal(unauth.error, "HTTP");
-    assert.match(unauth.message, /eCourtsIndia/i);
+    assert.match(unauth.message, /court-data API/i);
     assert.equal(unauth.message.includes(KEY), false);
 
     const limited = await fetchPartnerCase({

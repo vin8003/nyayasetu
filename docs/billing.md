@@ -4,7 +4,7 @@ CiteBench sells a **chamber**: diary + matters + research + order reading. There
 
 | Constant | Value | Code |
 |---|---|---|
-| Trial length | 30 days | `TRIAL_DAYS` |
+| Trial length | 30 days **or** 10 live CNR fetches, whichever comes first | `DEFAULT_TRIAL_DAYS` / `DEFAULT_TRIAL_CNR_FETCHES` (admin can change) |
 | Plan id | `chamber_monthly` | `PLAN_ID` |
 | Price | ₹500 / month, all-in | `PLAN_PRICE_INR` |
 | GST | Not added. No GSTIN. | `billingCopy.gst` |
@@ -14,7 +14,11 @@ CiteBench sells a **chamber**: diary + matters + research + order reading. There
 
 **Not** on sign-up. **Not** on loading the sample chamber.
 
-The first AI call on **non-sample** work calls `ensureTrial`, which inserts `entitlements` with `trial_ends_at = now() + 30 days`. Until that row exists, `readSnapshot` returns `unstartedSnapshot()`: status `trial`, `trialStarted: false`, `canUseAi: true`.
+The first AI call on **non-sample** work calls `ensureTrial`, which inserts `entitlements` with `trial_ends_at = now() + trial_days`. Until that row exists, `readSnapshot` returns `unstartedSnapshot()`: status `trial`, `trialStarted: false`, `canUseAi: true`.
+
+Live CNR fetches (the connected court-data API, not sample) increment `cnr_fetches_used`. Trial ends when the date lapses **or** the fetch cap is reached.
+
+Admin → Stats sets chamber defaults. Admin → Users sets a per-user cap and can reset the count.
 
 Sample research, sample order extract, and sample hearing briefs pass `gateAi(..., { demo: true })` and skip `ensureTrial`.
 

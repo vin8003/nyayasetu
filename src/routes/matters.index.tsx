@@ -102,14 +102,14 @@ export function MattersIndexPage() {
 		}
 	}
 	const sampleOn = matters.some((m) => isSampleTitle(m.title));
+	const showDesk = Boolean(user) || isPending;
 	return jsxs(AppShell, {
 		lang,
 		onLang,
 		active: "matters",
 		children: [
-			isPending ? jsx("div", { className: "skeleton h-40" }) : null,
 			!isPending && !user ? jsx(GuestPanel, { lang }) : null,
-			!isPending && user ? jsxs("div", { children: [
+			showDesk ? jsxs("div", { children: [
 				jsxs("div", {
 					className: "flex flex-wrap items-end justify-between gap-3",
 					children: [jsxs("div", { children: [jsx("h1", {

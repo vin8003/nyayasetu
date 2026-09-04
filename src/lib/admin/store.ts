@@ -4,12 +4,14 @@ import { getSql } from "@/lib/db";
 import { paymentsLive } from "@/lib/billing/live";
 import {
   PLAN_ID,
-  TRIAL_DAYS,
   addDays,
   computeSnapshot,
+  mapEntitlementRow,
+  unstartedSnapshot,
   type BillingSnapshot,
   type EntitlementRow,
 } from "@/lib/billing/plan";
+import type { TrialDefaults } from "@/lib/billing/limits";
 import { purgeUserAccount } from "@/lib/account/store";
 
 async function countOrZero(query: Promise<{ n: number }[]>): Promise<number> {
@@ -36,12 +38,14 @@ async function loadUser(userId: string): Promise<AdminUserRow> {
     countOrZero(sql<{ n: number }>`select count(*)::int as n from matters where user_id = ${userId}`),
     countOrZero(sql<{ n: number }>`select count(*)::int as n from memos where user_id = ${userId}`),
   ]);
+  const { readTrialDefaults } = await import("@/lib/billing/settings.server");
+  const defaults = await readTrialDefaults();
   return {
     id: String(raw.id),
     name: String(raw.name ?? ""),
     email: String(raw.email ?? ""),
     createdAt: created instanceof Date ? created.toISOString() : String(created ?? ""),
-    snap: snapshotOf(mapEntitlement(ents[0] ?? null)),
+    snap: snapshotOf(mapEntitlement(ents[0] ?? null), defaults),
     razorpayId: ents[0]?.razorpay_subscription_id
       ? String(ents[0].razorpay_subscription_id)
       : null,
@@ -52,42 +56,12 @@ async function loadUser(userId: string): Promise<AdminUserRow> {
 
 function mapEntitlement(row: Record<string, unknown> | null): EntitlementRow | null {
   if (!row) return null;
-  const str = (key: string) => {
-    const v = row[key];
-    if (v == null) return null;
-    if (v instanceof Date) return v.toISOString();
-    return String(v);
-  };
-  return {
-    user_id: String(row.user_id),
-    status: String(row.status ?? "trial"),
-    plan: String(row.plan ?? PLAN_ID),
-    trial_started_at: str("trial_started_at") ?? new Date().toISOString(),
-    trial_ends_at: str("trial_ends_at") ?? new Date().toISOString(),
-    subscribed_at: str("subscribed_at"),
-    period_end: str("period_end"),
-    cancelled_at: str("cancelled_at"),
-    updated_at: str("updated_at") ?? new Date().toISOString(),
-    razorpay_customer_id: str("razorpay_customer_id"),
-    razorpay_subscription_id: str("razorpay_subscription_id"),
-  };
+  return mapEntitlementRow(row);
 }
 
-function snapshotOf(row: EntitlementRow | null): BillingSnapshot {
-  if (!row) {
-    return {
-      status: "trial",
-      canUseAi: true,
-      trialEndsAt: addDays(new Date(), TRIAL_DAYS).toISOString(),
-      periodEnd: null,
-      daysLeft: TRIAL_DAYS,
-      plan: PLAN_ID,
-      priceInr: 500,
-      trialStarted: false,
-      paymentsLive: paymentsLive(),
-    };
-  }
-  return { ...computeSnapshot(row), paymentsLive: paymentsLive() };
+function snapshotOf(row: EntitlementRow | null, defaults?: TrialDefaults): BillingSnapshot {
+  if (!row) return { ...unstartedSnapshot(new Date(), defaults), paymentsLive: paymentsLive() };
+  return { ...computeSnapshot(row, new Date(), defaults), paymentsLive: paymentsLive() };
 }
 
 export type AdminStats = {
@@ -137,6 +111,8 @@ export const getAdminStats = createServerFn({ method: "GET" })
     const users30d = await sql<{ n: number }>`
       select count(*)::int as n from "user" where "createdAt" > now() - interval '30 days'
     `;
+    const { readTrialDefaults } = await import("@/lib/billing/settings.server");
+    const defaults = await readTrialDefaults();
     const rows = await sql<Record<string, unknown>>`select * from entitlements`;
     let trial = 0;
     let active = 0;
@@ -147,7 +123,7 @@ export const getAdminStats = createServerFn({ method: "GET" })
     for (const raw of rows) {
       const ent = mapEntitlement(raw);
       if (!ent) continue;
-      const snap = computeSnapshot(ent);
+      const snap = computeSnapshot(ent, new Date(), defaults);
       if (snap.status === "trial") trial += 1;
       else if (snap.status === "active") active += 1;
       else if (snap.status === "cancelled") cancelled += 1;
@@ -198,7 +174,8 @@ export const listAdminUsers = createServerFn({ method: "GET" })
           select u.id, u.name, u.email, u."createdAt",
                  e.status as ent_status, e.plan, e.trial_started_at, e.trial_ends_at,
                  e.subscribed_at, e.period_end, e.cancelled_at, e.updated_at,
-                 e.razorpay_customer_id, e.razorpay_subscription_id, e.user_id
+                 e.razorpay_customer_id, e.razorpay_subscription_id, e.user_id,
+                 e.cnr_fetches_used, e.cnr_fetch_limit
           from "user" u
           left join entitlements e on e.user_id = u.id
           where lower(u.email) like ${"%" + q + "%"}
@@ -210,12 +187,15 @@ export const listAdminUsers = createServerFn({ method: "GET" })
           select u.id, u.name, u.email, u."createdAt",
                  e.status as ent_status, e.plan, e.trial_started_at, e.trial_ends_at,
                  e.subscribed_at, e.period_end, e.cancelled_at, e.updated_at,
-                 e.razorpay_customer_id, e.razorpay_subscription_id, e.user_id
+                 e.razorpay_customer_id, e.razorpay_subscription_id, e.user_id,
+                 e.cnr_fetches_used, e.cnr_fetch_limit
           from "user" u
           left join entitlements e on e.user_id = u.id
           order by u."createdAt" desc
           limit 200
         `;
+    const { readTrialDefaults } = await import("@/lib/billing/settings.server");
+    const defaults = await readTrialDefaults();
     return rows.map((raw) => {
       const created = raw.createdAt;
       const createdAt =
@@ -231,7 +211,7 @@ export const listAdminUsers = createServerFn({ method: "GET" })
         name: String(raw.name ?? ""),
         email: String(raw.email ?? ""),
         createdAt,
-        snap: snapshotOf(ent),
+        snap: snapshotOf(ent, defaults),
         razorpayId: raw.razorpay_subscription_id ? String(raw.razorpay_subscription_id) : null,
       };
     });
@@ -263,9 +243,12 @@ export const updateAdminPlan = createServerFn({ method: "POST" })
       throw new Error("Unknown action.");
     }
     const sql = await getSql();
+    const { readTrialDefaults } = await import("@/lib/billing/settings.server");
+    const defaults = await readTrialDefaults();
+    const trialEnd = addDays(new Date(), defaults.trialDays).toISOString();
     await sql`
       insert into entitlements (user_id, status, plan, trial_started_at, trial_ends_at)
-      values (${data.userId}, 'trial', ${PLAN_ID}, now(), now() + interval '30 days')
+      values (${data.userId}, 'trial', ${PLAN_ID}, now(), ${trialEnd})
       on conflict (user_id) do nothing
     `;
     if (data.action === "grant30") {
@@ -306,7 +289,7 @@ export const updateAdminPlan = createServerFn({ method: "POST" })
         update entitlements
         set status = 'trial',
             trial_started_at = now(),
-            trial_ends_at = now() + interval '30 days',
+            trial_ends_at = ${trialEnd},
             subscribed_at = null,
             period_end = null,
             cancelled_at = null,
@@ -328,3 +311,89 @@ export const deleteAdminUser = createServerFn({ method: "POST" })
     await purgeUserAccount(data.userId);
     return { ok: true };
   });
+
+export const getAdminTrialDefaults = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }): Promise<TrialDefaults> => {
+    const { requireAdmin } = await import("./guard.server");
+    await requireAdmin(context.userId);
+    const { readTrialDefaults } = await import("@/lib/billing/settings.server");
+    return readTrialDefaults();
+  });
+
+export const saveAdminTrialDefaults = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((input: { trialDays?: number; trialCnrFetches?: number }) => ({
+    trialDays: Number(input?.trialDays),
+    trialCnrFetches: Number(input?.trialCnrFetches),
+  }))
+  .handler(async ({ context, data }): Promise<TrialDefaults> => {
+    const { requireAdmin } = await import("./guard.server");
+    const admin = await requireAdmin(context.userId);
+    const { writeTrialDefaults } = await import("@/lib/billing/settings.server");
+    return writeTrialDefaults(
+      { trialDays: data.trialDays, trialCnrFetches: data.trialCnrFetches },
+      admin.id,
+    );
+  });
+
+export const updateAdminUserLimits = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((input: { userId?: string; cnrFetchLimit?: number | null; resetFetches?: boolean; extraTrialDays?: number }) => ({
+    userId: String(input?.userId ?? "").trim(),
+    cnrFetchLimit: input?.cnrFetchLimit === null || input?.cnrFetchLimit === undefined ? null : Number(input.cnrFetchLimit),
+    resetFetches: Boolean(input?.resetFetches),
+    extraTrialDays:
+      input?.extraTrialDays == null || Number.isNaN(Number(input.extraTrialDays))
+        ? 0
+        : Math.trunc(Number(input.extraTrialDays)),
+  }))
+  .handler(async ({ context, data }): Promise<AdminUserRow> => {
+    const { requireAdmin } = await import("./guard.server");
+    await requireAdmin(context.userId);
+    if (!data.userId) throw new Error("Missing user.");
+    const { readTrialDefaults } = await import("@/lib/billing/settings.server");
+    const defaults = await readTrialDefaults();
+    const trialEnd = addDays(new Date(), defaults.trialDays).toISOString();
+    const sql = await getSql();
+    await sql`
+      insert into entitlements (user_id, status, plan, trial_started_at, trial_ends_at)
+      values (${data.userId}, 'trial', ${PLAN_ID}, now(), ${trialEnd})
+      on conflict (user_id) do nothing
+    `;
+    if (data.resetFetches) {
+      await sql`
+        update entitlements set cnr_fetches_used = 0, updated_at = now() where user_id = ${data.userId}
+      `;
+    }
+    if (data.cnrFetchLimit === null) {
+      await sql`
+        update entitlements set cnr_fetch_limit = null, updated_at = now() where user_id = ${data.userId}
+      `;
+    } else if (Number.isFinite(data.cnrFetchLimit)) {
+      const cap = Math.max(0, Math.min(1000, Math.trunc(data.cnrFetchLimit)));
+      await sql`
+        update entitlements set cnr_fetch_limit = ${cap}, updated_at = now() where user_id = ${data.userId}
+      `;
+    }
+    if (data.extraTrialDays > 0) {
+      const extra = Math.min(365, data.extraTrialDays);
+      const current = await sql<{ trial_ends_at: string | Date }>`
+        select trial_ends_at from entitlements where user_id = ${data.userId} limit 1
+      `;
+      const rawEnd = current[0]?.trial_ends_at;
+      const currentEnd = rawEnd instanceof Date ? rawEnd : new Date(String(rawEnd ?? ""));
+      const from = Number.isNaN(currentEnd.getTime()) || currentEnd.getTime() < Date.now() ? new Date() : currentEnd;
+      const nextEnd = addDays(from, extra).toISOString();
+      await sql`
+        update entitlements
+        set trial_ends_at = ${nextEnd},
+            status = case when status in ('expired', 'cancelled') then 'trial' else status end,
+            cancelled_at = case when status in ('expired', 'cancelled') then null else cancelled_at end,
+            updated_at = now()
+        where user_id = ${data.userId}
+      `;
+    }
+    return loadUser(data.userId);
+  });
+

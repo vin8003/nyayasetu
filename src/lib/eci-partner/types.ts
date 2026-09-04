@@ -14,6 +14,7 @@ export type EciErrorCode =
   | "SAMPLE_SKIPPED"
   | "EMPTY_PARSE"
   | "PROVIDER_DISABLED"
+  | "TRIAL_LIMIT"
   | "HTTP"
   | "NETWORK";
 

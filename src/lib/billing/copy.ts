@@ -4,10 +4,10 @@ export const billingCopy = {
   hi: {
     plan: "प्लान",
     kicker: "CiteBench चैंबर",
-    title: "30 दिन आज़माइश, फिर चैंबर।",
-    lead: "नमूना चैंबर मुफ़्त है — घड़ी नहीं चलती। 30 दिन तब शुरू होंगे जब आप अपना मामला शोध करें। कार्ड नहीं। बाद में ₹500 / महीना।",
+    title: "एक महीना या 10 लाइव CNR, फिर चैंबर।",
+    lead: "नमूना चैंबर मुफ़्त है — घड़ी नहीं चलती। आज़माइश तब शुरू होगी जब आप अपना मामला शोध करें: एक महीना या 10 लाइव CNR, जो पहले हो। कार्ड नहीं। बाद में ₹500 / महीना।",
     leadLive:
-      "नमूना चैंबर मुफ़्त है — घड़ी नहीं चलती। 30 दिन तब शुरू होंगे जब आप अपना मामला शोध करें। फिर ₹500 / महीना, UPI, कार्ड या नेटबैंकिंग से।",
+      "नमूना चैंबर मुफ़्त है — घड़ी नहीं चलती। आज़माइश तब शुरू होगी जब आप अपना मामला शोध करें: एक महीना या 10 लाइव CNR, जो पहले हो। फिर ₹500 / महीना, UPI, कार्ड या नेटबैंकिंग से।",
     trialOn: "आज़माइश चल रही है",
     trialDays: "दिन बाकी",
     trialIdle: "शुरू नहीं हुई — नमूना चैंबर मुफ़्त है",
@@ -23,7 +23,7 @@ export const billingCopy = {
     itemResearch: "भारतीय केस-लॉ शोध डेस्क",
     itemChamber: "डायरी, मामले, पेशियाँ, समय-सीमा",
     itemOrders: "आदेश पढ़ना और पेशी ब्रीफ",
-    itemTrial: "अपने मामलों पर 30 दिन मुफ़्त — नमूना चैंबर नहीं गिना जाता",
+    itemTrial: "अपने मामलों पर एक महीना या 10 लाइव CNR मुफ़्त — नमूना चैंबर नहीं गिना जाता",
     subscribe: "चैंबर शुरू करें — ₹500 / महीना",
     subscribing: "खोल रहे हैं…",
     subscribed: "चैंबर खुल गया।",
@@ -44,14 +44,15 @@ export const billingCopy = {
     bannerIdle: "नमूना मुफ़्त · आज़माइश बाकी",
     bannerExpired: "आज़माइश खत्म — चैंबर लें",
     bannerLeft: "दिन बाकी",
+    bannerFetches: "लाइव CNR बाकी",
   },
   en: {
     plan: "Plan",
     kicker: "CiteBench chamber",
-    title: "30 days free, then the chamber.",
-    lead: "Sample chamber is free and does not start the clock. The 30 days begin when you research your own matter. No card. Then ₹500 a month.",
+    title: "One month or 10 live CNR fetches, then the chamber.",
+    lead: "Sample chamber is free and does not start the clock. The trial begins when you research your own matter: one month or 10 live CNR fetches, whichever comes first. No card. Then ₹500 a month.",
     leadLive:
-      "Sample chamber is free and does not start the clock. The 30 days begin when you research your own matter. Then ₹500 a month, paid with UPI, card, or netbanking.",
+      "Sample chamber is free and does not start the clock. The trial begins when you research your own matter: one month or 10 live CNR fetches, whichever comes first. Then ₹500 a month, paid with UPI, card, or netbanking.",
     trialOn: "Trial running",
     trialDays: "days left",
     trialIdle: "Not started — sample chamber is free",
@@ -67,7 +68,7 @@ export const billingCopy = {
     itemResearch: "Indian case-law research desk",
     itemChamber: "Diary, matters, hearings, deadlines",
     itemOrders: "Order reading and hearing briefs",
-    itemTrial: "30-day free trial on your own matters — sample does not count",
+    itemTrial: "One month or 10 live CNR fetches on your own matters — sample does not count",
     subscribe: "Start chamber — ₹500 / month",
     subscribing: "Opening…",
     subscribed: "Chamber is open.",
@@ -88,6 +89,7 @@ export const billingCopy = {
     bannerIdle: "Sample is free · trial unused",
     bannerExpired: "Trial ended — open the chamber",
     bannerLeft: "days left",
+    bannerFetches: "live CNR left",
   },
 } as const;
 

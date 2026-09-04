@@ -26,11 +26,27 @@ export function BillingBanner({ lang }: { lang: OutputLang }) {
       .catch(() => setSnap(null));
   }, [user?.id]);
 
-  if (!user || !snap || pathname.startsWith("/billing")) return null;
+  if (!user || pathname.startsWith("/billing")) return null;
+  if (!snap) {
+    return (
+      <div className="banner no-print" aria-hidden>
+        <div className="banner-inner">
+          <p className="text-muted">{c.plan}</p>
+        </div>
+      </div>
+    );
+  }
   if (snap.status === "active") return null;
   if (snap.status === "cancelled" && snap.canUseAi) return null;
 
   if (snap.status === "trial") {
+    const fetches =
+      snap.cnrFetchesLeft == null ? null : (
+        <>
+          {" "}
+          · {snap.cnrFetchesLeft} {c.bannerFetches}
+        </>
+      );
     return (
       <div className="banner no-print">
         <div className="banner-inner">
@@ -41,6 +57,7 @@ export function BillingBanner({ lang }: { lang: OutputLang }) {
                 <span className="text-muted">
                   {" "}
                   · {snap.daysLeft} {c.bannerLeft}
+                  {fetches}
                 </span>
               </>
             ) : (

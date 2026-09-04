@@ -42,10 +42,10 @@ function defaultFetch(input: string, init?: RequestInit): Promise<Response> {
 function errorMessage(code: string, fallback: string): string {
   if (code === "INVALID_CNR") return "CNR must be 16 letters and digits.";
   if (code === "CASE_NOT_FOUND") return "No case for that CNR.";
-  if (code === "RATE_LIMIT_EXCEEDED" || code === "TOO_MANY_CONVERSIONS") return "eCourtsIndia rate limit — try again in a minute.";
-  if (code === "INSUFFICIENT_CREDITS") return "eCourtsIndia credits are exhausted.";
+  if (code === "RATE_LIMIT_EXCEEDED" || code === "TOO_MANY_CONVERSIONS") return "Court-data API rate limit — try again in a minute.";
+  if (code === "INSUFFICIENT_CREDITS") return "Court-data API credits are exhausted.";
   if (code === "INVALID_TOKEN" || code === "TOKEN_INACTIVE" || code === "TOKEN_EXPIRED") {
-    return "Could not fetch from eCourtsIndia.";
+    return "Could not fetch from the court-data API.";
   }
   return fallback;
 }
@@ -56,7 +56,7 @@ function readError(json: unknown, status: number): { code: string; message: stri
   const meta = root.meta && typeof root.meta === "object" ? (root.meta as Record<string, unknown>) : {};
   const code = typeof err.code === "string" ? err.code : status === 404 ? "CASE_NOT_FOUND" : status === 429 ? "RATE_LIMIT_EXCEEDED" : `HTTP_${status}`;
   const rawMessage = typeof err.message === "string" && err.message.trim() ? err.message : "";
-  const safeMessage = rawMessage && !/[<>]/.test(rawMessage) ? rawMessage : "Could not fetch from eCourtsIndia.";
+  const safeMessage = rawMessage && !/[<>]/.test(rawMessage) ? rawMessage : "Could not fetch from the court-data API.";
   const message = errorMessage(code, safeMessage);
   const requestId = typeof meta.request_id === "string" ? meta.request_id : "";
   return { code, message, requestId };
@@ -131,14 +131,14 @@ export async function fetchPartnerCase(input: {
     }
     const queued = await partnerFetch(fetchImpl, input.apiKey, refreshUrl, "POST");
     if ("network" in queued) {
-      return { ok: false, error: "NETWORK", message: "Could not reach eCourtsIndia." };
+      return { ok: false, error: "NETWORK", message: "Could not reach the court-data API." };
     }
     refreshed = queued.response.status === 202 || queued.response.ok;
   }
 
   const got = await partnerFetch(fetchImpl, input.apiKey, detailUrl, "GET");
   if ("network" in got) {
-    return { ok: false, error: "NETWORK", message: got.message.includes("forbidden in tests") ? got.message : "Could not reach eCourtsIndia." };
+    return { ok: false, error: "NETWORK", message: got.message.includes("forbidden in tests") ? got.message : "Could not reach the court-data API." };
   }
   const requestId =
     got.json && typeof got.json === "object" && got.json !== null

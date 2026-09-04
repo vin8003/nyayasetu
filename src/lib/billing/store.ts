@@ -6,6 +6,7 @@ import {
   TRIAL_DAYS,
   addDays,
   computeSnapshot,
+  mapEntitlementRow,
   periodEndIso,
   unstartedSnapshot,
   type BillingSnapshot,
@@ -17,25 +18,7 @@ import type { SubscribeResult } from "./types";
 export type { SubscribeResult } from "./types";
 
 function mapRow(row: Record<string, unknown>): EntitlementRow {
-  const str = (key: string) => {
-    const v = row[key];
-    if (v == null) return null;
-    if (v instanceof Date) return v.toISOString();
-    return String(v);
-  };
-  return {
-    user_id: String(row.user_id),
-    status: String(row.status ?? "trial"),
-    plan: String(row.plan ?? PLAN_ID),
-    trial_started_at: str("trial_started_at") ?? new Date().toISOString(),
-    trial_ends_at: str("trial_ends_at") ?? new Date().toISOString(),
-    subscribed_at: str("subscribed_at"),
-    period_end: str("period_end"),
-    cancelled_at: str("cancelled_at"),
-    updated_at: str("updated_at") ?? new Date().toISOString(),
-    razorpay_customer_id: str("razorpay_customer_id"),
-    razorpay_subscription_id: str("razorpay_subscription_id"),
-  };
+  return mapEntitlementRow(row);
 }
 
 async function fetchRow(userId: string): Promise<EntitlementRow | null> {
@@ -56,9 +39,12 @@ async function fetchRowBySubscription(subscriptionId: string): Promise<Entitleme
 
 async function ensureTrial(userId: string): Promise<EntitlementRow> {
   const sql = await getSql();
+  const { readTrialDefaults } = await import("./settings.server");
+  const defaults = await readTrialDefaults();
+  const ends = addDays(new Date(), defaults.trialDays).toISOString();
   await sql`
     insert into entitlements (user_id, status, plan, trial_started_at, trial_ends_at)
-    values (${userId}, 'trial', ${PLAN_ID}, now(), now() + interval '30 days')
+    values (${userId}, 'trial', ${PLAN_ID}, now(), ${ends})
     on conflict (user_id) do nothing
   `;
   const row = await fetchRow(userId);
@@ -82,8 +68,10 @@ async function markSnapshot(snap: BillingSnapshot): Promise<BillingSnapshot> {
 }
 
 export async function readSnapshot(userId: string): Promise<BillingSnapshot> {
+  const { readTrialDefaults } = await import("./settings.server");
+  const defaults = await readTrialDefaults();
   const row = await fetchRow(userId);
-  const snap = row ? computeSnapshot(row) : unstartedSnapshot();
+  const snap = row ? computeSnapshot(row, new Date(), defaults) : unstartedSnapshot(new Date(), defaults);
   return markSnapshot(snap);
 }
 
@@ -93,7 +81,8 @@ export async function gateAi(
 ): Promise<{ ok: true } | { ok: false; error: "PAYWALL" }> {
   if (opts?.demo) return { ok: true };
   const row = await ensureTrial(userId);
-  const snap = computeSnapshot(row);
+  const { readTrialDefaults } = await import("./settings.server");
+  const snap = computeSnapshot(row, new Date(), await readTrialDefaults());
   if (!snap.canUseAi) return { ok: false, error: "PAYWALL" };
   return { ok: true };
 }

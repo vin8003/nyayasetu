@@ -11,6 +11,7 @@ import { grokPwaPlugin } from "./scripts/grok-pwa-plugin.mjs";
 // @ts-expect-error JS plugin alongside the TS vite config
 import { appEnvPlugin } from "./scripts/app-env-plugin.mjs";
 import { isMigrationFile } from "./scripts/migration-plan.mjs";
+import { fixSsrExports } from "./scripts/fix-ssr-exports.mjs";
 
 /** The files `src/lib/db.ts` globs — same directory, same non-recursive scope. */
 function hasGlobbedMigrations(root: string): boolean {
@@ -60,7 +61,9 @@ function pgliteAssetsPlugin(): Plugin {
       const srcDir = join(process.cwd(), "node_modules/@electric-sql/pglite/dist");
       const dests = [
         join(process.cwd(), ".vercel/output/functions/__server.func/_libs"),
+        join(process.cwd(), ".vercel/output/functions/__server.func"),
         join(process.cwd(), ".output/server/_libs"),
+        join(process.cwd(), ".output/server"),
       ];
       const files = ["pglite.data", "pglite.wasm", "initdb.wasm"];
       for (const dest of dests) {
@@ -69,6 +72,11 @@ function pgliteAssetsPlugin(): Plugin {
           const from = join(srcDir, file);
           if (existsSync(from)) copyFileSync(from, join(dest, file));
         }
+      }
+      try {
+        fixSsrExports();
+      } catch (err) {
+        console.error("[fix-ssr-exports] closeBundle failed:", err);
       }
     },
   };
@@ -199,6 +207,25 @@ export default defineConfig(({ command, isPreview }) => ({
             // manifest + head-tag middleware). Nitro v3 defaults serverDir to
             // false, so removing this silently unwires /?install=1 on deploys.
             serverDir: "./server",
+            // Rolldown otherwise emits a circular _ssr/ssr.mjs ↔ ssr2.mjs pair
+            // that 500s every request (`ssr_exports is not defined`).
+            inlineDynamicImports: true,
+            hooks: {
+              compiled() {
+                try {
+                  fixSsrExports();
+                } catch (err) {
+                  console.error("[fix-ssr-exports] nitro hook failed:", err);
+                }
+              },
+              close() {
+                try {
+                  fixSsrExports();
+                } catch (err) {
+                  console.error("[fix-ssr-exports] nitro close hook failed:", err);
+                }
+              },
+            },
           }),
         ]
       : []),

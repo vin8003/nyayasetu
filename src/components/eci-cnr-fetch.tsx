@@ -11,6 +11,7 @@ import { p } from "@/lib/practice/copy";
 import type { OutputLang } from "@/lib/research/types";
 
 function errorCopy(c: ReturnType<typeof p>, result: Extract<FetchCnrResult, { ok: false }>): string {
+  if (result.error === "TRIAL_LIMIT") return c.eciTrialLimit;
   if (result.error === "PROVIDER_DISABLED") return c.eciProviderOff;
   if (result.error === "API_KEY_MISSING") return c.eciKeyMissing;
   if (result.error === "SAMPLE_SKIPPED") return c.eciSkipSample;
@@ -105,7 +106,7 @@ export function EciCnrFetch({
 
   const providerOff = providerId === "none";
   const keyMissing = configured === false && !providerOff;
-  const blocked = configured === false;
+  const blocked = providerOff || keyMissing;
   const outside = cnr.trim() && !partnerCnrError(cnr) && !isFirstStateCnr(cnr);
 
   return (

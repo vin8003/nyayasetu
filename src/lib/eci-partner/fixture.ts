@@ -82,7 +82,7 @@ export const PARTNER_HEARINGS_ONLY_FIXTURE = {
     ],
     interimOrders: [],
     judgmentOrders: [],
-    files: { files: [] },
+    files: { files: [] as Array<Record<string, unknown>> },
   },
   meta: { request_id: "req_fixture_empty" },
 };
@@ -105,7 +105,7 @@ export const PARTNER_NESTED_ORDERS_FIXTURE = {
       ],
       judgmentOrders: [],
     },
-    files: { files: [] },
+    files: { files: [] as Array<Record<string, unknown>> },
   },
   meta: { request_id: "req_fixture_nested" },
 };
@@ -154,7 +154,7 @@ export const PARTNER_DLHC_VIEW_ORDER_FIXTURE = {
       ],
       judgmentOrders: [],
     },
-    files: { files: [] },
+    files: { files: [] as Array<Record<string, unknown>> },
   },
   meta: { request_id: "4000dfb8-0011-9c00-b63f-84710c7967bb" },
 };

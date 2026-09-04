@@ -127,7 +127,10 @@ function createNeonSql(): Promise<Sql> {
           } catch {
             /* keep original error */
           }
-          throw err;
+          throw new Error(
+            `migration ${name} failed: ${err instanceof Error ? err.message : String(err)}`,
+            { cause: err },
+          );
         }
       }
     } finally {
@@ -269,6 +272,8 @@ if (typeof window === "undefined") {
   globalBoot.__pgBootstrapPromise__ ??= ensureDbReady().catch((err) => {
     globalBoot.__pgBootstrapPromise__ = undefined;
     console.error("[db] bootstrap failed:", err);
-    throw err;
+    // Do not rethrow. On Vercel an unhandled rejection here 500s every route,
+    // including HTML, when a single migration file fails (pooled Neon rejects
+    // multi-command queries). getSql() still retries on the next call.
   });
 }

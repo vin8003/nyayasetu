@@ -8,6 +8,11 @@ import { authMiddleware } from "@/lib/auth/middleware";
 import type { FetchCnrResult } from "@/lib/eci-partner/types";
 import { COURT_PROVIDER_IDS, type CourtProviderId, type CourtProviderStatus } from "./types";
 
+function countsAsLiveFetch(result: FetchCnrResult): boolean {
+  if (result.ok) return true;
+  return result.error === "EMPTY_PARSE" || result.error === "HTTP";
+}
+
 export const courtProviderStatus = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async () => {
@@ -27,8 +32,23 @@ export const fetchCnrToInbox = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ context, data }): Promise<FetchCnrResult> => {
+    const { gateLiveCnrFetch, recordLiveCnrFetch } = await import("@/lib/billing/settings.server");
+    const gate = await gateLiveCnrFetch(context.userId);
+    if (!gate.ok) {
+      return {
+        ok: false,
+        error: "TRIAL_LIMIT",
+        status: "fetch_error",
+        code: "TRIAL_LIMIT",
+        message: gate.message,
+      };
+    }
     const { dispatchFetchCnr } = await import("./settings.server");
-    return dispatchFetchCnr({ userId: context.userId, ...data });
+    const result = await dispatchFetchCnr({ userId: context.userId, ...data });
+    if (countsAsLiveFetch(result)) {
+      await recordLiveCnrFetch(context.userId);
+    }
+    return result;
   });
 
 export const listCourtProviders = createServerFn({ method: "GET" })

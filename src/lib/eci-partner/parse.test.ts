@@ -24,9 +24,9 @@ describe("partner case parse", () => {
   });
 
   it("does not turn hearings or AI summaries into an order body", () => {
-    const withAi = structuredClone(PARTNER_HEARINGS_ONLY_FIXTURE) as typeof PARTNER_HEARINGS_ONLY_FIXTURE & {
+    const withAi = structuredClone(PARTNER_HEARINGS_ONLY_FIXTURE) as {
       data: { files: { files: Array<Record<string, unknown>> } };
-    };
+    } & typeof PARTNER_HEARINGS_ONLY_FIXTURE;
     withAi.data.files = {
       files: [
         {
@@ -35,7 +35,7 @@ describe("partner case parse", () => {
           markdownContent: "",
         },
       ],
-    };
+    } as typeof withAi.data.files;
     const parsed = parsePartnerCase(withAi);
     assert.equal(hasLandableBody(parsed.orders), false);
     assert.equal(parsed.orders.every((o) => !o.body.includes("clever")), true);

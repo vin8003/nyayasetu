@@ -1,12 +1,12 @@
 import type { EciHttpErr, FetchCnrResult, InboxLandPlan } from "./types.ts";
 
 export const API_KEY_NOT_CONFIGURED = "API key not configured";
-export const EMPTY_PARSE_MESSAGE = "eCourtsIndia returned the case but no order text. Nothing was invented.";
+export const EMPTY_PARSE_MESSAGE = "The court-data API returned the case but no order text. Nothing was invented.";
 export const IK_EMPTY_PARSE_MESSAGE =
-  "Indian Kanoon returned hits but no order text. Nothing was invented. Live cause-list cases often need eCourtsIndia.";
+  "Indian Kanoon returned hits but no order text. Nothing was invented.";
 export const IK_NOT_FOUND_MESSAGE = "Indian Kanoon has no published document for this CNR.";
 export const PDF_PENDING_MESSAGE =
-  "eCourtsIndia listed PDF orders but has not converted the text yet. Try Fetch again in a minute.";
+  "The court-data API listed PDF orders but has not converted the text yet. Try Fetch again in a minute.";
 
 export function missingKeyResult(): Extract<FetchCnrResult, { ok: false }> {
   return {

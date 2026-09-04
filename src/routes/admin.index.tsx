@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { getAdminStats, type AdminStats } from "@/lib/admin/store";
+import { AdminTrialSettings } from "@/components/admin-trial-settings";
 
 export const Route = createFileRoute("/admin/")({ component: AdminHome });
 
@@ -52,6 +53,7 @@ export function AdminHome() {
           Court data provider →
         </Link>
       </p>
+      <AdminTrialSettings />
     </div>
   );
 }
