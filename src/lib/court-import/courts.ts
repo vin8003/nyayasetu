@@ -10,8 +10,8 @@ export const COURT_SOURCES: CourtSource[] = [
     name: "District courts (eCourts)",
     nameHi: "जिला न्यायालय (ई-कोर्ट्स)",
     kind: "district",
-    officialUrl: "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index",
-    officialName: "eCourts Case Status",
+    officialUrl: "https://webapi.ecourtsindia.com",
+    officialName: "eCourtsIndia Partner API",
     fields: [
       {
         id: "cnr",
@@ -44,16 +44,16 @@ export const COURT_SOURCES: CourtSource[] = [
         placeholder: "2025",
       },
     ],
-    demoHint: "Try CNR DLND010012342025 for a full reconstruction. Live eCourts searches need you to complete CAPTCHA on the court site.",
-    demoHintHi: "पूरी पुनर्रचना के लिए CNR DLND010012342025 आज़माएँ। लाइव ई-कोर्ट्स खोज पर अदालत की साइट पर कैप्चा आप पूरा करेंगे।",
+    demoHint: "Try CNR DLND010012342025 for a published demo reconstruction. Live cases need a CNR via the eCourtsIndia Partner API — CiteBench does not open the court CAPTCHA page.",
+    demoHintHi: "प्रकाशित डेमो पुनर्रचना के लिए CNR DLND010012342025 आज़माएँ। लाइव केस eCourtsIndia पार्टनर API से CNR से आते हैं — कैप्चा साइट नहीं खुलती।",
   },
   {
     id: DELHI_HC_ID,
     name: "Delhi High Court",
     nameHi: "दिल्ली उच्च न्यायालय",
     kind: "high_court",
-    officialUrl: "https://delhihighcourt.nic.in/app/case-status",
-    officialName: "Delhi High Court Case Status",
+    officialUrl: "https://webapi.ecourtsindia.com",
+    officialName: "eCourtsIndia Partner API",
     fields: [
       {
         id: "caseType",
@@ -77,8 +77,8 @@ export const COURT_SOURCES: CourtSource[] = [
         placeholder: "2025",
       },
     ],
-    demoHint: "Try W.P.(C) 3312 / 2025. The High Court site also requires CAPTCHA for a live search.",
-    demoHintHi: "W.P.(C) 3312 / 2025 आज़माएँ। लाइव खोज पर उच्च न्यायालय की साइट भी कैप्चा माँगती है।",
+    demoHint: "Try W.P.(C) 3312 / 2025 for the published demo. Live Delhi matters fetch by CNR through the eCourtsIndia Partner API.",
+    demoHintHi: "प्रकाशित डेमो के लिए W.P.(C) 3312 / 2025 आज़माएँ। लाइव दिल्ली मामले CNR से eCourtsIndia पार्टनर API से आते हैं।",
   },
 ];
 

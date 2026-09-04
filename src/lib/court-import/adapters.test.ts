@@ -1,8 +1,10 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { continueFromPaste, getAdapter, searchCourt } from "./adapters.ts";
-import { DEMO_DISTRICT_CNR, DEMO_HC_CASE, SAMPLE_ECOURTS_PASTE } from "./fixtures.ts";
+import { getAdapter, searchCourt } from "./adapters.ts";
+import * as adapters from "./adapters.ts";
+import { DEMO_DISTRICT_CNR, DEMO_HC_CASE } from "./fixtures.ts";
 import { COURT_SOURCES } from "./courts.ts";
+import { isForbiddenCourtUrl } from "./forbidden.ts";
 
 describe("court adapter selection", () => {
   it("registers district eCourts and Delhi High Court", () => {
@@ -20,7 +22,8 @@ describe("court adapter selection", () => {
     assert.equal(result.case.cnr, DEMO_DISTRICT_CNR);
     assert.ok(result.orders.length >= 5);
     assert.ok(result.orders.some((o) => o.available === false));
-    assert.ok(result.case.sourceUrl.includes("ecourts.gov.in"));
+    assert.equal(isForbiddenCourtUrl(result.case.sourceUrl), false);
+    assert.equal(result.orders.every((o) => !isForbiddenCourtUrl(o.sourceUrl)), true);
   });
 
   it("retrieves the Delhi High Court demo by type/number/year", () => {
@@ -30,23 +33,18 @@ describe("court adapter selection", () => {
     assert.equal(result.demo, true);
     assert.equal(result.case.caseNumber, DEMO_HC_CASE);
     assert.ok(result.orders.length >= 3);
+    assert.equal(isForbiddenCourtUrl(result.case.sourceUrl), false);
   });
 
-  it("returns CAPTCHA_REQUIRED for a live identifier and does not invent a case", () => {
+  it("refuses a live identifier instead of opening court CAPTCHA", () => {
     const result = searchCourt("district-ecourts", { cnr: "DLND019999992025" });
-    assert.equal(result.kind, "captcha");
-    if (result.kind !== "captcha") return;
-    assert.match(result.message, /CAPTCHA/i);
-    assert.match(result.officialUrl, /ecourts\.gov\.in/);
+    assert.equal(result.kind, "error");
+    if (result.kind !== "error") return;
+    assert.match(result.message, /Partner API/i);
+    assert.doesNotMatch(result.message, /Complete it there|upload the orders/i);
   });
 
-  it("continues from pasted official case status", () => {
-    const result = continueFromPaste("district-ecourts", SAMPLE_ECOURTS_PASTE);
-    assert.equal(result.kind, "found");
-    if (result.kind !== "found") return;
-    assert.equal(result.demo, false);
-    assert.match(result.case.caseNumber, /90/);
-    assert.ok(result.orders.length >= 1);
-    assert.equal(result.case.parties[0]?.name.includes("MALHOTRA") || result.case.parties.length > 0, true);
+  it("does not offer a paste-status handoff", () => {
+    assert.equal("continueFromPaste" in adapters, false);
   });
 });

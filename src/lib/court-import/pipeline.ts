@@ -1,7 +1,7 @@
 import type { Sql } from "@/lib/db";
 import { newId, todayISO } from "@/lib/practice/ids";
 import { defaultStage } from "@/lib/practice/workflow";
-import { continueFromPaste, getAdapter, searchCourt } from "./adapters.ts";
+import { getAdapter, searchCourt } from "./adapters.ts";
 import { enrichChronology } from "./analyse.ts";
 import { buildChronology, eventKey } from "./chronology.ts";
 import { extractDeadlines } from "./deadlines.ts";
@@ -10,6 +10,7 @@ import { importLog } from "./log.ts";
 import { captionFromParties } from "./proceeding.ts";
 import { emptySummary, type ImportJobView, type ImportStatus, type ImportSummary, type NormalizedCase, type NormalizedOrder } from "./types.ts";
 import { buildSteps } from "./steps.ts";
+import { safeCourtUrl } from "./forbidden.ts";
 import { formatCaseNumber } from "./validate.ts";
 
 type JobRow = {
@@ -125,7 +126,7 @@ export async function loadJobView(sql: Sql, userId: string, id: string): Promise
         status: m.status,
         stage: m.stage,
         nextHearingOn: m.next_hearing_on,
-        sourceUrl: m.source_url,
+        sourceUrl: safeCourtUrl(m.source_url),
       };
     }
   }
@@ -136,21 +137,21 @@ export async function loadJobView(sql: Sql, userId: string, id: string): Promise
     courtName: adapter?.name ?? job.court_id,
     status,
     stageNote: job.stage_note,
-    officialUrl: job.official_url,
-    captchaRequired: Boolean(job.captcha_required),
+    officialUrl: safeCourtUrl(job.official_url),
+    captchaRequired: false,
     demo: Boolean(job.demo),
     error: job.error,
     lookup,
     casePreview,
     summary,
-    steps: buildSteps(status, Boolean(job.captcha_required) || status === "CAPTCHA_REQUIRED"),
+    steps: buildSteps(status, false),
     records: records.map((r) => ({
       id: r.id,
       kind: r.kind,
       title: r.title,
       orderDate: r.order_date,
       status: r.status,
-      sourceUrl: r.source_url,
+      sourceUrl: safeCourtUrl(r.source_url),
       documentId: r.document_id,
       error: r.error,
     })),
@@ -464,34 +465,24 @@ export async function executeSearch(
   sql: Sql,
   userId: string,
   jobId: string,
-  pastedText?: string,
 ): Promise<ImportJobView> {
   const job = (await sql<JobRow>`select * from case_imports where id = ${jobId} and user_id = ${userId}`)[0];
   if (!job) throw new Error("Import job not found.");
   const lookup = parseJson<Record<string, string>>(job.lookup_json, {});
-  await setJob(sql, userId, jobId, { status: "CONNECTING", stageNote: "Opening the official court source." });
+  await setJob(sql, userId, jobId, { status: "CONNECTING", stageNote: "Looking up the case." });
   await setJob(sql, userId, jobId, { status: "SEARCHING", stageNote: "Looking up the case." });
-  const result = pastedText?.trim()
-    ? continueFromPaste(job.court_id, pastedText)
-    : searchCourt(job.court_id, lookup);
-  if (result.kind === "captcha") {
-    importLog("captcha_required", { jobId, court: job.court_id });
-    await setJob(sql, userId, jobId, {
-      status: "CAPTCHA_REQUIRED",
-      stageNote: result.message,
-      officialUrl: result.officialUrl,
-      captchaRequired: true,
-      error: "",
-    });
-    const view = await loadJobView(sql, userId, jobId);
-    if (!view) throw new Error("Import job missing.");
-    return view;
-  }
+  const result = searchCourt(job.court_id, lookup);
   if (result.kind !== "found") {
+    const message =
+      result.kind === "error"
+        ? result.message
+        : "Live CNR fetch uses the eCourtsIndia Partner API. CiteBench does not open the court CAPTCHA page.";
     await setJob(sql, userId, jobId, {
       status: "FAILED",
-      stageNote: result.message,
-      error: result.message,
+      stageNote: message,
+      officialUrl: "",
+      captchaRequired: false,
+      error: message,
     });
     const view = await loadJobView(sql, userId, jobId);
     if (!view) throw new Error("Import job missing.");
@@ -523,7 +514,7 @@ export async function createImportJob(
     ) values (
       ${id}, ${userId}, ${input.matterId ?? null}, ${input.courtId}, ${caseNumber}, ${cnr},
       ${JSON.stringify(input.lookup)}, ${"CREATED"}, ${"Import created."}, ${JSON.stringify(emptySummary())},
-      ${adapter.officialUrl}
+      ${""}
     )
   `;
   return id;

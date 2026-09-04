@@ -33,21 +33,6 @@ export const startCaseImport = createServerFn({ method: "POST" })
     return executeSearch(sql, context.userId, id);
   });
 
-export const continueCaseImport = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
-  .validator((input: unknown) =>
-    z
-      .object({
-        importId: z.string().min(1),
-        pastedText: z.string().trim().min(40).max(40000),
-      })
-      .parse(input),
-  )
-  .handler(async ({ context, data }) => {
-    const sql = await getSql();
-    return executeSearch(sql, context.userId, data.importId, data.pastedText);
-  });
-
 export const getCaseImport = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .validator((id: unknown) => z.string().min(1).parse(id))

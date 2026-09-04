@@ -3,7 +3,6 @@ import { IMPORT_STATUSES, type ImportStatus, type ImportStep } from "./types.ts"
 const VISIBLE: ImportStatus[] = [
   "CONNECTING",
   "SEARCHING",
-  "CAPTCHA_REQUIRED",
   "RETRIEVING_CASE",
   "RETRIEVING_HISTORY",
   "DOWNLOADING_ORDERS",
@@ -17,7 +16,7 @@ const LABELS: Record<ImportStatus, string> = {
   CREATED: "Created",
   CONNECTING: "Connecting to court source",
   SEARCHING: "Searching the case",
-  CAPTCHA_REQUIRED: "CAPTCHA on the court site",
+  CAPTCHA_REQUIRED: "Live CNR uses the Partner API",
   RETRIEVING_CASE: "Retrieving case details",
   RETRIEVING_HISTORY: "Retrieving historical orders",
   DOWNLOADING_ORDERS: "Importing documents",
@@ -33,16 +32,16 @@ export function stepLabel(status: ImportStatus): string {
   return LABELS[status];
 }
 
-export function buildSteps(current: ImportStatus, captcha: boolean): ImportStep[] {
-  const skipCaptcha = !captcha && current !== "CAPTCHA_REQUIRED";
-  const list = VISIBLE.filter((id) => (skipCaptcha ? id !== "CAPTCHA_REQUIRED" : true));
+export function buildSteps(current: ImportStatus, _captcha = false): ImportStep[] {
+  const list = VISIBLE;
+  const mapped: ImportStatus = current === "CAPTCHA_REQUIRED" ? "FAILED" : current;
   const terminal: ImportStatus[] = ["COMPLETED", "PARTIAL", "FAILED"];
-  const idx = list.indexOf(current === "PARTIAL" || current === "FAILED" ? "COMPLETED" : current);
+  const idx = list.indexOf(mapped === "PARTIAL" || mapped === "FAILED" ? "COMPLETED" : mapped);
   return list.map((id, i) => ({
     id,
-    label: id === "COMPLETED" && current === "PARTIAL" ? LABELS.PARTIAL : LABELS[id],
-    done: terminal.includes(current) ? i <= list.length - 1 && (current !== "FAILED" || i < list.length - 1) : i < idx,
-    active: !terminal.includes(current) && i === idx,
+    label: id === "COMPLETED" && mapped === "PARTIAL" ? LABELS.PARTIAL : LABELS[id],
+    done: terminal.includes(mapped) ? i <= list.length - 1 && (mapped !== "FAILED" || i < list.length - 1) : i < idx,
+    active: !terminal.includes(mapped) && i === idx,
   }));
 }
 

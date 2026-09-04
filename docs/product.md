@@ -36,7 +36,7 @@ On a phone the listing is a sheet with **Back**. After you leave, the diary stay
 
 ## Matters — `/matters` and `/matters/$id`
 
-**List:** title, court, case number, stage, next hearing, status (active / stayed / dormant / closed). New matter form: client, proceeding type, court, CNR, our side, parties — or **Import from court** (court + case number / CNR). Fetch Case reads the official source; CAPTCHA is completed on the court site, then the status or orders are pasted back. Historical orders land on the file with a chronology and deadlines.
+**List:** title, court, case number, stage, next hearing, status (active / stayed / dormant / closed). New matter form: client, proceeding type, court, CNR, our side, parties — or **Import from court**. Live CNR fetch uses the court-data adapter selected in Admin (default: eCourtsIndia Partner API). Orders land unconfirmed in Inbox. CiteBench does not open the official eCourts CAPTCHA page or continue from a pasted court-status handoff. Published demo identifiers reconstruct a file locally.
 
 **Record** is the case file. A listing, paper, task, deadline, timeline event, memo or statute opens in a **sheet** above the tab bar, with **Back**. If you arrived from Diary (hash on the URL), Back returns to Diary. Opening and closing a row in-page does not rewrite the address, so the list does not jump.
 
@@ -68,7 +68,7 @@ Sample-matter facts do not start the trial clock. Your own facts do.
 
 ## Inbox — `/inbox`
 
-Paste order or notice text, or upload a PDF / photo, pick a matter, **Read order**.
+Fetch a CNR through the eCourtsIndia Partner API, or paste an order / notice and **Read order**. Partner results land **unconfirmed**; nothing hits the diary until you **Confirm**. CiteBench does not open the court CAPTCHA page.
 
 The model returns:
 
@@ -104,6 +104,9 @@ Below a wide screen the five chamber tabs sit in a bar at the bottom (Today, Dia
 ## What CiteBench will not do
 
 - File on eCourts or CIS
+- Scrape eCourts.gov.in or bypass CAPTCHA
+- Treat Partner API fetch as confirmed until the lawyer accepts it in Inbox
+- Resell court data as a stand-alone product without a written MSA / consent
 - Fetch Indian Kanoon HTML to “prove” a cite
 - Treat a model `verified: true` as truth
 - Charge a card in this preview (the public chamber charges ₹500 through Razorpay when the individual payment account is connected)

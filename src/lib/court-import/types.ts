@@ -84,7 +84,6 @@ export type NormalizedOrder = {
 
 export type AdapterSearchResult =
   | { kind: "found"; case: NormalizedCase; orders: NormalizedOrder[]; demo: boolean }
-  | { kind: "captcha"; officialUrl: string; message: string }
   | { kind: "not_found"; message: string }
   | { kind: "error"; message: string };
 

@@ -77,6 +77,12 @@ export function AdminLayout() {
             >
               Users
             </Link>
+            <Link
+              to="/admin/providers"
+              className={cn("link-quiet px-2 py-1", pathname.startsWith("/admin/providers") && "text-accent")}
+            >
+              Providers
+            </Link>
           </nav>
           <div className="topbar-actions text-xs text-muted">
             <span className="hidden max-w-[10rem] truncate sm:inline">{email}</span>

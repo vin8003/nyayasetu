@@ -1,16 +1,17 @@
 import { useMemo, useState } from "react";
 import { Check, Circle, LoaderCircle, SquareArrowOutUpRight } from "lucide-react";
 import { toast } from "sonner";
+import { EciCnrFetch } from "@/components/eci-cnr-fetch";
 import { Button } from "@/components/ui/button";
-import { Field, Hint, Input, Label, Select, Textarea } from "@/components/ui/field";
+import { Field, Hint, Input, Label, Select } from "@/components/ui/field";
 import { Segmented } from "@/components/segmented";
 import { COURT_SOURCES, courtSourceById } from "@/lib/court-import/courts";
-import { continueCaseImport, startCaseImport, syncMatterFromCourt } from "@/lib/court-import/store";
+import { matchDelhiHcDemo, matchDistrictDemo } from "@/lib/court-import/fixtures";
+import { startCaseImport } from "@/lib/court-import/store";
 import type { ImportJobView } from "@/lib/court-import/types";
+import { fetchCnrToInbox } from "@/lib/eci-partner/store";
 import { p } from "@/lib/practice/copy";
 import type { OutputLang } from "@/lib/research/types";
-import { extractUploads } from "@/lib/research/files";
-import { fileToBase64 } from "@/lib/read-file";
 
 function emptyLookup(courtId: string): Record<string, string> {
   const src = courtSourceById(courtId);
@@ -19,18 +20,26 @@ function emptyLookup(courtId: string): Record<string, string> {
   return lookup;
 }
 
+function isPublishedDemo(lookup: Record<string, string>) {
+  return Boolean(matchDistrictDemo(lookup) || matchDelhiHcDemo(lookup));
+}
+
 export function CourtImportPanel({
   lang,
   matterId,
   defaultCourtId,
   seed,
+  sample = false,
+  showCnrFetch = true,
   onComplete,
 }: {
   lang: OutputLang;
   matterId?: string;
   defaultCourtId?: string;
   seed?: Record<string, string>;
-  onComplete: (job: ImportJobView) => void;
+  sample?: boolean;
+  showCnrFetch?: boolean;
+  onComplete: (result: { matterId: string | null }) => void;
 }) {
   const c = p(lang);
   const [courtId, setCourtId] = useState(defaultCourtId || COURT_SOURCES[0].id);
@@ -40,7 +49,6 @@ export function CourtImportPanel({
   }));
   const [busy, setBusy] = useState(false);
   const [job, setJob] = useState<ImportJobView | null>(null);
-  const [paste, setPaste] = useState("");
   const court = useMemo(() => courtSourceById(courtId) ?? COURT_SOURCES[0], [courtId]);
 
   function onCourtChange(id: string) {
@@ -50,69 +58,39 @@ export function CourtImportPanel({
   }
 
   async function fetchCase() {
-    setBusy(true);
-    try {
-      const next = matterId && !Object.values(lookup).some((v) => v.trim())
-        ? await syncMatterFromCourt({ data: { matterId } })
-        : await startCaseImport({
-            data: { courtId, lookup, matterId },
-          });
-      setJob(next);
-      if (next.status === "FAILED") toast.error(next.error || c.failedImport);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : c.failedImport);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function continuePaste() {
-    if (!job) return;
-    const text = paste.trim();
-    if (text.length < 40) {
-      toast.error(c.pasteCourtHint);
+    const demo = isPublishedDemo(lookup);
+    const cnr = (lookup.cnr || seed?.cnr || "").trim();
+    if (!demo) {
+      if (!cnr) {
+        toast.error(c.eciNeedCnr);
+        return;
+      }
+      setBusy(true);
+      try {
+        const next = await fetchCnrToInbox({ data: { matterId, cnr } });
+        if (!next.ok) {
+          toast.error(next.message || c.eciFetchError);
+          return;
+        }
+        toast.success(`${c.eciLanded}: ${next.landed}`);
+        onComplete({ matterId: next.matterId });
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : c.eciFetchError);
+      } finally {
+        setBusy(false);
+      }
       return;
     }
+
     setBusy(true);
     try {
-      const next = await continueCaseImport({ data: { importId: job.id, pastedText: text } });
+      const next = await startCaseImport({
+        data: { courtId, lookup, matterId },
+      });
       setJob(next);
       if (next.status === "FAILED") toast.error(next.error || c.failedImport);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : c.failedImport);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onFiles(list: FileList | null) {
-    const files = [...(list ?? [])].slice(0, 3);
-    if (!files.length || !job) return;
-    setBusy(true);
-    try {
-      const extracted = await extractUploads({
-        data: {
-          files: await Promise.all(
-            files.map(async (f) => ({
-              name: f.name,
-              mime: f.type,
-              base64: await fileToBase64(f),
-            })),
-          ),
-        },
-      });
-      if (!extracted.ok) {
-        toast.error(c.failedAi);
-        return;
-      }
-      const text = String(extracted.combined || "").trim();
-      if (text.length < 40) {
-        toast.error(c.parseErr);
-        return;
-      }
-      setPaste((cur) => (cur ? `${cur}\n\n${text}` : text));
-    } catch {
-      toast.error(c.parseErr);
     } finally {
       setBusy(false);
     }
@@ -123,14 +101,27 @@ export function CourtImportPanel({
   return (
     <div className="grid gap-4">
       <p className="text-sm leading-relaxed text-muted">{c.importHint}</p>
+      {showCnrFetch ? (
+        <>
+          <EciCnrFetch
+            lang={lang}
+            matterId={matterId}
+            defaultCnr={lookup.cnr || seed?.cnr || ""}
+            compact
+            sample={sample}
+            onLanded={(landed) => {
+              if (landed.cnr) setLookup((cur) => ({ ...cur, cnr: landed.cnr }));
+              onComplete({ matterId: landed.matterId });
+            }}
+          />
+          <p className="text-xs text-subtle">{c.eciPartnerNotCaptcha}</p>
+        </>
+      ) : (
+        <p className="text-xs text-subtle">{c.eciPartnerNotCaptcha}</p>
+      )}
       <Field>
         <Label htmlFor="court-source">{c.courtName}</Label>
-        <Select
-          id="court-source"
-          value={courtId}
-          onChange={(e) => onCourtChange(e.target.value)}
-          disabled={busy || job?.status === "CAPTCHA_REQUIRED"}
-        >
+        <Select id="court-source" value={courtId} onChange={(e) => onCourtChange(e.target.value)} disabled={busy}>
           {COURT_SOURCES.map((src) => (
             <option key={src.id} value={src.id}>
               {lang === "hi" ? src.nameHi : src.name}
@@ -155,7 +146,7 @@ export function CourtImportPanel({
       </div>
       <Hint>{lang === "hi" ? court.demoHintHi : court.demoHint}</Hint>
       <div className="flex flex-wrap gap-2">
-        <Button type="button" onClick={() => void fetchCase()} disabled={busy || Boolean(done) || job?.status === "CAPTCHA_REQUIRED"}>
+        <Button type="button" onClick={() => void fetchCase()} disabled={busy || Boolean(done) || sample}>
           {busy ? (
             <>
               <LoaderCircle className="size-4 animate-spin" aria-hidden />
@@ -171,51 +162,7 @@ export function CourtImportPanel({
 
       {job ? <ImportProgress job={job} lang={lang} /> : null}
 
-      {job?.status === "CAPTCHA_REQUIRED" ? (
-        <div className="space-y-3 rounded-lg bg-elevated p-4 shadow-hairline">
-          <div className="text-sm font-medium">{c.captchaTitle}</div>
-          <p className="text-sm leading-relaxed text-muted">{c.captchaHint}</p>
-          <a
-            href={job.officialUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-11 items-center gap-2 text-sm text-accent hover:underline"
-          >
-            {c.openCourtSite}
-            <SquareArrowOutUpRight className="size-4" aria-hidden />
-          </a>
-          <Field>
-            <Label htmlFor="court-paste">{c.pasteCourtResult}</Label>
-            <Textarea
-              id="court-paste"
-              className="min-h-36"
-              value={paste}
-              onChange={(e) => setPaste(e.target.value)}
-              placeholder={c.pasteCourtHint}
-            />
-          </Field>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" onClick={() => void continuePaste()} disabled={busy}>
-              {c.continueImport}
-            </Button>
-            <label className="inline-flex h-11 cursor-pointer items-center rounded-md px-3 text-sm text-muted hover:text-fg">
-              {c.uploadPaper}
-              <input
-                type="file"
-                className="sr-only"
-                accept=".pdf,.txt,.png,.jpg,.jpeg,.webp,application/pdf,image/*,.html,.htm"
-                multiple
-                onChange={(e) => {
-                  void onFiles(e.target.files);
-                  e.target.value = "";
-                }}
-              />
-            </label>
-          </div>
-        </div>
-      ) : null}
-
-      {done && job ? <ImportSummaryCard job={job} lang={lang} onReview={() => onComplete(job)} /> : null}
+      {done && job ? <ImportSummaryCard job={job} lang={lang} onReview={() => onComplete({ matterId: job.matterId })} /> : null}
     </div>
   );
 }
@@ -316,7 +263,7 @@ export function ImportSummaryCard({
           ))}
         </ul>
       ) : null}
-      {preview?.sourceUrl ? (
+      {preview?.sourceUrl && !/ecourts\.gov\.in/i.test(preview.sourceUrl) ? (
         <a
           href={preview.sourceUrl}
           target="_blank"

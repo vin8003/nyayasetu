@@ -39,6 +39,7 @@ import { extractUploads } from "@/lib/research/files";
 import { fileToBase64 } from "@/lib/read-file";
 import { writeInboxDraft } from "@/lib/practice/inbox-draft";
 import { CourtImportPanel } from "@/components/court-import";
+import { EciCnrFetch } from "@/components/eci-cnr-fetch";
 import { verifyTimelineEvent } from "@/lib/court-import/store";
 import { lookupFromMatter } from "@/lib/court-import/lookup";
 
@@ -465,6 +466,16 @@ export function MatterDetailPage() {
                 {showImport ? c.cancel : c.syncCase}
               </Button>
             </div>
+            <div className="mt-3">
+              <EciCnrFetch
+                lang={lang}
+                matterId={matter.id}
+                defaultCnr={matter.cnr || ""}
+                compact
+                sample={isSampleTitle(matter.title)}
+                onLanded={() => void reload()}
+              />
+            </div>
             {showImport ? (
               <div className="mt-3">
                 <CourtImportPanel
@@ -472,6 +483,8 @@ export function MatterDetailPage() {
                   matterId={matter.id}
                   defaultCourtId={courtLookup.courtId}
                   seed={courtLookup.lookup}
+                  sample={isSampleTitle(matter.title)}
+                  showCnrFetch={false}
                   onComplete={() => {
                     setShowImport(false);
                     void reload();

@@ -17,6 +17,8 @@ import type { Matter, MatterOrder, OrderExtract } from "@/lib/practice/types";
 import { useChamberLang } from "@/lib/practice/use-lang";
 import { extractUploads } from "@/lib/research/files";
 import { fileToBase64 } from "@/lib/read-file";
+import { EciCnrFetch } from "@/components/eci-cnr-fetch";
+import { isSampleMatter } from "@/lib/practice/sample-ids";
 
 export const Route = createFileRoute("/inbox")({
 	validateSearch: (search: Record<string, unknown>): { matter?: string } => ({
@@ -42,11 +44,7 @@ export function InboxPage() {
 	const [queue, setQueue] = useState([]);
 	async function reloadQueue() {
 		const rows = await listUnconfirmedOrders();
-		setQueue(rows.map((r) => ({
-			id: r.id,
-			matterTitle: r.matterTitle ?? "",
-			matterId: r.matterId
-		})));
+		setQueue(rows);
 	}
 	useEffect(() => {
 		if (!user) return;
@@ -183,6 +181,19 @@ export function InboxPage() {
 		setPendingId(null);
 		await reloadQueue();
 	}
+	function openPending(row) {
+		setPendingId(row.id);
+		setMatterId(row.matterId);
+		setBody(row.body || "");
+		setExtract({
+			summary: String(row.body || "").slice(0, 500),
+			nextHearing: null,
+			directions: row.directions ?? [],
+			suggestedTasks: [],
+			stageHint: null,
+			caveats: []
+		});
+	}
 	return jsxs(AppShell, {
 		lang,
 		onLang,
@@ -203,6 +214,26 @@ export function InboxPage() {
 					className: "mt-2 max-w-xl text-xs text-subtle",
 					children: c.trustNote
 				}),
+				matters.length > 0 ? jsx("div", {
+					className: "mt-6 max-w-xl",
+					children: jsx(EciCnrFetch, {
+						lang,
+						matterId,
+						defaultCnr: matter?.cnr || "",
+						sample: isSampleMatter({ title: matter?.title, caseNumber: matter?.caseNumber }),
+						onLanded: async (landed) => {
+							if (landed.matterId && landed.matterId !== matterId) setMatterId(landed.matterId);
+							await reloadQueue();
+							const first = landed.pending?.[0];
+							if (first) openPending({
+								id: first.id,
+								matterId: landed.matterId,
+								body: first.body,
+								directions: first.directions
+							});
+						}
+					})
+				}) : null,
 				matters.length === 0 ? jsxs("p", {
 					className: "section-note stack-tight",
 					children: [
@@ -388,13 +419,10 @@ export function InboxPage() {
 						]
 					}), jsx("ul", {
 						className: "row-list",
-						children: queue.map((q) => jsx("li", { children: q.matterId ? jsx(Link, {
-							to: "/matters/$id",
-							params: { id: q.matterId },
-							className: "row",
-							children: q.matterTitle || c.orders
-						}) : jsx("div", {
-							className: "row text-sm",
+						children: queue.map((q) => jsx("li", { children: jsx("button", {
+							type: "button",
+							className: "row w-full text-left",
+							onClick: () => openPending(q),
 							children: q.matterTitle || c.orders
 						}) }, q.id))
 					})]

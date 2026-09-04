@@ -36,8 +36,8 @@ export function pullJson(text) {
 	if (start < 0 || end <= start) throw new Error("PARSE");
 	return JSON.parse(text.slice(start, end + 1));
 }
-export const extractOrder = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => inputSchema.parse(input)).handler(async ({ data, context }) => {
-	const gated = await gateAi(context.userId, { demo: looksLikeSample({ title: data.matterTitle }) });
+export async function runExtractOrder(userId, data) {
+	const gated = await gateAi(userId, { demo: looksLikeSample({ title: data.matterTitle }) });
 	if (!gated.ok) return gated;
 	const apiKey = process.env.XAI_API_KEY;
 	if (!apiKey) return {
@@ -114,4 +114,7 @@ Rules:
 	} finally {
 		clearTimeout(timer);
 	}
+}
+export const extractOrder = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => inputSchema.parse(input)).handler(async ({ data, context }) => {
+	return runExtractOrder(context.userId, data);
 });

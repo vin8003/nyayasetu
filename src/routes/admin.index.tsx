@@ -44,9 +44,12 @@ export function AdminHome() {
         <Card label="Matters" value={stats.matters} />
         <Card label="Memos" value={stats.memos} />
       </div>
-      <p className="mt-8">
+      <p className="mt-8 flex flex-wrap gap-4">
         <Link to="/admin/users" className="link-accent text-sm">
           Manage users →
+        </Link>
+        <Link to="/admin/providers" className="link-accent text-sm">
+          Court data provider →
         </Link>
       </p>
     </div>

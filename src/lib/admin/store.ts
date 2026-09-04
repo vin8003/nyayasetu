@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { UnauthorizedError } from "@/lib/auth/verify.server";
 import { getSql } from "@/lib/db";
 import { paymentsLive } from "@/lib/billing/live";
 import {
@@ -12,27 +11,6 @@ import {
   type EntitlementRow,
 } from "@/lib/billing/plan";
 import { purgeUserAccount } from "@/lib/account/store";
-import { adminConfigured, isAdminEmail } from "./allowlist";
-
-export class ForbiddenError extends Error {
-  readonly status = 403;
-  constructor(message = "Forbidden") {
-    super(message);
-    this.name = "ForbiddenError";
-  }
-}
-
-async function requireAdmin(userId: string): Promise<{ id: string; email: string }> {
-  if (!userId) throw new UnauthorizedError();
-  if (!adminConfigured()) throw new ForbiddenError("Admin is not configured.");
-  const sql = await getSql();
-  const rows = await sql<{ email: string | null }>`
-    select email from "user" where id = ${userId} limit 1
-  `;
-  const email = (rows[0]?.email ?? "").trim().toLowerCase();
-  if (!isAdminEmail(email)) throw new ForbiddenError("Not an admin.");
-  return { id: userId, email };
-}
 
 async function countOrZero(query: Promise<{ n: number }[]>): Promise<number> {
   try {
@@ -141,6 +119,7 @@ export type AdminUserRow = {
 export const adminSession = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }): Promise<{ ok: true; email: string; userId: string }> => {
+    const { requireAdmin } = await import("./guard.server");
     const admin = await requireAdmin(context.userId);
     return { ok: true, email: admin.email, userId: admin.id };
   });
@@ -148,6 +127,7 @@ export const adminSession = createServerFn({ method: "GET" })
 export const getAdminStats = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }): Promise<AdminStats> => {
+    const { requireAdmin } = await import("./guard.server");
     await requireAdmin(context.userId);
     const sql = await getSql();
     const users = await sql<{ n: number }>`select count(*)::int as n from "user"`;
@@ -209,6 +189,7 @@ export const listAdminUsers = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .validator((input: { q?: string }) => ({ q: String(input?.q ?? "").trim().slice(0, 80) }))
   .handler(async ({ context, data }): Promise<AdminUserRow[]> => {
+    const { requireAdmin } = await import("./guard.server");
     await requireAdmin(context.userId);
     const sql = await getSql();
     const q = data.q.toLowerCase();
@@ -260,6 +241,7 @@ export const getAdminUser = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .validator((input: { userId?: string }) => ({ userId: String(input?.userId ?? "").trim() }))
   .handler(async ({ context, data }): Promise<AdminUserRow> => {
+    const { requireAdmin } = await import("./guard.server");
     await requireAdmin(context.userId);
     if (!data.userId) throw new Error("Missing user.");
     return loadUser(data.userId);
@@ -274,6 +256,7 @@ export const updateAdminPlan = createServerFn({ method: "POST" })
     action: String(input?.action ?? "").trim() as AdminPlanAction,
   }))
   .handler(async ({ context, data }): Promise<AdminUserRow> => {
+    const { requireAdmin } = await import("./guard.server");
     await requireAdmin(context.userId);
     if (!data.userId) throw new Error("Missing user.");
     if (!["grant30", "cancel", "expire", "trial"].includes(data.action)) {
@@ -338,6 +321,7 @@ export const deleteAdminUser = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator((input: { userId?: string }) => ({ userId: String(input?.userId ?? "").trim() }))
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    const { requireAdmin } = await import("./guard.server");
     const admin = await requireAdmin(context.userId);
     if (!data.userId) throw new Error("Missing user.");
     if (data.userId === admin.id) throw new Error("You cannot delete your own admin account.");

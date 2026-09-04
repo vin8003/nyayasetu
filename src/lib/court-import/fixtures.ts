@@ -5,8 +5,8 @@ export const DEMO_DISTRICT_CNR = "DLND010012342025";
 export const DEMO_DISTRICT_CASE = "CS 184/2025";
 export const DEMO_HC_CASE = "W.P.(C) 3312/2025";
 
-const ECOURTS = "https://services.ecourts.gov.in/ecourtindia_v6/?p=casestatus/index";
-const DHC = "https://delhihighcourt.nic.in/app/case-status";
+const DEMO_DISTRICT_SOURCE = "citebench://demo/district-ecourts";
+const DEMO_HC_SOURCE = "citebench://demo/delhi-hc";
 
 function order(
   date: string,
@@ -19,7 +19,7 @@ function order(
     orderDate: date,
     orderType: title,
     title: `Order dated ${date} — ${title}`,
-    sourceUrl: extra?.sourceUrl ?? ECOURTS,
+    sourceUrl: extra?.sourceUrl ?? DEMO_DISTRICT_SOURCE,
     filename: `${date}.txt`,
     body,
     available: extra?.available ?? true,
@@ -70,7 +70,7 @@ Replication filed. List the matter for framing of issues. Next Date of Hearing: 
     {
       available: false,
       error: "Court source returned a broken link for this order.",
-      sourceUrl: `${ECOURTS}#issues-unavailable`,
+      sourceUrl: `${DEMO_DISTRICT_SOURCE}#issues-unavailable`,
     },
   ),
   order(
@@ -91,21 +91,21 @@ Verma v GNCTD
 Dated 4 March 2025
 
 The writ petition is filed challenging the termination of a guest faculty appointment. Issue notice. Counter affidavit be filed within 4 weeks. Next Date of Hearing: 08-04-2025.`,
-    { sourceUrl: DHC },
+    { sourceUrl: DEMO_HC_SOURCE },
   ),
   order(
     "2025-04-08",
     "Counter",
     `Order dated 08.04.2025
 Respondent appeared. Counter affidavit filed. Rejoinder, if any, within 2 weeks. Next Date of Hearing: 20-05-2025.`,
-    { sourceUrl: DHC },
+    { sourceUrl: DEMO_HC_SOURCE },
   ),
   order(
     "2025-05-20",
     "Rejoinder",
     `Order dated 20.05.2025
 Rejoinder filed. Listed for arguments. Next Date of Hearing: 22-09-2026.`,
-    { sourceUrl: DHC },
+    { sourceUrl: DEMO_HC_SOURCE },
   ),
 ];
 
@@ -148,7 +148,7 @@ export const DISTRICT_FIXTURE: DemoFixture = {
     disposalDate: null,
     judge: "Ms. A. Sharma, DJ (Commercial)",
     subject: "Recovery of money — construction dues",
-    sourceUrl: ECOURTS,
+    sourceUrl: DEMO_DISTRICT_SOURCE,
     retrievedAt: "",
     unavailable: ["Order dated 2025-05-02 — Issues"],
     notes: "",
@@ -184,7 +184,7 @@ export const DELHI_HC_FIXTURE: DemoFixture = {
     disposalDate: null,
     judge: "Hon'ble Mr. Justice (roster)",
     subject: "Service — guest faculty termination",
-    sourceUrl: DHC,
+    sourceUrl: DEMO_HC_SOURCE,
     retrievedAt: "",
     unavailable: [],
     notes: "",
@@ -236,24 +236,3 @@ function stamp(fixture: DemoFixture): DemoFixture {
     orders: fixture.orders.map((o) => ({ ...o })),
   };
 }
-
-export const SAMPLE_ECOURTS_PASTE = `CNR Number: DLST010099882025
-Case Type: CS
-Filing Number: 88/2025 Filing Date: 04-02-2025
-Registration Number: 90/2025 Registration Date: 06-02-2025
-First Hearing Date: 20-02-2025
-Next Hearing Date: 30-09-2026
-Case Status: Pending
-Case Stage: Written Statement
-Court Number and Judge: 04-Sh. B. Singh
-Petitioner and Advocate: S. MALHOTRA / ADV. KAPUR
-Respondent and Advocate: NORTH LIGHT AGENCIES / ADV. IYER
-
-History of case hearing
-04-02-2025 | 20-02-2025 | Notice
-20-02-2025 | 18-03-2025 | Appearance
-18-03-2025 | 30-09-2026 | Written Statement
-
-Order dated 20.02.2025
-Issue notice to the defendant. Defendant to file written statement within 30 days. Next Date of Hearing: 18-03-2025.
-`;

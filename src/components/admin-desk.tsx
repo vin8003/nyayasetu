@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { CiteMark } from "@/components/cite-mark";
+import { AdminProvidersPane } from "@/components/admin-providers";
 import { Button } from "@/components/ui/button";
 import { Field, Hint, Input, Label } from "@/components/ui/field";
 import {
@@ -18,7 +19,7 @@ import { authClient, signOut } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { chambersAuth } from "@/lib/seed-user";
 
-type View = "stats" | "users" | { user: string };
+type View = "stats" | "users" | "providers" | { user: string };
 
 function stashToken(token: string | null | undefined) {
   if (!token || typeof window === "undefined") return;
@@ -209,10 +210,17 @@ function AdminDeskApp({ email }: { email: string }) {
             </button>
             <button
               type="button"
-              className={`link-quiet px-2 py-1 ${view !== "stats" ? "text-accent" : ""}`}
+              className={`link-quiet px-2 py-1 ${view === "users" || typeof view === "object" ? "text-accent" : ""}`}
               onClick={() => setView("users")}
             >
               Users
+            </button>
+            <button
+              type="button"
+              className={`link-quiet px-2 py-1 ${view === "providers" ? "text-accent" : ""}`}
+              onClick={() => setView("providers")}
+            >
+              Providers
             </button>
           </nav>
           <div className="topbar-actions text-xs text-muted">
@@ -230,6 +238,7 @@ function AdminDeskApp({ email }: { email: string }) {
       <main className="mx-auto w-full max-w-5xl px-4 py-8">
         {view === "stats" ? <AdminStatsPane /> : null}
         {view === "users" ? <AdminUsersPane onOpen={(id) => setView({ user: id })} /> : null}
+        {view === "providers" ? <AdminProvidersPane /> : null}
         {typeof view === "object" ? (
           <AdminUserPane id={view.user} onBack={() => setView("users")} />
         ) : null}
@@ -463,3 +472,4 @@ function AdminUserPane({ id, onBack }: { id: string; onBack: () => void }) {
     </div>
   );
 }
+

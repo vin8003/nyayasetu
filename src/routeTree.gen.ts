@@ -20,6 +20,7 @@ import { Route as ResearchRouteImport } from './routes/research'
 import { Route as StoryRouteImport } from './routes/story'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminProvidersRouteImport } from './routes/admin.providers'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as ApiCreateOrderRouteImport } from './routes/api/create-order'
 import { Route as ApiVerifyPaymentRouteImport } from './routes/api/verify-payment'
@@ -85,6 +86,11 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminProvidersRoute = AdminProvidersRouteImport.update({
+  id: '/providers',
+  path: '/providers',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -142,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/research': typeof ResearchRoute
   '/story': typeof StoryRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/providers': typeof AdminProvidersRoute
   '/admin/users': typeof AdminUsersRouteWithChildren
   '/api/create-order': typeof ApiCreateOrderRoute
   '/api/verify-payment': typeof ApiVerifyPaymentRoute
@@ -162,6 +169,7 @@ export interface FileRoutesByTo {
   '/research': typeof ResearchRoute
   '/story': typeof StoryRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/providers': typeof AdminProvidersRoute
   '/api/create-order': typeof ApiCreateOrderRoute
   '/api/verify-payment': typeof ApiVerifyPaymentRoute
   '/matters/$id': typeof MattersIdRoute
@@ -184,6 +192,7 @@ export interface FileRoutesById {
   '/research': typeof ResearchRoute
   '/story': typeof StoryRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/providers': typeof AdminProvidersRoute
   '/admin/users': typeof AdminUsersRouteWithChildren
   '/api/create-order': typeof ApiCreateOrderRoute
   '/api/verify-payment': typeof ApiVerifyPaymentRoute
@@ -208,6 +217,7 @@ export interface FileRouteTypes {
     | '/research'
     | '/story'
     | '/admin/login'
+    | '/admin/providers'
     | '/admin/users'
     | '/api/create-order'
     | '/api/verify-payment'
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
     | '/research'
     | '/story'
     | '/admin/login'
+    | '/admin/providers'
     | '/api/create-order'
     | '/api/verify-payment'
     | '/matters/$id'
@@ -249,6 +260,7 @@ export interface FileRouteTypes {
     | '/research'
     | '/story'
     | '/admin/login'
+    | '/admin/providers'
     | '/admin/users'
     | '/api/create-order'
     | '/api/verify-payment'
@@ -356,6 +368,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/providers': {
+      id: '/admin/providers'
+      path: '/providers'
+      fullPath: '/admin/providers'
+      preLoaderRoute: typeof AdminProvidersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/users'
@@ -438,12 +457,14 @@ const AdminUsersRouteWithChildren = AdminUsersRoute._addFileChildren(
 
 interface AdminRouteChildren {
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminProvidersRoute: typeof AdminProvidersRoute
   AdminUsersRoute: typeof AdminUsersRouteWithChildren
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminLoginRoute: AdminLoginRoute,
+  AdminProvidersRoute: AdminProvidersRoute,
   AdminUsersRoute: AdminUsersRouteWithChildren,
   AdminIndexRoute: AdminIndexRoute,
 }

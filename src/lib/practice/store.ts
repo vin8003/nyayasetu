@@ -615,21 +615,28 @@ export const updateEvent = createServerFn({ method: "POST" }).middleware([authMi
     `;
 	return { ok: true };
 });
+export async function insertPastedDocument(sql, userId, data) {
+	const id = newId("dc");
+	await sql`
+      insert into matter_documents (id, user_id, matter_id, kind, title, body, source_kind, source_url, external_id, content_hash, retrieved_at)
+      values (${id}, ${userId}, ${data.matterId}, ${data.kind ?? "order"}, ${data.title}, ${data.body}, ${data.sourceKind ?? "paste"}, ${data.sourceUrl ?? ""}, ${data.externalId ?? ""}, ${data.contentHash ?? ""}, now())
+    `;
+	const origin = data.sourceKind === "eci_partner" ? "system" : "lawyer";
+	const detail = data.sourceKind === "eci_partner" ? "Fetched via eCourtsIndia Partner API. Unconfirmed." : "";
+	await addEvent(sql, userId, data.matterId, "document", data.title, detail, origin, id);
+	return { id };
+}
 export const savePastedDocument = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => z.object({
 	matterId: z.string().min(1),
 	title: z.string().trim().min(1).max(240),
 	body: z.string().trim().min(20).max(40000),
 	kind: z.string().optional(),
-	sourceKind: z.string().optional()
+	sourceKind: z.string().optional(),
+	sourceUrl: z.string().max(500).optional(),
+	externalId: z.string().max(240).optional(),
+	contentHash: z.string().max(64).optional()
 }).parse(input)).handler(async ({ context, data }) => {
-	const sql = await getSql();
-	const id = newId("dc");
-	await sql`
-      insert into matter_documents (id, user_id, matter_id, kind, title, body, source_kind)
-      values (${id}, ${context.userId}, ${data.matterId}, ${data.kind ?? "order"}, ${data.title}, ${data.body}, ${data.sourceKind ?? "paste"})
-    `;
-	await addEvent(sql, context.userId, data.matterId, "document", data.title, "", "lawyer", id);
-	return { id };
+	return insertPastedDocument(await getSql(), context.userId, data);
 });
 export async function saveAiDraftDocument(userId, matterId, title, kind, body) {
 	const sql = await getSql();
@@ -659,6 +666,15 @@ export const attachDraftToMatter = createServerFn({ method: "POST" }).middleware
 	const id = await saveAiDraftDocument(context.userId, data.matterId, data.title, data.kind, data.body);
 	return { id };
 });
+export async function insertUnconfirmedOrder(sql, userId, data) {
+	const id = newId("or");
+	// confirmed is locked false — Partner fetch and Inbox paste share this path. confirmOrder is the only writer that flips it.
+	await sql`
+      insert into matter_orders (id, user_id, matter_id, document_id, order_date, body, directions_json, confirmed)
+      values (${id}, ${userId}, ${data.matterId}, ${data.documentId ?? null}, ${data.orderDate ?? null}, ${data.body}, ${JSON.stringify(data.directions ?? [])}, false)
+    `;
+	return { id };
+}
 export const saveUnconfirmedOrder = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => z.object({
 	matterId: z.string().min(1),
 	body: z.string().min(1).max(40000),
@@ -668,15 +684,10 @@ export const saveUnconfirmedOrder = createServerFn({ method: "POST" }).middlewar
 		deadline: z.string().nullable(),
 		quote: z.string()
 	})),
-	documentId: z.string().optional()
+	documentId: z.string().optional(),
+	orderDate: z.string().max(12).nullable().optional()
 }).parse(input)).handler(async ({ context, data }) => {
-	const sql = await getSql();
-	const id = newId("or");
-	await sql`
-      insert into matter_orders (id, user_id, matter_id, document_id, body, directions_json, confirmed)
-      values (${id}, ${context.userId}, ${data.matterId}, ${data.documentId ?? null}, ${data.body}, ${JSON.stringify(data.directions)}, false)
-    `;
-	return { id };
+	return insertUnconfirmedOrder(await getSql(), context.userId, data);
 });
 export const confirmOrder = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => z.object({
 	orderId: z.string().min(1),
