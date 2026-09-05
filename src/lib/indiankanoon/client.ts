@@ -1,16 +1,17 @@
 /**
  * Indian Kanoon API client.
  * Auth: Authorization: Token <IKANOON_API_TOKEN>
- * Search/doc: GET first (official docs). POST if GET is 405 or the GET socket dies.
+ * Live Allow on /search/ is POST, OPTIONS (user curls 2026-09-04). GET is documented
+ * but unauthenticated GET 401s and authenticated GET can reset on Vercel — POST first.
  * Never scrape eCourts.gov.in. Unit tests must pass fetchImpl.
  */
 import { isForbiddenCourtUrl } from "../court-import/forbidden.ts";
 import { ikAuthHeaders, resolveIkApiToken } from "./key.ts";
 import { parseDocument, parseSearchHits } from "./parse.ts";
+import { nodeHttpsFetch } from "./transport.ts";
 import { IK_MAX_DOCS, type IkDocument, type IkSearchHit } from "./types.ts";
 
 export const IK_BASE = "https://api.indiankanoon.org";
-const TIMEOUT_MS = 30000;
 type FetchImpl = (input: string, init?: RequestInit) => Promise<Response>;
 type IkCall =
   | { ok: true; json: unknown; status: number }
@@ -20,7 +21,7 @@ function defaultFetch(input: string, init?: RequestInit): Promise<Response> {
   if (process.env.NODE_TEST_CONTEXT) {
     throw new Error("Live Indian Kanoon API is forbidden in tests. Pass fetchImpl with a mock.");
   }
-  return fetch(input, init);
+  return nodeHttpsFetch(input, init);
 }
 
 export function searchUrl(): string {
@@ -50,20 +51,26 @@ function networkMessage(err: unknown): string {
       : typeof err.cause === "object" && err.cause && "code" in err.cause
         ? String((err.cause as { code?: string }).code ?? "")
         : "";
-  const raw = `${err.message} ${cause}`.toLowerCase();
+  const code =
+    typeof err === "object" && err && "cause" in err && err.cause && typeof err.cause === "object" && "code" in err.cause
+      ? String((err.cause as { code?: string }).code ?? "")
+      : "";
+  const raw = `${err.message} ${cause} ${code}`.toLowerCase();
+  const tag = (code || cause).match(/\b(E[A-Z0-9]{3,}|UND_[A-Z0-9_]+)\b/);
+  const suffix = tag ? ` (${tag[1]})` : "";
   if (err.name === "AbortError" || raw.includes("abort")) {
-    return "Indian Kanoon timed out. Try again in a minute.";
+    return `Indian Kanoon timed out. Try again in a minute.${suffix}`;
   }
   if (raw.includes("enotfound") || raw.includes("dns")) {
-    return "Could not resolve Indian Kanoon.";
+    return `Could not resolve Indian Kanoon.${suffix}`;
   }
   if (raw.includes("cert") || raw.includes("ssl") || raw.includes("tls")) {
-    return "Could not establish a TLS session with Indian Kanoon.";
+    return `Could not establish a TLS session with Indian Kanoon.${suffix}`;
   }
   if (raw.includes("econnreset") || raw.includes("econnrefused") || raw.includes("fetch failed")) {
-    return "Could not reach Indian Kanoon (connection reset).";
+    return `Could not reach Indian Kanoon (connection reset).${suffix}`;
   }
-  return "Could not reach Indian Kanoon.";
+  return `Could not reach Indian Kanoon.${suffix}`;
 }
 
 function httpMessage(status: number): string {
@@ -72,6 +79,12 @@ function httpMessage(status: number): string {
   if (status === 405) return "Indian Kanoon rejected the request method.";
   if (status === 404) return "Indian Kanoon has no published document for this CNR.";
   return "Could not fetch from Indian Kanoon.";
+}
+
+function headersFor(token: string, hasBody: boolean): Record<string, string> {
+  const headers: Record<string, string> = { ...ikAuthHeaders(token) };
+  if (hasBody) headers["Content-Type"] = "application/x-www-form-urlencoded";
+  return headers;
 }
 
 async function callOnce(
@@ -84,33 +97,14 @@ async function callOnce(
   if (isForbiddenCourtUrl(url) || /ecourts\.gov\.in/i.test(url)) {
     return { ok: false, status: 0, message: "CiteBench does not fetch from the official eCourts site." };
   }
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-  const headers: Record<string, string> = {
-    ...ikAuthHeaders(token),
-    "Accept-Language": "en-IN,en;q=0.9",
-  };
-  if (body) headers["Content-Type"] = "application/x-www-form-urlencoded";
   const init: RequestInit = {
     method,
-    headers,
+    headers: headersFor(token, Boolean(body)),
     body,
     redirect: "follow",
-    signal: controller.signal,
   };
   try {
-    let response: Response;
-    try {
-      response = await fetchImpl(url, init);
-    } catch (first) {
-      const text = first instanceof Error ? first.message : "";
-      if (init.signal && /signal|abortcontroller/i.test(text) && !/aborted/i.test(text)) {
-        const { signal: _s, ...rest } = init;
-        response = await fetchImpl(url, rest);
-      } else {
-        throw first;
-      }
-    }
+    const response = await fetchImpl(url, init);
     const text = await response.text();
     let json: unknown = null;
     if (text) {
@@ -126,28 +120,34 @@ async function callOnce(
     return { ok: true, json, status: response.status };
   } catch (err) {
     return { ok: false, status: 0, message: networkMessage(err) };
-  } finally {
-    clearTimeout(timer);
   }
 }
 
-/** GET first (docs + live 401-without-token). POST if GET is 405 or the socket dies. */
+function shouldFallback(call: IkCall): boolean {
+  return call.status === 405 || call.status === 0 || call.status === 501 || call.status === 411;
+}
+
 async function ikFetch(
   fetchImpl: FetchImpl,
-  getUrl: string,
   postUrl: string,
+  getUrl: string,
   token: string,
   postBody?: string,
 ): Promise<IkCall> {
-  const get = await callOnce(fetchImpl, getUrl, token, "GET");
-  if (get.ok) return get;
-  const tryPost = get.status === 405 || get.status === 0 || get.status === 501;
-  if (!tryPost) return get;
   const post = await callOnce(fetchImpl, postUrl, token, "POST", postBody);
   if (post.ok) return post;
-  if (get.status === 0 && post.status !== 0) return post;
-  if (post.status === 0 && get.status !== 0) return get;
-  return post.status !== 0 ? post : get;
+  if (post.status === 0) {
+    const retry = await callOnce(fetchImpl, postUrl, token, "POST", postBody);
+    if (retry.ok) return retry;
+    if (!shouldFallback(retry) && retry.status !== 0) return retry;
+    const get = await callOnce(fetchImpl, getUrl, token, "GET");
+    if (get.ok) return get;
+    return retry.status !== 0 ? retry : get.status !== 0 ? get : retry;
+  }
+  if (!shouldFallback(post)) return post;
+  const get = await callOnce(fetchImpl, getUrl, token, "GET");
+  if (get.ok) return get;
+  return get.status !== 0 ? get : post;
 }
 
 export async function fetchIkCase(input: {
@@ -164,8 +164,8 @@ export async function fetchIkCase(input: {
   const fetchImpl = input.fetchImpl ?? defaultFetch;
   const found = await ikFetch(
     fetchImpl,
-    searchGetUrl(input.cnr),
     searchUrl(),
+    searchGetUrl(input.cnr),
     input.token,
     searchBody(input.cnr),
   );
@@ -198,9 +198,13 @@ export async function fetchIkCase(input: {
   const docs: IkDocument[] = [];
   for (const hit of hits) {
     const docUrl = documentUrl(hit.tid);
-    const got = await ikFetch(fetchImpl, docUrl, docUrl, input.token);
-    if (!got.ok) continue;
-    const doc = parseDocument(got.json, hit);
+    const got = await callOnce(fetchImpl, docUrl, input.token, "GET");
+    const docCall =
+      got.ok || !shouldFallback(got)
+        ? got
+        : await callOnce(fetchImpl, docUrl, input.token, "POST");
+    if (!docCall.ok) continue;
+    const doc = parseDocument(docCall.json, hit);
     if (doc) docs.push(doc);
   }
   return { ok: true, hits, docs };

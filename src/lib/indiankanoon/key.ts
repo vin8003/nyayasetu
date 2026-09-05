@@ -19,11 +19,9 @@ export function isIkConfigured(env: NodeJS.Dict<string | undefined> = process.en
 export function ikAuthHeaders(token: string): {
   Authorization: string;
   Accept: string;
-  "User-Agent": string;
 } {
   return {
     Authorization: `Token ${token}`,
     Accept: "application/json",
-    "User-Agent": "CiteBench/1.0 (court-data adapter)",
   };
 }
