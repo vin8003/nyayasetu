@@ -47,11 +47,16 @@ describe("indian kanoon client", () => {
     assert.equal(result.error, "API_KEY_MISSING");
   });
 
-  it("GETs search then GET /doc/{tid}/ with Token auth against the live shape", async () => {
+  it("POSTs search then GET /doc/{tid}/ with Token auth against the live curl shape", async () => {
     const { calls, fetchImpl } = mockIk((url, init) => {
-      assert.equal(init.method, "GET");
-      if (url === searchGetUrl(CNR)) return jsonResponse(IK_SEARCH_FIXTURE);
-      if (url === documentUrl("99098448")) return jsonResponse(IK_DOC_FIXTURE);
+      if (url === searchUrl()) {
+        assert.equal(init.method, "POST");
+        return jsonResponse(IK_SEARCH_FIXTURE);
+      }
+      if (url === documentUrl("99098448")) {
+        assert.equal(init.method, "GET");
+        return jsonResponse(IK_DOC_FIXTURE);
+      }
       if (url === documentUrl("106234790")) {
         return jsonResponse({
           tid: 106234790,
@@ -69,18 +74,19 @@ describe("indian kanoon client", () => {
     assert.equal(result.hits[0]?.tid, "99098448");
     assert.equal(result.docs.length, 2);
     assert.match(result.docs[0]?.body ?? "", /CNR No\. DLHC010097752026/);
-    assert.equal(calls[0]?.url, searchGetUrl(CNR));
-    assert.equal(calls[0]?.method, "GET");
-    assert.equal(calls[0]?.body, "");
+    assert.equal(calls[0]?.url, searchUrl());
+    assert.equal(calls[0]?.method, "POST");
+    assert.equal(calls[0]?.body, searchBody(CNR));
+    assert.match(calls[0]?.contentType, /application\/x-www-form-urlencoded/);
     assert.equal(calls[1]?.url, documentUrl("99098448"));
-    assert.equal(calls.every((c) => c.method === "GET"), true);
+    assert.equal(calls[1]?.method, "GET");
     assert.equal(calls.every((c) => c.auth === `Token ${TOKEN}`), true);
   });
 
-  it("falls back to POST when GET is 405", async () => {
+  it("falls back to GET when POST is 405", async () => {
     const { calls, fetchImpl } = mockIk((url, init) => {
-      if (init.method === "GET") return jsonResponse({ detail: "method" }, 405);
-      if (url === searchUrl()) return jsonResponse(IK_SEARCH_FIXTURE);
+      if (init.method === "POST") return jsonResponse({ detail: "method" }, 405);
+      if (url === searchGetUrl(CNR)) return jsonResponse(IK_SEARCH_FIXTURE);
       if (url === documentUrl("99098448")) return jsonResponse(IK_DOC_FIXTURE);
       if (url === documentUrl("106234790")) {
         return jsonResponse({
@@ -95,17 +101,18 @@ describe("indian kanoon client", () => {
     const result = await fetchIkCase({ cnr: CNR, token: TOKEN, fetchImpl });
     assert.equal(result.ok, true);
     if (!result.ok) return;
-    assert.equal(calls[0]?.method, "GET");
-    assert.equal(calls[1]?.method, "POST");
-    assert.equal(calls[1]?.url, searchUrl());
-    assert.equal(calls[1]?.body, searchBody(CNR));
-    assert.match(calls[1]?.contentType, /application\/x-www-form-urlencoded/);
+    assert.equal(calls[0]?.method, "POST");
+    assert.equal(calls[0]?.url, searchUrl());
+    assert.equal(calls.some((c) => c.method === "GET" && c.url === searchGetUrl(CNR)), true);
   });
 
-  it("falls back to POST when GET cannot reach the host", async () => {
+  it("retries POST when the first POST cannot reach the host", async () => {
+    let posts = 0;
     const { calls, fetchImpl } = mockIk((url, init) => {
-      if (init.method === "GET") throw new Error("fetch failed", { cause: new Error("ECONNRESET") });
-      if (url === searchUrl()) return jsonResponse(IK_SEARCH_FIXTURE);
+      if (init.method === "POST" && url === searchUrl() && posts++ === 0) {
+        throw new Error("fetch failed", { cause: new Error("ECONNRESET") });
+      }
+      if (url === searchUrl() || url.startsWith(`${IK_BASE}/search/`)) return jsonResponse(IK_SEARCH_FIXTURE);
       if (url.includes("/doc/")) {
         return jsonResponse({
           tid: 99098448,
@@ -119,7 +126,7 @@ describe("indian kanoon client", () => {
     const result = await fetchIkCase({ cnr: CNR, token: TOKEN, fetchImpl });
     assert.equal(result.ok, true);
     if (!result.ok) return;
-    assert.equal(calls.some((c) => c.method === "POST" && c.url === searchUrl()), true);
+    assert.equal(calls.filter((c) => c.method === "POST" && c.url === searchUrl()).length >= 2, true);
   });
 
   it("fetches all five Kamran hits, not a 3-doc cap", async () => {
