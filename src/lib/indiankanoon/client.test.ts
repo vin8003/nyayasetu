@@ -221,4 +221,18 @@ describe("indian kanoon client", () => {
     assert.equal(calls.filter((c) => c.url.includes("/doc/")).length, 1);
     assert.ok(traces.every((t) => t === trace));
   });
+
+  it("reports an invalid header character as a token problem, not a connection reset", async () => {
+    const { fetchImpl } = mockIk(() => {
+      throw new Error("fetch failed ERR_INVALID_CHAR", {
+        cause: Object.assign(new TypeError('Invalid character in header content ["Authorization"]'), { code: "ERR_INVALID_CHAR" }),
+      });
+    });
+    const result = await fetchIkCase({ cnr: CNR, token: TOKEN, fetchImpl });
+    assert.equal(result.ok, false);
+    if (result.ok) return;
+    assert.match(result.message, /not sent/);
+    assert.match(result.message, /IKANOON_API_TOKEN/);
+    assert.doesNotMatch(result.message, /connection reset/);
+  });
 });

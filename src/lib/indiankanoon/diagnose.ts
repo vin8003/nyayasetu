@@ -37,6 +37,9 @@ export function summariseDiagnosis(steps: DiagStep[]): string {
   }
   if (!search) return `Indian Kanoon is reachable${where}; the authenticated search was not run.`;
   if (search.code === "NO_TOKEN") return `Indian Kanoon is reachable${where}, but IKANOON_API_TOKEN is not set on this server.`;
+  if (search.code === "TOKEN_INVALID_CHARS" || search.code === "ERR_INVALID_CHAR" || search.code === "ERR_INVALID_HTTP_TOKEN") {
+    return `Indian Kanoon is reachable${where}. The request was never sent: IKANOON_API_TOKEN contains a character that cannot go in an HTTP header (often a pasted line break, non-breaking space or curly quote). Re-paste the token as plain text and redeploy.`;
+  }
   if (search.ok) return `Live fetch works from this server${where}. ${search.detail}`;
   if (search.status === 401 || search.status === 403) {
     return `Indian Kanoon is reachable${where} but rejected IKANOON_API_TOKEN.`;

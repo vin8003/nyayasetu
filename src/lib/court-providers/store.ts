@@ -92,7 +92,15 @@ export const diagnoseIndianKanoon = createServerFn({ method: "POST" })
     await requireAdmin(context.userId);
     const { isValidCnr, normalizeCnr } = await import("@/lib/eci-partner/cnr");
     if (!isValidCnr(data.cnr)) throw new Error("CNR must be 16 letters and digits.");
-    const { resolveIkApiToken } = await import("@/lib/indiankanoon/key");
+    const { resolveIkTokenStatus } = await import("@/lib/indiankanoon/key");
     const { diagnoseIk } = await import("@/lib/indiankanoon/diagnose.server");
-    return diagnoseIk({ cnr: normalizeCnr(data.cnr), token: resolveIkApiToken() });
+    const status = resolveIkTokenStatus();
+    return diagnoseIk({
+      cnr: normalizeCnr(data.cnr),
+      token: status.token,
+      tokenProblem:
+        status.problem && status.problem !== "missing"
+          ? { code: status.problem === "invalid_chars" ? "TOKEN_INVALID_CHARS" : status.problem.toUpperCase(), detail: status.detail }
+          : null,
+    });
   });

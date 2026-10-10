@@ -66,13 +66,12 @@ async function reachStep(): Promise<DiagStep> {
     );
     return { name: "reach", ok: true, ms: Date.now() - started, status: res.status, detail: `HTTP ${res.status} without a token`, attempts };
   } catch (err) {
-    const failed = [...attempts].reverse().find((a) => a.code);
     return {
       name: "reach",
       ok: false,
       ms: Date.now() - started,
       detail: err instanceof Error ? err.message : "network error",
-      code: failed?.code,
+      code: firstCode(attempts),
       attempts,
     };
   }
@@ -94,17 +93,32 @@ async function searchStep(cnr: string, token: string): Promise<DiagStep> {
       attempts,
     };
   }
-  const failed = [...attempts].reverse().find((a) => a.code);
-  return { name: "search", ok: false, ms, status: result.status, code: failed?.code ?? result.code, detail: result.message, attempts };
+  return { name: "search", ok: false, ms, status: result.status, code: firstCode(attempts) ?? result.code, detail: result.message, attempts };
 }
 
-export async function diagnoseIk(input: { cnr: string; token: string | null }): Promise<IkDiagnosis> {
+function firstCode(attempts: IkAttempt[]): string | undefined {
+  return attempts.find((a) => a.code && a.via !== "fetch")?.code ?? attempts.find((a) => a.code)?.code;
+}
+
+export async function diagnoseIk(input: {
+  cnr: string;
+  token: string | null;
+  tokenProblem?: { code: string; detail: string } | null;
+}): Promise<IkDiagnosis> {
   const steps: DiagStep[] = [runtimeStep(), await egressStep(), await dnsStep()];
   const reach = await reachStep();
   steps.push(reach);
   // Spend a billed search only once the host is reachable at all.
   if (reach.ok && input.token) steps.push(await searchStep(input.cnr, input.token));
-  if (!input.token) steps.push({ name: "search", ok: false, ms: 0, code: "NO_TOKEN", detail: "IKANOON_API_TOKEN is not set on this server" });
+  if (!input.token) {
+    steps.push({
+      name: "search",
+      ok: false,
+      ms: 0,
+      code: input.tokenProblem?.code ?? "NO_TOKEN",
+      detail: input.tokenProblem?.detail ?? "IKANOON_API_TOKEN is not set on this server",
+    });
+  }
   const report: IkDiagnosis = { cnr: input.cnr, at: new Date().toISOString(), steps, verdict: summariseDiagnosis(steps) };
   console.info(`[ik] diagnose ${input.cnr}: ${report.verdict}`);
   return report;
