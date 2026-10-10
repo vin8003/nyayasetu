@@ -3,6 +3,7 @@ import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { ScrollMemory } from "@/components/scroll-memory";
 import { ClientToaster } from "@/components/client-toaster";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "CiteBench";
@@ -18,7 +19,8 @@ export const Route = createRootRoute({
         content:
           "CiteBench — the lawyer's practice assistant. Court diary, matters, orders and Indian case-law research.",
       },
-      { name: "theme-color", content: "#0c1014" },
+      { name: "theme-color", content: "#f5f3ee", media: "(prefers-color-scheme: light)" },
+      { name: "theme-color", content: "#0b0e13", media: "(prefers-color-scheme: dark)" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -36,6 +38,7 @@ export const Route = createRootRoute({
   component: () => (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>
       <body className="antialiased">

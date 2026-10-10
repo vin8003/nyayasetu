@@ -27,7 +27,7 @@ export const Route = createFileRoute("/")({
       return null;
     }
   },
-  staleTime: 30_000,
+  staleTime: 0,
   component: TodayPage,
 });
 
@@ -203,6 +203,20 @@ export function TodayPage() {
               <div className="tile-label">{c.stale}</div>
             </button>
           </div>
+
+          {!empty && board ? (
+            <div className="quick-actions">
+              <Button asChild>
+                <Link to="/matters">{c.newMatter}</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/inbox">{c.inbox}</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/research">{c.research}</Link>
+              </Button>
+            </div>
+          ) : null}
 
           {empty ? (
             <div className="empty stack-tight max-w-lg">

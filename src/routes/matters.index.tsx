@@ -19,7 +19,18 @@ import { useChamberLang } from "@/lib/practice/use-lang";
 import { intakeFromMatter } from "@/lib/practice/intake-from-matter";
 import { DRAFT_KEY } from "@/lib/research/draft";
 
-export const Route = createFileRoute("/matters/")({ component: MattersIndexPage });
+export const Route = createFileRoute("/matters/")({
+	// Server-side first load (session cookie rides along); null falls back to the client fetch.
+	loader: async () => {
+		try {
+			return await listMatters();
+		} catch {
+			return null;
+		}
+	},
+	staleTime: 0,
+	component: MattersIndexPage
+});
 
 export function emptyDraft() {
 	return {
@@ -41,7 +52,11 @@ export function MattersIndexPage() {
 	const { lang, onLang } = useChamberLang();
 	const { user, isPending } = useCurrentUserState();
 	const navigate = useNavigate();
-	const [matters, setMatters] = useSwrState("matters", user?.id, []);
+	const loaded = Route.useLoaderData();
+	const [matters, setMatters] = useSwrState("matters", user?.id, loaded ?? []);
+	useEffect(() => {
+		if (loaded) setMatters(loaded);
+	}, [loaded]);
 	const [draft, setDraft] = useState(emptyDraft);
 	const [open, setOpen] = useState(false);
 	const [mode, setMode] = useState("manual");
@@ -50,7 +65,7 @@ export function MattersIndexPage() {
 	const c = p(lang);
 	const proc = proceedingDef(draft.proceeding);
 	useEffect(() => {
-		if (!user) return;
+		if (!user || loaded) return;
 		listMatters().then(setMatters).catch((err) => {
 			if (/unauthorized/i.test(String(err))) navigate({ to: "/login" });
 		});
@@ -369,11 +384,11 @@ export function MattersIndexPage() {
 					children: c.emptyMatters
 				}) : null,
 				jsx("ul", {
-					className: "mt-8 space-y-2",
+					className: "mt-8 space-y-2.5",
 					children: matters.map((m) => {
 						const st = stageDef(m.proceeding, m.stage);
 						return jsxs("li", {
-							className: "flex items-stretch gap-2",
+							className: "card-row",
 							children: [jsxs(Link, {
 							to: "/matters/$id",
 							params: { id: m.id },

@@ -276,7 +276,7 @@ export function InboxPage() {
 							jsx(Hint, { children: c.inboxHint })
 						] }),
 						jsxs("label", {
-							className: "inline-flex h-10 cursor-pointer items-center text-sm text-accent hover:underline",
+							className: "mr-4 inline-flex h-10 cursor-pointer items-center text-sm text-accent hover:underline",
 							children: [c.uploadPaper, jsx("input", {
 								type: "file",
 								className: "sr-only",

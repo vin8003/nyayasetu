@@ -88,7 +88,7 @@ export function MemoHistory({
                 deleteLabel={c.deleteMemo}
               />
               {thread.children.length > 0 ? (
-                <ul className="border-t border-[rgb(255_255_255/0.08)]">
+                <ul className="border-t border-hairline">
                   {thread.children.map((child) => (
                     <li key={child.id}>
                       <MemoRow

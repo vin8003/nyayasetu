@@ -395,7 +395,7 @@ export function MatterDetailPage() {
           <Button variant="outline" onClick={() => void onBrief()} disabled={briefing}>
             {briefing ? c.briefing : c.prepareBrief}
           </Button>
-          <Button asChild variant="paper">
+          <Button asChild>
             <Link
               to="/research"
               search={{ matter: matter.id }}
@@ -411,12 +411,12 @@ export function MatterDetailPage() {
         </div>
       </div>
 
-      <nav className="mt-6 flex flex-wrap gap-2">
+      <nav className="jump-nav" aria-label={c.matters}>
         {jumps.map(([hid, label]) => (
           <a
             key={hid}
             href={`#${hid}`}
-            className="rounded-full bg-elevated px-3 py-1.5 text-xs text-muted hover:text-fg"
+            className="jump-pill"
             onClick={(e) => {
               e.preventDefault();
               openRecord(hid);
