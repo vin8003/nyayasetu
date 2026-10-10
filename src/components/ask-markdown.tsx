@@ -20,6 +20,15 @@ function Inline({ parts }: { parts: AskInline[] }) {
   );
 }
 
+function isSourcesLabel(block: ReturnType<typeof parseAskMarkdown>[number]) {
+  return (
+    block.kind === "p" &&
+    block.inlines.length === 1 &&
+    block.inlines[0]?.kind === "strong" &&
+    block.inlines[0].text.trim().toLowerCase() === "sources"
+  );
+}
+
 export function AskMarkdown({ text }: { text: string }) {
   const blocks = parseAskMarkdown(text);
   if (!blocks.length) return null;
@@ -27,9 +36,10 @@ export function AskMarkdown({ text }: { text: string }) {
     <div className="ask-md">
       {blocks.map((block, i) => {
         if (block.kind === "hr") return <hr key={i} />;
+        const sources = i > 0 && block.kind === "list" && isSourcesLabel(blocks[i - 1]);
         if (block.kind === "list") {
           return (
-            <ul key={i}>
+            <ul key={i} className={sources ? "ask-sources" : undefined}>
               {block.items.map((item, j) => (
                 <li key={j}>
                   <span className="ask-marker">{item.marker}</span>
@@ -39,6 +49,13 @@ export function AskMarkdown({ text }: { text: string }) {
                 </li>
               ))}
             </ul>
+          );
+        }
+        if (isSourcesLabel(block)) {
+          return (
+            <p key={i} className="ask-sources-label">
+              <Inline parts={block.inlines} />
+            </p>
           );
         }
         return (

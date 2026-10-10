@@ -185,15 +185,24 @@ export function AskDesk({ lang, matterId, chatId }: { lang: OutputLang; matterId
     }
   }
 
+  const active = matters.find((row) => row.id === matter);
+  const sheetTitle = active?.title || c.general;
+  const sheetMeta = [active?.caseNumber, active?.courtName].filter(Boolean).join(" · ") || c.hint;
+
   return (
-    <div className="ask-desk">
-      <header className="ask-head">
-        <div>
-          <h1 className="font-display text-3xl tracking-tight sm:text-4xl">{c.title}</h1>
-          <p className="mt-1.5 max-w-xl text-sm text-muted">{c.hint}</p>
+    <div className="ask-session">
+      <aside className="ask-index" aria-label={c.chats}>
+        <div className="ask-index-top">
+          <div>
+            <p className="ask-kicker">{c.title}</p>
+            <p className="ask-index-note">{c.chats}</p>
+          </div>
+          <button type="button" className="ask-new" onClick={onNewChat}>
+            {c.newChat}
+          </button>
         </div>
         <label className="ask-case">
-          {c.matter}
+          <span>{c.matter}</span>
           <select id="ask-matter" value={matter} onChange={(e) => onMatter(e.target.value)}>
             <option value="">{c.general}</option>
             {matters.map((m) => (
@@ -204,25 +213,15 @@ export function AskDesk({ lang, matterId, chatId }: { lang: OutputLang; matterId
             ))}
           </select>
         </label>
-      </header>
-
-      <div className="ask-layout">
-        <aside className="ask-rail" aria-label={c.chats}>
-          <button type="button" className="ask-new" onClick={onNewChat}>
-            {c.newChat}
-          </button>
+        <nav className="ask-index-list">
           {groups.length === 0 ? <p className="ask-rail-empty">{c.noChats}</p> : null}
           {groups.map((group) => (
-            <section key={group.key} className="ask-group">
-              <h2 className="ask-group-label">{group.label}</h2>
+            <section key={group.key} className={`ask-group${group.matterId === (matter || null) ? " is-open" : ""}`}>
+              <h2>{group.label}</h2>
               <ul>
                 {group.chats.map((row) => (
                   <li key={row.id}>
-                    <button
-                      type="button"
-                      className={row.id === chatId ? "is-current" : ""}
-                      onClick={() => onOpenChat(row)}
-                    >
+                    <button type="button" className={row.id === chatId ? "is-current" : ""} onClick={() => onOpenChat(row)}>
                       {row.title}
                     </button>
                   </li>
@@ -230,63 +229,80 @@ export function AskDesk({ lang, matterId, chatId }: { lang: OutputLang; matterId
               </ul>
             </section>
           ))}
-        </aside>
+        </nav>
+      </aside>
 
-        <div className="ask-main">
-      <div className="ask-thread" ref={threadRef} aria-live="polite">
-        {turns.length === 0 ? <p className="ask-empty">{c.empty}</p> : null}
-        {turns.map((turn, i) => {
-          const mine = turn.role === "user";
-          return (
-            <article key={`${turn.role}-${i}`} className={`ask-turn ${mine ? "is-user" : "is-assistant"}`}>
-              <span className="ask-who">{mine ? c.you : c.desk}</span>
-              <div className={`ask-bubble ${mine ? "is-user" : "is-assistant"}`}>
-                {mine ? turn.content : <AskMarkdown text={turn.content} />}
-              </div>
-            </article>
-          );
-        })}
-        {busy ? <p className="ask-pending">{c.sending}</p> : null}
-      </div>
+      <section className="ask-sheet" aria-label={sheetTitle}>
+        <header className="ask-sheet-bar">
+          <div>
+            <h1>{sheetTitle}</h1>
+            <p>{sheetMeta}</p>
+          </div>
+        </header>
 
-      {error ? (
-        <p className="text-sm text-danger" role="alert">
-          {error}{" "}
-          {error === c.paywall ? (
-            <Link to="/billing" className="underline">
-              {c.upgrade}
-            </Link>
+        <div className="ask-transcript" ref={threadRef} aria-live="polite">
+          {turns.length === 0 ? (
+            <div className="ask-empty">
+              <p className="ask-empty-mark">§</p>
+              <p>{c.empty}</p>
+            </div>
           ) : null}
-        </p>
-      ) : null}
-
-      <form
-        className="ask-composer"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void send();
-        }}
-      >
-        <textarea
-          value={draft}
-          rows={2}
-          placeholder={c.placeholder}
-          disabled={busy}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              void send();
-            }
-          }}
-        />
-        <Button type="submit" disabled={busy || draft.trim().length < 2}>
-          {busy ? c.sending : c.send}
-        </Button>
-      </form>
-      <p className="ask-note">{c.disclaimer}</p>
+          {turns.map((turn, i) => {
+            const mine = turn.role === "user";
+            return (
+              <article key={`${turn.role}-${i}`} className={`ask-turn ${mine ? "is-user" : "is-note"}`}>
+                <span className="ask-who">{mine ? c.you : c.desk}</span>
+                <div className="ask-body">{mine ? turn.content : <AskMarkdown text={turn.content} />}</div>
+              </article>
+            );
+          })}
+          {busy ? (
+            <p className="ask-pending">
+              <span className="ask-pulse" aria-hidden="true" />
+              {c.sending}
+            </p>
+          ) : null}
         </div>
-      </div>
+
+        {error ? (
+          <p className="ask-error" role="alert">
+            {error}{" "}
+            {error === c.paywall ? (
+              <Link to="/billing" className="underline">
+                {c.upgrade}
+              </Link>
+            ) : null}
+          </p>
+        ) : null}
+
+        <form
+          className="ask-composer"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void send();
+          }}
+        >
+          <textarea
+            value={draft}
+            rows={2}
+            placeholder={c.placeholder}
+            disabled={busy}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                void send();
+              }
+            }}
+          />
+          <div className="ask-composer-row">
+            <p className="ask-note">{c.disclaimer}</p>
+            <Button type="submit" size="sm" disabled={busy || draft.trim().length < 2}>
+              {busy ? "…" : c.send}
+            </Button>
+          </div>
+        </form>
+      </section>
     </div>
   );
 }
