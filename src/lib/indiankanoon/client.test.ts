@@ -163,4 +163,62 @@ describe("indian kanoon client", () => {
     if (result.ok) return;
     assert.match(result.message, /forbidden in tests/i);
   });
+
+  it("names the step and error code when search cannot reach the host", async () => {
+    const { fetchImpl } = mockIk(() => {
+      throw new Error("fetch failed ECONNRESET", { cause: Object.assign(new Error("socket hang up"), { code: "ECONNRESET" }) });
+    });
+    const result = await fetchIkCase({ cnr: CNR, token: TOKEN, fetchImpl });
+    assert.equal(result.ok, false);
+    if (result.ok) return;
+    assert.equal(result.error, "NETWORK");
+    assert.match(result.message, /during search/);
+    assert.match(result.message, /ECONNRESET/);
+  });
+
+  it("reports a network failure when every document fetch dies, not an empty parse", async () => {
+    const { fetchImpl } = mockIk((url) => {
+      if (url.startsWith(`${IK_BASE}/search/`)) return jsonResponse(IK_SEARCH_FIXTURE);
+      throw new Error("fetch failed", { cause: Object.assign(new Error("reset"), { code: "ECONNRESET" }) });
+    });
+    const result = await fetchIkCase({ cnr: CNR, token: TOKEN, fetchImpl });
+    assert.equal(result.ok, false);
+    if (result.ok) return;
+    assert.equal(result.error, "NETWORK");
+    assert.match(result.message, /during document/);
+  });
+
+  it("still succeeds when only some documents fail", async () => {
+    let docs = 0;
+    const { fetchImpl } = mockIk((url) => {
+      if (url.startsWith(`${IK_BASE}/search/`)) return jsonResponse(IK_SEARCH_FIXTURE_KAMRAN);
+      if (docs++ === 0) throw new Error("fetch failed", { cause: new Error("ECONNRESET") });
+      const tid = url.match(/\/doc\/(\d+)\//)?.[1];
+      return jsonResponse({ tid: Number(tid), publishdate: "2026-09-03", title: "K", doc: `<pre>CNR No. ${IK_LIVE_CNR_KAMRAN} ${tid}</pre>` });
+    });
+    const result = await fetchIkCase({ cnr: IK_LIVE_CNR_KAMRAN, token: TOKEN, fetchImpl });
+    assert.equal(result.ok, true);
+  });
+
+  it("caps billed document fetches with maxDocs and passes the trace to the transport", async () => {
+    const traces: unknown[] = [];
+    const { calls, fetchImpl } = mockIk((url) => {
+      if (url.startsWith(`${IK_BASE}/search/`)) return jsonResponse(IK_SEARCH_FIXTURE_KAMRAN);
+      return jsonResponse({ tid: 1, publishdate: "2026-09-03", title: "K", doc: `<pre>CNR No. ${IK_LIVE_CNR_KAMRAN}</pre>` });
+    });
+    const trace: never[] = [];
+    const result = await fetchIkCase({
+      cnr: IK_LIVE_CNR_KAMRAN,
+      token: TOKEN,
+      maxDocs: 1,
+      trace,
+      fetchImpl: (url, init, t) => {
+        traces.push(t);
+        return fetchImpl(url, init);
+      },
+    });
+    assert.equal(result.ok, true);
+    assert.equal(calls.filter((c) => c.url.includes("/doc/")).length, 1);
+    assert.ok(traces.every((t) => t === trace));
+  });
 });

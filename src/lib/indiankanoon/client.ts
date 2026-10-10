@@ -9,19 +9,20 @@ import { isForbiddenCourtUrl } from "../court-import/forbidden.ts";
 import { ikAuthHeaders, resolveIkApiToken } from "./key.ts";
 import { parseDocument, parseSearchHits } from "./parse.ts";
 import { nodeHttpsFetch } from "./transport.ts";
-import { IK_MAX_DOCS, type IkDocument, type IkSearchHit } from "./types.ts";
+import { IK_MAX_DOCS, type IkAttempt, type IkDocument, type IkSearchHit } from "./types.ts";
 
 export const IK_BASE = "https://api.indiankanoon.org";
-type FetchImpl = (input: string, init?: RequestInit) => Promise<Response>;
+type FetchImpl = (input: string, init?: RequestInit, trace?: IkAttempt[]) => Promise<Response>;
+type IkStep = "search" | "document";
 type IkCall =
   | { ok: true; json: unknown; status: number }
   | { ok: false; status: number; message: string };
 
-function defaultFetch(input: string, init?: RequestInit): Promise<Response> {
+function defaultFetch(input: string, init?: RequestInit, trace?: IkAttempt[]): Promise<Response> {
   if (process.env.NODE_TEST_CONTEXT) {
     throw new Error("Live Indian Kanoon API is forbidden in tests. Pass fetchImpl with a mock.");
   }
-  return nodeHttpsFetch(input, init);
+  return nodeHttpsFetch(input, init, trace);
 }
 
 export function searchUrl(): string {
@@ -42,8 +43,9 @@ export function searchBody(cnr: string): string {
   return new URLSearchParams({ formInput: cnr, pagenum: "0" }).toString();
 }
 
-function networkMessage(err: unknown): string {
-  if (!(err instanceof Error)) return "Could not reach Indian Kanoon.";
+export function networkMessage(err: unknown, step?: IkStep): string {
+  const during = step ? ` during ${step}` : "";
+  if (!(err instanceof Error)) return `Could not reach Indian Kanoon${during}.`;
   if (err.message.includes("forbidden in tests")) return err.message;
   const cause =
     err.cause instanceof Error
@@ -56,21 +58,21 @@ function networkMessage(err: unknown): string {
       ? String((err.cause as { code?: string }).code ?? "")
       : "";
   const raw = `${err.message} ${cause} ${code}`.toLowerCase();
-  const tag = (code || cause).match(/\b(E[A-Z0-9]{3,}|UND_[A-Z0-9_]+)\b/);
+  const tag = `${code} ${cause} ${err.message}`.match(/\b(E[A-Z0-9]{3,}|UND_[A-Z0-9_]+)\b/);
   const suffix = tag ? ` (${tag[1]})` : "";
   if (err.name === "AbortError" || raw.includes("abort")) {
-    return `Indian Kanoon timed out. Try again in a minute.${suffix}`;
+    return `Indian Kanoon timed out${during}. Try again in a minute.${suffix}`;
   }
   if (raw.includes("enotfound") || raw.includes("dns")) {
-    return `Could not resolve Indian Kanoon.${suffix}`;
+    return `Could not resolve Indian Kanoon${during}.${suffix}`;
   }
   if (raw.includes("cert") || raw.includes("ssl") || raw.includes("tls")) {
-    return `Could not establish a TLS session with Indian Kanoon.${suffix}`;
+    return `Could not establish a TLS session with Indian Kanoon${during}.${suffix}`;
   }
   if (raw.includes("econnreset") || raw.includes("econnrefused") || raw.includes("fetch failed")) {
-    return `Could not reach Indian Kanoon (connection reset).${suffix}`;
+    return `Could not reach Indian Kanoon${during} (connection reset).${suffix}`;
   }
-  return `Could not reach Indian Kanoon.${suffix}`;
+  return `Could not reach Indian Kanoon${during}.${suffix}`;
 }
 
 function httpMessage(status: number): string {
@@ -93,6 +95,8 @@ async function callOnce(
   token: string,
   method: "GET" | "POST",
   body?: string,
+  step?: IkStep,
+  trace?: IkAttempt[],
 ): Promise<IkCall> {
   if (isForbiddenCourtUrl(url) || /ecourts\.gov\.in/i.test(url)) {
     return { ok: false, status: 0, message: "CiteBench does not fetch from the official eCourts site." };
@@ -104,7 +108,7 @@ async function callOnce(
     redirect: "follow",
   };
   try {
-    const response = await fetchImpl(url, init);
+    const response = await fetchImpl(url, init, trace);
     const text = await response.text();
     let json: unknown = null;
     if (text) {
@@ -119,7 +123,7 @@ async function callOnce(
     }
     return { ok: true, json, status: response.status };
   } catch (err) {
-    return { ok: false, status: 0, message: networkMessage(err) };
+    return { ok: false, status: 0, message: networkMessage(err, step) };
   }
 }
 
@@ -133,19 +137,22 @@ async function ikFetch(
   getUrl: string,
   token: string,
   postBody?: string,
+  trace?: IkAttempt[],
 ): Promise<IkCall> {
-  const post = await callOnce(fetchImpl, postUrl, token, "POST", postBody);
+  const call = (url: string, method: "GET" | "POST", body?: string) =>
+    callOnce(fetchImpl, url, token, method, body, "search", trace);
+  const post = await call(postUrl, "POST", postBody);
   if (post.ok) return post;
   if (post.status === 0) {
-    const retry = await callOnce(fetchImpl, postUrl, token, "POST", postBody);
+    const retry = await call(postUrl, "POST", postBody);
     if (retry.ok) return retry;
     if (!shouldFallback(retry) && retry.status !== 0) return retry;
-    const get = await callOnce(fetchImpl, getUrl, token, "GET");
+    const get = await call(getUrl, "GET");
     if (get.ok) return get;
     return retry.status !== 0 ? retry : get.status !== 0 ? get : retry;
   }
   if (!shouldFallback(post)) return post;
-  const get = await callOnce(fetchImpl, getUrl, token, "GET");
+  const get = await call(getUrl, "GET");
   if (get.ok) return get;
   return get.status !== 0 ? get : post;
 }
@@ -154,6 +161,10 @@ export async function fetchIkCase(input: {
   cnr: string;
   token: string | null;
   fetchImpl?: FetchImpl;
+  /** Live transport attempts, appended in order (diagnostics only). */
+  trace?: IkAttempt[];
+  /** Cap on document fetches; each one is a billed Indian Kanoon call. */
+  maxDocs?: number;
 }): Promise<
   | { ok: true; hits: IkSearchHit[]; docs: IkDocument[] }
   | { ok: false; error: "API_KEY_MISSING" | "HTTP" | "NETWORK"; status?: number; code?: string; message: string }
@@ -168,6 +179,7 @@ export async function fetchIkCase(input: {
     searchGetUrl(input.cnr),
     input.token,
     searchBody(input.cnr),
+    input.trace,
   );
   if (!found.ok) {
     return {
@@ -185,7 +197,7 @@ export async function fetchIkCase(input: {
       message: found.message,
     };
   }
-  const hits = parseSearchHits(found.json).slice(0, IK_MAX_DOCS);
+  const hits = parseSearchHits(found.json).slice(0, Math.min(IK_MAX_DOCS, input.maxDocs ?? IK_MAX_DOCS));
   if (!hits.length) {
     return {
       ok: false,
@@ -196,16 +208,24 @@ export async function fetchIkCase(input: {
     };
   }
   const docs: IkDocument[] = [];
+  let networkFailure: IkCall | null = null;
+  let reached = false;
   for (const hit of hits) {
     const docUrl = documentUrl(hit.tid);
-    const got = await callOnce(fetchImpl, docUrl, input.token, "GET");
+    const got = await callOnce(fetchImpl, docUrl, input.token, "GET", undefined, "document", input.trace);
     const docCall =
       got.ok || !shouldFallback(got)
         ? got
-        : await callOnce(fetchImpl, docUrl, input.token, "POST");
+        : await callOnce(fetchImpl, docUrl, input.token, "POST", undefined, "document", input.trace);
+    if (docCall.status !== 0) reached = true;
+    else networkFailure = docCall;
     if (!docCall.ok) continue;
     const doc = parseDocument(docCall.json, hit);
     if (doc) docs.push(doc);
+  }
+  // Every document died on the network: say so, instead of "hits but no order text".
+  if (!reached && networkFailure && !networkFailure.ok) {
+    return { ok: false, error: "NETWORK", message: networkFailure.message };
   }
   return { ok: true, hits, docs };
 }

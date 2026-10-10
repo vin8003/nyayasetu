@@ -14,3 +14,12 @@ export type IkDocument = IkSearchHit & {
   body: string;
   sourceUrl: string;
 };
+
+/** One network attempt inside the live transport, for diagnostics. Never holds headers or the token. */
+export type IkAttempt = {
+  via: string;
+  round: number;
+  ms: number;
+  status?: number;
+  code?: string;
+};
