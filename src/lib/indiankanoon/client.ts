@@ -60,6 +60,9 @@ export function networkMessage(err: unknown, step?: IkStep): string {
   const raw = `${err.message} ${cause} ${code}`.toLowerCase();
   const tag = `${code} ${cause} ${err.message}`.match(/\b(E[A-Z0-9]{3,}|UND_[A-Z0-9_]+)\b/);
   const suffix = tag ? ` (${tag[1]})` : "";
+  if (/err_invalid_char|err_invalid_http_token|invalid character in header|headers.*invalid/.test(raw)) {
+    return `The Indian Kanoon request was not sent: a header has an invalid character. Re-paste IKANOON_API_TOKEN as plain text.${suffix}`;
+  }
   if (err.name === "AbortError" || raw.includes("abort")) {
     return `Indian Kanoon timed out${during}. Try again in a minute.${suffix}`;
   }

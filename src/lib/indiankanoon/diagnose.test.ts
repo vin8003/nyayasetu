@@ -53,4 +53,17 @@ describe("summariseDiagnosis", () => {
     assert.match(verdict, /not set on this server/);
     assert.doesNotMatch(verdict, /WAF/);
   });
+
+  it("blames the token, not the network, when Node refuses the header", () => {
+    for (const code of ["ERR_INVALID_CHAR", "TOKEN_INVALID_CHARS"]) {
+      const verdict = summariseDiagnosis([
+        egress,
+        { name: "reach", ok: true, ms: 88, status: 401, detail: "HTTP 401 without a token" },
+        { name: "search", ok: false, ms: 1, code, detail: "not sent" },
+      ]);
+      assert.match(verdict, /never sent/);
+      assert.match(verdict, /Re-paste the token/);
+      assert.doesNotMatch(verdict, /WAF/);
+    }
+  });
 });

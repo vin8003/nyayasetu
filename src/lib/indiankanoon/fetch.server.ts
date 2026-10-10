@@ -14,7 +14,7 @@ import { fetchErrorResult, ikEmptyParseResult, missingKeyResult } from "../eci-p
 import { planInboxLand } from "../eci-partner/land";
 import type { FetchCnrResult } from "../eci-partner/types";
 import { fetchIkCase } from "./client";
-import { resolveIkApiToken } from "./key";
+import { resolveIkTokenStatus } from "./key";
 import { documentsToOrders, previewFromDocs } from "./parse";
 import { IK_SOURCE_KIND } from "./types";
 
@@ -110,8 +110,13 @@ export async function fetchIkCnrToInbox(
   fetchImpl?: (input: string, init?: RequestInit) => Promise<Response>,
 ): Promise<FetchCnrResult> {
   const sql = await getSql();
-  const token = resolveIkApiToken();
-  if (!token) return missingKeyResult();
+  const tokenStatus = resolveIkTokenStatus();
+  if (tokenStatus.problem !== null) {
+    if (tokenStatus.problem === "missing") return missingKeyResult();
+    console.warn(`[ik] ${tokenStatus.detail}`);
+    return { ...missingKeyResult(), message: tokenStatus.detail };
+  }
+  const token = tokenStatus.token;
 
   let typed = data.cnr ?? "";
   if (data.matterId) {
