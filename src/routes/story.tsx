@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { CiteMark } from "@/components/cite-mark";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { storyCopy } from "@/lib/story/copy";
 import type { OutputLang } from "@/lib/research/types";
 
@@ -18,7 +19,8 @@ function storyHead(lang: OutputLang) {
     meta: [
       { title },
       { name: "description", content: c.dek },
-      { name: "theme-color", content: "#f4efe6" },
+      { name: "theme-color", content: "#f4efe6", media: "(prefers-color-scheme: light)" },
+      { name: "theme-color", content: "#0d1117", media: "(prefers-color-scheme: dark)" },
       { name: "author", content: "CiteBench" },
       { property: "og:site_name", content: "CiteBench" },
       { property: "og:title", content: title },
@@ -65,17 +67,23 @@ function StoryPage() {
   useEffect(() => {
     const html = document.documentElement;
     const prevLang = html.lang;
-    const prevHtmlBg = html.style.background;
-    const prevBodyBg = document.body.style.background;
     html.lang = lang === "hi" ? "hi-IN" : "en-IN";
-    html.style.background = "#f4efe6";
-    document.body.style.background = "#f4efe6";
     return () => {
       html.lang = prevLang;
-      html.style.background = prevHtmlBg;
-      document.body.style.background = prevBodyBg;
     };
   }, [lang]);
+
+  // Reading progress: a thin bar across the top, driven by scroll position.
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    function onScroll() {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      setProgress(max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0);
+    }
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   function setLang(next: OutputLang) {
     void navigate({
@@ -114,6 +122,7 @@ function StoryPage() {
     <div className="story-page" lang={lang === "hi" ? "hi" : "en"}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
+      <div className="story-progress no-print" style={{ transform: `scaleX(${progress})` }} aria-hidden />
       <header className="story-mast no-print">
         <div className="story-mast-inner">
           <Link to="/" className="story-brand" aria-label={c.home}>
@@ -134,6 +143,7 @@ function StoryPage() {
                 </button>
               ))}
             </div>
+            <ThemeToggle lang={lang} />
             <a href="/login" className="story-text-link">
               {c.signIn}
             </a>

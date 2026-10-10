@@ -67,9 +67,11 @@ function ExternalLink({
   children: ReactNode;
 }) {
   const safe = httpHref(href);
-  if (!safe) return <span className={className}>{children}</span>;
+  // Long URLs have no natural break points; let them wrap instead of widening the page.
+  const wrap = cn("max-w-full [overflow-wrap:anywhere]", className);
+  if (!safe) return <span className={wrap}>{children}</span>;
   return (
-    <a href={safe} target="_blank" rel="noreferrer" className={className}>
+    <a href={safe} target="_blank" rel="noreferrer" className={wrap}>
       {children}
     </a>
   );
@@ -377,7 +379,7 @@ export function MemoView({
                   <ExternalLink href={s.url} className="text-sm text-accent hover:text-fg">
                     {s.title || s.url}
                   </ExternalLink>
-                  <p className="mt-0.5 text-xs text-muted">
+                  <p className="mt-0.5 text-xs text-muted [overflow-wrap:anywhere]">
                     {s.publisher}
                     {s.url ? ` · ${s.url.replace(/^https?:\/\//, "")}` : ""}
                   </p>

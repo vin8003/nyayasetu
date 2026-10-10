@@ -89,6 +89,7 @@
   --t-shadow: rgb(24 27 33 / 0.12);
   --t-shadow-lg: rgb(24 27 33 / 0.22);
   --t-glow: 7%;
+  --story-bg: #f4efe6;
 }
 
 :root[data-theme="dark"] {
@@ -115,6 +116,7 @@
   --t-shadow: rgb(0 0 0 / 0.4);
   --t-shadow-lg: rgb(0 0 0 / 0.55);
   --t-glow: 9%;
+  --story-bg: #0d1117;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -142,6 +144,7 @@
     --t-shadow: rgb(0 0 0 / 0.4);
     --t-shadow-lg: rgb(0 0 0 / 0.55);
     --t-glow: 9%;
+    --story-bg: #0d1117;
   }
 }
 
@@ -184,6 +187,11 @@
 
   p {
     text-wrap: pretty;
+  }
+
+  /* Long unbroken URLs wrap instead of widening the page. */
+  a {
+    overflow-wrap: anywhere;
   }
 
   :focus-visible {
@@ -1936,13 +1944,50 @@
 
   html:has(.story-page),
   body:has(.story-page) {
+    background: var(--story-bg);
+  }
+
+  /* The article follows the theme: cream paper by day, a deep reading surface at night. */
+  .story-page {
+    --color-paper: var(--story-bg);
+    min-height: 100dvh;
     background: var(--color-paper);
     color: var(--color-paper-ink);
   }
 
-  .story-page {
-    min-height: 100dvh;
-    background: var(--color-paper);
+  :root[data-theme="dark"] .story-page {
+    --color-paper-ink: #ece9e2;
+    --color-paper-muted: #a9a79f;
+    --color-paper-line: #2c3644;
+    --color-accent-paper: #9db4f0;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .story-page {
+      --color-paper-ink: #ece9e2;
+      --color-paper-muted: #a9a79f;
+      --color-paper-line: #2c3644;
+      --color-accent-paper: #9db4f0;
+    }
+  }
+
+  .story-progress {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 40;
+    height: 3px;
+    transform-origin: left;
+    background: var(--color-accent-paper);
+    pointer-events: none;
+  }
+
+  .story-page .icon-btn {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--color-paper-line);
+    color: var(--color-paper-muted);
+  }
+
+  .story-page .icon-btn:hover {
     color: var(--color-paper-ink);
   }
 
