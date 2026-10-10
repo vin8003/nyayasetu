@@ -373,6 +373,19 @@ export function MatterDetailPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button asChild>
+            <Link
+              to="/research"
+              search={{ matter: matter.id }}
+              onClick={() => {
+                try {
+                  sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ intake: intakeFromMatter(bundle, lang), lang }));
+                } catch {}
+              }}
+            >
+              {c.attachResearch}
+            </Link>
+          </Button>
           {isSampleTitle(matter.title) ? (
             confirmExit ? (
               <>
@@ -389,24 +402,11 @@ export function MatterDetailPage() {
               </Button>
             )
           ) : null}
-          <Button variant="outline" onClick={() => openRecord("file")}>
+          <Button variant="ghost" onClick={() => openRecord("file")}>
             {c.editFile}
           </Button>
           <Button variant="outline" onClick={() => void onBrief()} disabled={briefing}>
             {briefing ? c.briefing : c.prepareBrief}
-          </Button>
-          <Button asChild>
-            <Link
-              to="/research"
-              search={{ matter: matter.id }}
-              onClick={() => {
-                try {
-                  sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ intake: intakeFromMatter(bundle, lang), lang }));
-                } catch {}
-              }}
-            >
-              {c.attachResearch}
-            </Link>
           </Button>
         </div>
       </div>
@@ -450,23 +450,18 @@ export function MatterDetailPage() {
             </button>
           </section>
 
-          <section className="rounded-lg bg-elevated p-4 shadow-hairline">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h2 className="section-title">{c.importFromCourt}</h2>
-                {matter.lastSyncedAt ? (
-                  <p className="mt-1 text-xs text-muted">
-                    {c.lastSynced} {String(matter.lastSyncedAt).slice(0, 16).replace("T", " ")}
-                  </p>
-                ) : (
-                  <p className="mt-1 text-xs text-muted">{c.importHint}</p>
-                )}
-              </div>
-              <Button type="button" variant="outline" onClick={() => setShowImport((v) => !v)}>
-                {showImport ? c.cancel : c.syncCase}
-              </Button>
-            </div>
-            <div className="mt-3">
+          <details className="disclosure" open={!matter.lastSyncedAt && !isSampleTitle(matter.title)}>
+            <summary>
+              <span>
+                <span className="section-title block">{c.importFromCourt}</span>
+                <span className="mt-0.5 block text-xs font-normal text-muted">
+                  {matter.lastSyncedAt
+                    ? `${c.lastSynced} ${String(matter.lastSyncedAt).slice(0, 16).replace("T", " ")}`
+                    : c.importHint}
+                </span>
+              </span>
+            </summary>
+            <div className="disclosure-body">
               <EciCnrFetch
                 lang={lang}
                 matterId={matter.id}
@@ -475,24 +470,27 @@ export function MatterDetailPage() {
                 sample={isSampleTitle(matter.title)}
                 onLanded={() => void reload()}
               />
+              <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => setShowImport((v) => !v)}>
+                {showImport ? c.cancel : c.syncCase}
+              </Button>
+              {showImport ? (
+                <div className="mt-3">
+                  <CourtImportPanel
+                    lang={lang}
+                    matterId={matter.id}
+                    defaultCourtId={courtLookup.courtId}
+                    seed={courtLookup.lookup}
+                    sample={isSampleTitle(matter.title)}
+                    showCnrFetch={false}
+                    onComplete={() => {
+                      setShowImport(false);
+                      void reload();
+                    }}
+                  />
+                </div>
+              ) : null}
             </div>
-            {showImport ? (
-              <div className="mt-3">
-                <CourtImportPanel
-                  lang={lang}
-                  matterId={matter.id}
-                  defaultCourtId={courtLookup.courtId}
-                  seed={courtLookup.lookup}
-                  sample={isSampleTitle(matter.title)}
-                  showCnrFetch={false}
-                  onComplete={() => {
-                    setShowImport(false);
-                    void reload();
-                  }}
-                />
-              </div>
-            ) : null}
-          </section>
+          </details>
 
           {matter.parties?.length ? (
             <section>

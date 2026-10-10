@@ -202,28 +202,16 @@ function AdminDeskApp({ email }: { email: string }) {
             <CiteMark className="size-7" />
             <span className="brand-word">Admin</span>
           </button>
-          <nav className="flex items-center gap-1 text-sm">
-            <button
-              type="button"
-              className={`link-quiet px-2 py-1 ${view === "stats" ? "text-accent" : ""}`}
-              onClick={() => setView("stats")}
-            >
-              Stats
-            </button>
-            <button
-              type="button"
-              className={`link-quiet px-2 py-1 ${view === "users" || typeof view === "object" ? "text-accent" : ""}`}
-              onClick={() => setView("users")}
-            >
-              Users
-            </button>
-            <button
-              type="button"
-              className={`link-quiet px-2 py-1 ${view === "providers" ? "text-accent" : ""}`}
-              onClick={() => setView("providers")}
-            >
-              Providers
-            </button>
+          <nav className="admin-tabs" aria-label="Admin">
+            {([
+              ["stats", "Stats", view === "stats"],
+              ["users", "Users", view === "users" || typeof view === "object"],
+              ["providers", "Providers", view === "providers"],
+            ] as const).map(([key, label, on]) => (
+              <button key={key} type="button" className={`admin-tab${on ? " is-on" : ""}`} onClick={() => setView(key)}>
+                {label}
+              </button>
+            ))}
           </nav>
           <div className="topbar-actions text-xs text-muted">
             <span className="hidden max-w-[10rem] truncate sm:inline">{email}</span>
@@ -237,7 +225,7 @@ function AdminDeskApp({ email }: { email: string }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-5xl px-4 py-8">
+      <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
         {view === "stats" ? <AdminStatsPane /> : null}
         {view === "users" ? <AdminUsersPane onOpen={(id) => setView({ user: id })} /> : null}
         {view === "providers" ? <AdminProvidersPane /> : null}
@@ -251,7 +239,7 @@ function AdminDeskApp({ email }: { email: string }) {
 
 function Card({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
-    <div className="rounded-lg bg-surface p-4 shadow-hairline">
+    <div className="card card-pad !p-4">
       <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted">{label}</p>
       <p className="mt-2 font-display text-3xl tabular-nums">{value}</p>
       {hint ? <p className="mt-1 text-xs text-muted">{hint}</p> : null}

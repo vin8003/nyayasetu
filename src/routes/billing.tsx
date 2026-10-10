@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -112,64 +113,81 @@ export function BillingPage() {
       {isPending ? <div className="skeleton h-40" /> : null}
       {!isPending && !user ? <GuestPanel lang={lang} /> : null}
       {!isPending && user && snap ? (
-        <div className="stagger-in mx-auto max-w-2xl">
+        <div className="stagger-in">
           <p className="eyebrow">{c.kicker}</p>
           <h1 className="page-title">{c.title}</h1>
           <p className="page-lead">{live ? c.leadLive : c.lead}</p>
 
-          <div className="paper mt-8 p-6 sm:p-8">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <div className="font-display text-4xl font-medium tracking-tight tabular-nums">{c.price}</div>
-                <div className="mt-1 text-sm text-paper-muted">{c.perMonth}</div>
+          <div className="plan-grid">
+            <section className="card card-pad">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="plan-price">{c.price}</div>
+                  <div className="mt-1.5 text-sm text-muted">{c.perMonth}</div>
+                </div>
+                <StatusPill snap={snap} lang={lang} />
               </div>
-              <StatusPill snap={snap} lang={lang} />
-            </div>
-            <p className="mt-4 text-xs text-paper-muted">{c.gst}</p>
-            <dl className="mt-7 grid gap-4 border-t border-paper-line pt-6 text-sm sm:grid-cols-2">
-              {snap.status === "trial" ? (
-                <div>
-                  <dt className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-paper-muted">{c.trialOn}</dt>
-                  <dd className="mt-1.5 tabular-nums">
-                    {snap.trialStarted
-                      ? `${formatDay(snap.trialEndsAt)} · ${snap.daysLeft} ${c.trialDays}`
-                      : c.trialIdle}
-                  </dd>
+              <p className="mt-3 text-xs text-subtle">{c.gst}</p>
+
+              {snap.status === "trial" && snap.trialStarted ? (
+                <div className="mt-6">
+                  <div className="flex items-baseline justify-between text-sm">
+                    <span className="text-muted">{c.trialOn}</span>
+                    <span className="tabular-nums">
+                      {snap.daysLeft} {c.trialDays}
+                    </span>
+                  </div>
+                  <div
+                    className="meter mt-2"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={30}
+                    aria-valuenow={Math.max(0, 30 - (snap.daysLeft ?? 30))}
+                  >
+                    <span style={{ width: `${Math.min(100, Math.max(4, ((30 - (snap.daysLeft ?? 30)) / 30) * 100))}%` }} />
+                  </div>
+                  <p className="mt-2 text-xs text-subtle tabular-nums">{formatDay(snap.trialEndsAt)}</p>
                 </div>
+              ) : snap.status === "trial" ? (
+                <p className="mt-6 text-sm text-muted">{c.trialIdle}</p>
               ) : (
-                <div>
-                  <dt className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-paper-muted">{c.accessUntil}</dt>
+                <dl className="mt-6 text-sm">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-subtle">{c.accessUntil}</dt>
                   <dd className="mt-1.5 tabular-nums">{formatDay(snap.periodEnd)}</dd>
-                </div>
+                </dl>
               )}
-            </dl>
-            <h2 className="mt-8 font-display text-lg font-medium">{c.includes}</h2>
-            <ul className="mt-3 space-y-2.5 text-sm">
-              {[c.itemTrial, c.itemResearch, c.itemChamber, c.itemOrders].map((item) => (
-                <li key={item} className="flex gap-2.5">
-                  <span className="mt-2 h-px w-3 shrink-0 bg-paper-muted" aria-hidden />
-                  <span className="leading-relaxed">{item}</span>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-8 flex flex-col gap-3 border-t border-paper-line pt-6">
-              {snap.status === "active" ? (
-                <Button variant="paper" onClick={() => void cancel()} disabled={busy}>
-                  {c.cancelPlan}
-                </Button>
-              ) : snap.status === "cancelled" && snap.canUseAi ? null : (
-                <Button variant="paper" size="lg" onClick={() => void subscribe()} disabled={busy}>
-                  {busy ? c.subscribing : c.subscribe}
-                </Button>
-              )}
-              <p className="text-xs leading-relaxed text-paper-muted">
-                {snap.status === "cancelled" && snap.canUseAi
-                  ? c.leftoverHint
-                  : live
-                    ? c.confirmHintLive
-                    : c.confirmHint}
-              </p>
-            </div>
+
+              <div className="mt-7 flex flex-col gap-3 border-t border-border pt-6">
+                {snap.status === "active" ? (
+                  <Button variant="outline" onClick={() => void cancel()} disabled={busy}>
+                    {c.cancelPlan}
+                  </Button>
+                ) : snap.status === "cancelled" && snap.canUseAi ? null : (
+                  <Button size="lg" onClick={() => void subscribe()} disabled={busy}>
+                    {busy ? c.subscribing : c.subscribe}
+                  </Button>
+                )}
+                <p className="text-xs leading-relaxed text-subtle">
+                  {snap.status === "cancelled" && snap.canUseAi
+                    ? c.leftoverHint
+                    : live
+                      ? c.confirmHintLive
+                      : c.confirmHint}
+                </p>
+              </div>
+            </section>
+
+            <section className="card card-pad">
+              <h2 className="font-display text-xl font-medium">{c.includes}</h2>
+              <ul className="check-list mt-4 space-y-3.5">
+                {[c.itemTrial, c.itemResearch, c.itemChamber, c.itemOrders].map((item) => (
+                  <li key={item}>
+                    <Check className="size-4" aria-hidden />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
           </div>
 
           <p className="mt-8">
@@ -196,7 +214,7 @@ function StatusPill({ snap, lang }: { snap: BillingSnapshot; lang: "hi" | "en" }
           ? c.cancelledOn
           : c.expired;
   return (
-    <div className="rounded-full bg-paper-ink/6 px-3 py-1 text-xs font-medium shadow-[0_0_0_1px_rgb(0_0_0/0.1)]">
+    <div className="rounded-full bg-elevated px-3 py-1 text-xs font-medium text-fg shadow-hairline">
       {label}
     </div>
   );

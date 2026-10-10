@@ -7,7 +7,7 @@ export const Route = createFileRoute("/admin/")({ component: AdminHome });
 
 function Card({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
-    <div className="rounded-lg bg-surface p-4 shadow-hairline">
+    <div className="card card-pad !p-4">
       <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted">{label}</p>
       <p className="mt-2 font-display text-3xl tabular-nums">{value}</p>
       {hint ? <p className="mt-1 text-xs text-muted">{hint}</p> : null}
@@ -35,13 +35,20 @@ export function AdminHome() {
       <p className="page-lead">
         Payments {stats.paymentsLive ? "are connected." : "are not connected on this build."}
       </p>
-      <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <h2 className="section-title mt-8">People</h2>
+      <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Card label="Users" value={stats.users} hint={`${stats.users7d} in 7 days · ${stats.users30d} in 30`} />
         <Card label="Active" value={stats.active} hint="Paid window still open" />
         <Card label="Trial" value={stats.trial} />
         <Card label="Cancelled" value={stats.cancelled} hint="Leftover days still count" />
-        <Card label="Expired" value={stats.expired} />
+      </div>
+      <h2 className="section-title mt-8">Revenue</h2>
+      <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Card label="Paid vs dummy" value={`${stats.paid} / ${stats.dummy}`} hint="Razorpay id vs preview grant" />
+        <Card label="Expired" value={stats.expired} />
+      </div>
+      <h2 className="section-title mt-8">Usage</h2>
+      <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Card label="Matters" value={stats.matters} />
         <Card label="Memos" value={stats.memos} />
       </div>

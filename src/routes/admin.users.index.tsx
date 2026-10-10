@@ -55,27 +55,49 @@ export function AdminUsers() {
       {error ? <p className="mt-4 text-sm text-danger">{error}</p> : null}
       {!rows ? <div className="skeleton mt-6 h-40" /> : null}
       {rows ? (
-        <ul className="mt-6 divide-y divide-border">
-          {rows.length === 0 ? (
-            <li className="py-6 text-sm text-muted">No users match.</li>
-          ) : (
-            rows.map((row) => (
-              <li key={row.id} className="py-4">
-                <Link to="/admin/users/$id" params={{ id: row.id }} className="block">
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <p className="font-medium">{row.name || row.email}</p>
-                    <p className="text-xs uppercase tracking-wide text-muted">{row.snap.status}</p>
-                  </div>
-                  <p className="mt-1 text-sm text-muted">{row.email}</p>
-                  <p className="mt-1 text-xs text-subtle">
-                    Access {formatDay(row.snap.periodEnd ?? row.snap.trialEndsAt)}
-                    {row.razorpayId ? " · paid" : row.snap.status === "active" ? " · dummy" : ""}
-                  </p>
-                </Link>
-              </li>
-            ))
-          )}
-        </ul>
+        <div className="card mt-6 overflow-x-auto">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Status</th>
+                <th className="hidden sm:table-cell">Access until</th>
+                <th className="hidden sm:table-cell">Billing</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center text-muted">
+                    No users match.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((row) => (
+                  <tr key={row.id}>
+                    <td>
+                      <Link to="/admin/users/$id" params={{ id: row.id }} className="block">
+                        <span className="font-medium">{row.name || row.email}</span>
+                        <span className="block text-xs text-muted">{row.email}</span>
+                      </Link>
+                    </td>
+                    <td>
+                      <span className="rounded-full bg-elevated px-2.5 py-0.5 text-xs font-medium capitalize shadow-hairline">
+                        {row.snap.status}
+                      </span>
+                    </td>
+                    <td className="hidden tabular-nums sm:table-cell">
+                      {formatDay(row.snap.periodEnd ?? row.snap.trialEndsAt)}
+                    </td>
+                    <td className="hidden text-muted sm:table-cell">
+                      {row.razorpayId ? "Paid" : row.snap.status === "active" ? "Dummy" : "—"}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       ) : null}
     </div>
   );

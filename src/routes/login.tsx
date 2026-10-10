@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { BookOpen, CalendarDays, Eye, EyeOff, Inbox } from "lucide-react";
 import { Link, createFileRoute, Navigate } from "@tanstack/react-router";
 import { GROK_PROVIDERS, authClient, authEnabled, signIn } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -53,6 +54,7 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const [lang, setLang] = useState<"hi" | "en">("en");
 
   const hi = lang === "hi";
@@ -102,130 +104,179 @@ function Login() {
     }
   }
 
+  const points = [
+    {
+      icon: CalendarDays,
+      title: hi ? "डायरी और समय-सीमाएँ" : "Diary and deadlines",
+      body: hi ? "हर पेशी और क्लॉक एक जगह — आज क्या करना है, साफ़ दिखता है।" : "Every hearing and limitation clock in one place, so today is never a surprise.",
+    },
+    {
+      icon: BookOpen,
+      title: hi ? "स्रोत-सहित शोध" : "Research with sources",
+      body: hi ? "सुप्रीम कोर्ट और हाईकोर्ट के फ़ैसले, हर उद्धरण के लिंक के साथ।" : "Supreme Court and High Court rulings, every citation linked to its source.",
+    },
+    {
+      icon: Inbox,
+      title: hi ? "आदेश पढ़ना" : "Order reading",
+      body: hi ? "आदेश पेस्ट करें — मॉडल निकालता है, आप पुष्टि करते हैं।" : "Paste an order. The model extracts; you confirm.",
+    },
+  ];
+
   return (
-    <main className="shell grid min-h-dvh place-items-center px-4 py-10">
-      <div className="stagger-in w-full max-w-sm">
-        <div className="mb-9 flex items-center justify-between">
-          <Link to="/" className="brand">
-            <CiteMark className="size-8" />
-            <span className="brand-word text-xl">CiteBench</span>
-          </Link>
-          <LangToggle
-            lang={lang}
-            onLang={(next) => setLang(next)}
-            ariaLabel={hi ? "भाषा" : "Language"}
-          />
+    <main className="auth-page">
+      <aside className="auth-aside">
+        <Link to="/" className="brand">
+          <CiteMark className="size-9" />
+          <span className="brand-word">CiteBench</span>
+        </Link>
+        <div>
+          <h2 className="auth-aside-title">
+            {hi ? "आपका चैंबर, व्यवस्थित।" : "Your chamber, in order."}
+          </h2>
+          <ul className="auth-points">
+            {points.map((pt) => (
+              <li key={pt.title}>
+                <span className="auth-point-icon" aria-hidden>
+                  <pt.icon className="size-[1.1rem]" />
+                </span>
+                <span>
+                  <strong>{pt.title}</strong>
+                  <span>{pt.body}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
-        <h1 className="font-display text-3xl font-medium tracking-tight">
-          {mode === "in" ? (hi ? "लॉगिन" : "Sign in") : hi ? "खाता बनाएँ" : "Create account"}
-        </h1>
-        <p className="mt-3 text-sm leading-relaxed text-muted">
-          {hi
-            ? "केस हिस्ट्री आपके अकाउंट पर सुरक्षित रहेगी — Google, X या ईमेल, हर लॉगिन का अपना रिकॉर्ड।"
-            : "Case history is saved on the account you sign in with — Google, X, or email each keep their own memos."}
-        </p>
-        <p className="mt-2 text-sm text-muted">
-          {hi ? "30 दिन आज़माइश। कार्ड नहीं चाहिए।" : "30-day trial. No card required."}
-        </p>
-        <p className="mt-4">
-          <Link to="/story" search={{ lang: hi ? "hi" : undefined }} className="link-accent text-sm">
-            {hi ? "शोध डेस्क से चैंबर तक — पहले दिन की कहानी" : "From a research desk to a chamber — the first-day story"}
-          </Link>
-        </p>
-        <div className="card card-pad mt-8">
-        <form className="flex flex-col gap-4" onSubmit={onSubmit}>
-          <Field>
-            <Label htmlFor="username">{hi ? "यूज़रनेम / ईमेल" : "Username / email"}</Label>
-            <Input
-              id="username"
-              name="username"
-              autoComplete="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder={hi ? "आपका ईमेल या यूज़रनेम" : "Your email or username"}
-              disabled={busy}
+        <Link to="/story" search={{ lang: hi ? "hi" : undefined }} className="auth-story-link">
+          {hi ? "पहले दिन की कहानी पढ़ें →" : "Read the first-day story →"}
+        </Link>
+      </aside>
+
+      <section className="auth-main">
+        <div className="stagger-in w-full max-w-sm">
+          <div className="mb-8 flex items-center justify-between">
+            <Link to="/" className="brand auth-brand-mobile">
+              <CiteMark className="size-8" />
+              <span className="brand-word">CiteBench</span>
+            </Link>
+            <LangToggle
+              lang={lang}
+              onLang={(next) => setLang(next)}
+              ariaLabel={hi ? "भाषा" : "Language"}
+              className="ml-auto"
             />
-            <Hint>
-              {hi
-                ? "पूरा ईमेल या सिर्फ़ यूज़रनेम — @ की ज़रूरत नहीं।"
-                : "Full email or a username — no @ needed."}
-            </Hint>
-          </Field>
-          <Field>
-            <Label htmlFor="password">{hi ? "पासवर्ड" : "Password"}</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete={mode === "up" ? "new-password" : "current-password"}
-              value={password}
-              minLength={8}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={busy}
-            />
-          </Field>
-          {error ? (
-            <p className="rounded-md bg-danger/12 px-3.5 py-3 text-sm leading-relaxed text-danger" role="alert">
-              {error}
-            </p>
-          ) : null}
-          <Button type="submit" size="lg" disabled={busy} className="w-full">
-            {busy
-              ? hi
-                ? "रुकिए…"
-                : "Please wait…"
-              : mode === "in"
-                ? hi
-                  ? "अंदर जाएँ"
-                  : "Sign in"
-                : hi
-                  ? "खाता बनाएँ"
-                  : "Create account"}
-          </Button>
-        </form>
-        <button
-          type="button"
-          className="link-quiet mt-4 text-sm"
-          onClick={() => {
-            setMode(mode === "in" ? "up" : "in");
-            setError(null);
-          }}
-        >
-          {mode === "in"
-            ? hi
-              ? "नया अकाउंट चाहिए? रजिस्टर करें"
-              : "Need an account? Register"
-            : hi
-              ? "पहले से अकाउंट है? लॉगिन करें"
-              : "Already registered? Sign in"}
-        </button>
-        {authEnabled ? (
-          <>
-            <div className="mt-8 flex items-center gap-3">
-              <span className="hairline flex-1" />
-              <span className="text-xs text-subtle">{hi ? "या" : "or"}</span>
-              <span className="hairline flex-1" />
-            </div>
-            <div className="mt-4 flex flex-col gap-2">
-              {GROK_PROVIDERS.map((p) => (
-                <Button
-                  key={p.providerId}
-                  type="button"
-                  variant="outline"
-                  className="w-full"
+          </div>
+
+          <h1 className="font-display text-3xl font-medium tracking-tight">
+            {mode === "in" ? (hi ? "वापसी पर स्वागत" : "Welcome back") : hi ? "खाता बनाएँ" : "Create your account"}
+          </h1>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            {hi ? "30 दिन आज़माइश। कार्ड नहीं चाहिए।" : "30-day trial. No card required."}
+          </p>
+
+          <div role="tablist" className="seg seg-fill mt-6">
+            {(["in", "up"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                aria-selected={mode === m}
+                className={"seg-btn" + (mode === m ? " is-on" : "")}
+                onClick={() => {
+                  setMode(m);
+                  setError(null);
+                }}
+              >
+                {m === "in" ? (hi ? "लॉगिन" : "Sign in") : hi ? "रजिस्टर" : "Register"}
+              </button>
+            ))}
+          </div>
+
+          <form className="mt-5 flex flex-col gap-4" onSubmit={onSubmit}>
+            <Field>
+              <Label htmlFor="username">{hi ? "यूज़रनेम / ईमेल" : "Username / email"}</Label>
+              <Input
+                id="username"
+                name="username"
+                autoComplete="username"
+                autoFocus
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder={hi ? "आपका ईमेल या यूज़रनेम" : "Your email or username"}
+                disabled={busy}
+              />
+            </Field>
+            <Field>
+              <Label htmlFor="password">{hi ? "पासवर्ड" : "Password"}</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPw ? "text" : "password"}
+                  autoComplete={mode === "up" ? "new-password" : "current-password"}
+                  value={password}
+                  minLength={8}
+                  onChange={(e) => setPassword(e.target.value)}
                   disabled={busy}
-                  onClick={() => void signIn(p.providerId, { callbackURL: "/" })}
+                  className="pr-11"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw((v) => !v)}
+                  aria-label={showPw ? (hi ? "पासवर्ड छुपाएँ" : "Hide password") : hi ? "पासवर्ड दिखाएँ" : "Show password"}
+                  className="absolute inset-y-0 right-0 grid w-11 place-items-center text-muted hover:text-fg"
                 >
-                  {hi ? `${p.label} से जारी रखें` : `Continue with ${p.label}`}
-                </Button>
-              ))}
-            </div>
-          </>
-        ) : (
-          <p className="mt-8 text-sm text-muted">{hi ? "लॉगिन अभी बंद है।" : "Sign-in is disabled."}</p>
-        )}
+                  {showPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
+              <Hint>{hi ? "कम से कम 8 अक्षर।" : "At least 8 characters."}</Hint>
+            </Field>
+            {error ? (
+              <p className="rounded-md bg-danger/12 px-3.5 py-3 text-sm leading-relaxed text-danger" role="alert">
+                {error}
+              </p>
+            ) : null}
+            <Button type="submit" size="lg" disabled={busy} className="w-full">
+              {busy
+                ? hi ? "रुकिए…" : "Please wait…"
+                : mode === "in"
+                  ? hi ? "अंदर जाएँ" : "Sign in"
+                  : hi ? "खाता बनाएँ" : "Create account"}
+            </Button>
+          </form>
+
+          {authEnabled ? (
+            <>
+              <div className="mt-6 flex items-center gap-3">
+                <span className="hairline flex-1" />
+                <span className="text-xs text-subtle">{hi ? "या" : "or"}</span>
+                <span className="hairline flex-1" />
+              </div>
+              <div className="mt-4 flex flex-col gap-2">
+                {GROK_PROVIDERS.map((p) => (
+                  <Button
+                    key={p.providerId}
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    disabled={busy}
+                    onClick={() => void signIn(p.providerId, { callbackURL: "/" })}
+                  >
+                    {hi ? `${p.label} से जारी रखें` : `Continue with ${p.label}`}
+                  </Button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="mt-6 text-sm text-muted">{hi ? "लॉगिन अभी बंद है।" : "Sign-in is disabled."}</p>
+          )}
+          <p className="mt-6 text-xs leading-relaxed text-subtle">
+            {hi
+              ? "केस हिस्ट्री उसी अकाउंट पर सुरक्षित रहती है जिससे आप लॉगिन करते हैं।"
+              : "Case history is saved on the account you sign in with."}
+          </p>
         </div>
-      </div>
+      </section>
     </main>
   );
 }

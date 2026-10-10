@@ -585,6 +585,137 @@
     box-shadow: var(--shadow-hairline-strong);
   }
 
+
+  /* Primary form action: pinned above the tab bar on phones so it never scrolls away. */
+  .form-actions {
+    position: sticky;
+    bottom: 4.25rem;
+    z-index: 10;
+    margin-inline: -1.25rem;
+    margin-bottom: -1.25rem;
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid var(--color-border);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    background: color-mix(in oklab, var(--color-surface) 92%, transparent);
+    backdrop-filter: blur(10px);
+  }
+
+  @media (min-width: 900px) {
+    .form-actions {
+      position: static;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: none;
+      backdrop-filter: none;
+    }
+  }
+
+  /* Collapsible block: one quiet row until opened. */
+  .disclosure {
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-hairline), var(--shadow-e1);
+  }
+
+  .disclosure > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 3.5rem;
+    padding: 0.75rem 1.25rem;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .disclosure > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .disclosure > summary::after {
+    content: "";
+    flex-shrink: 0;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-right: 1.5px solid var(--color-muted);
+    border-bottom: 1.5px solid var(--color-muted);
+    transform: rotate(45deg);
+    transition: transform var(--dur-base) var(--ease-out);
+  }
+
+  .disclosure[open] > summary::after {
+    transform: rotate(225deg);
+  }
+
+  .disclosure-body {
+    padding: 0 1.25rem 1.25rem;
+  }
+
+  /* Inbox */
+  .inbox-grid {
+    margin-top: 2rem;
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  @media (min-width: 1100px) {
+    .inbox-grid {
+      grid-template-columns: minmax(0, 1fr) 20rem;
+      align-items: start;
+    }
+  }
+
+  .dropzone {
+    display: flex;
+    min-height: 3.25rem;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-md);
+    border: 1.5px dashed var(--color-hairline);
+    color: var(--color-muted);
+    font-size: 0.875rem;
+    transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+  }
+
+  .dropzone:hover,
+  .dropzone:focus-within {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+    background: color-mix(in oklab, var(--color-accent) 6%, transparent);
+  }
+
+  .steps {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+  }
+
+  .steps li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--color-muted);
+  }
+
+  .step-num {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--color-accent) 16%, transparent);
+    color: var(--color-accent);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
   /* Stat tile */
   .tile {
     display: block;
@@ -893,12 +1024,14 @@
   }
 
   /* Desktop layout: sidebar + content column. */
+  /* Only the app shell (which owns a sidebar) goes two-column. Admin and sign-in
+     reuse .shell/.topbar as plain single-column pages. */
   @media (min-width: 900px) {
-    .shell {
+    .shell:has(> .sidebar) {
       display: grid;
       grid-template-columns: 15.5rem minmax(0, 1fr);
     }
-    .topbar {
+    .shell:has(> .sidebar) .topbar {
       display: none;
     }
   }
@@ -1444,6 +1577,216 @@
 
   .link-quiet:hover {
     color: var(--color-fg);
+  }
+
+
+  /* ==========================================================================
+     Sign-in
+     ========================================================================== */
+
+  .auth-page {
+    display: grid;
+    min-height: 100dvh;
+    background: var(--color-bg);
+    color: var(--color-fg);
+  }
+
+  .auth-aside {
+    display: none;
+  }
+
+  .auth-main {
+    display: grid;
+    place-items: center;
+    padding: 2rem 1.25rem;
+  }
+
+  @media (min-width: 900px) {
+    .auth-page {
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    }
+
+    .auth-aside {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 2rem;
+      padding: 2.5rem 3rem;
+      background:
+        radial-gradient(80% 60% at 0% 0%, color-mix(in oklab, var(--color-accent) 22%, transparent), transparent 70%),
+        var(--color-surface);
+      border-right: 1px solid var(--color-border);
+    }
+
+    .auth-brand-mobile {
+      display: none;
+    }
+  }
+
+  .auth-aside-title {
+    font-size: clamp(2rem, 3.2vw, 2.75rem);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    max-width: 18ch;
+  }
+
+  .auth-points {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    max-width: 28rem;
+  }
+
+  .auth-points li {
+    display: flex;
+    gap: 0.875rem;
+  }
+
+  .auth-points li > span:last-child {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--color-muted);
+  }
+
+  .auth-points strong {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-fg);
+  }
+
+  .auth-point-icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-md);
+    background: color-mix(in oklab, var(--color-accent) 16%, transparent);
+    color: var(--color-accent);
+  }
+
+  .auth-story-link {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-accent);
+  }
+
+  /* ==========================================================================
+     Billing
+     ========================================================================== */
+
+  .plan-grid {
+    margin-top: 2rem;
+    display: grid;
+    gap: 1rem;
+  }
+
+  @media (min-width: 900px) {
+    .plan-grid {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      align-items: start;
+    }
+  }
+
+  .plan-price {
+    font-family: var(--font-display);
+    font-size: 3rem;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .meter {
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--color-elevated);
+    box-shadow: var(--shadow-hairline);
+    overflow: hidden;
+  }
+
+  .meter > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--color-accent);
+    transition: width var(--dur-slow) var(--ease-out);
+  }
+
+  .check-list li {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+  }
+
+  .check-list svg {
+    margin-top: 0.2rem;
+    flex-shrink: 0;
+    color: var(--color-ok);
+  }
+
+  /* ==========================================================================
+     Admin
+     ========================================================================== */
+
+  .admin-tabs {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.1875rem;
+    border-radius: var(--radius-md);
+    background: var(--color-elevated);
+    box-shadow: var(--shadow-hairline);
+  }
+
+  .admin-tab {
+    padding: 0.4375rem 0.875rem;
+    border-radius: calc(var(--radius-md) - 3px);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-muted);
+    transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+  }
+
+  .admin-tab:hover {
+    color: var(--color-fg);
+  }
+
+  .admin-tab.is-on {
+    background: var(--color-accent);
+    color: var(--color-accent-fg);
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.875rem;
+  }
+
+  .data-table th {
+    text-align: left;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-subtle);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .data-table td {
+    padding: 0.75rem 0.875rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .data-table tbody tr:hover td {
+    background: var(--color-elevated);
   }
 
   /* ==========================================================================
