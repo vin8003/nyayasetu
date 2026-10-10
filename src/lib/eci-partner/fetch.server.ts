@@ -230,6 +230,7 @@ export async function fetchCnrToInboxImpl(
         proceeding: matter.proceeding,
         stage: matter.stage,
         orderText: order.body.slice(0, 40000),
+        orderDate: order.orderDate ?? null,
       });
       if (extracted?.ok) {
         directions = extracted.extract?.directions ?? [];

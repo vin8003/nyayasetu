@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { PRACTICE_AREAS, SIDES, OUTPUT_LANGS } from "./types.ts";
+import { bool, list, obj, str as jstr, strEnum } from "../ai/schema.ts";
 
 export const intakeSchema = z.object({
   facts: z.string().trim().min(40).max(20000),
@@ -75,4 +76,42 @@ export const memoSchema = z.object({
     }),
   ),
   unverified: arr(z.string()),
+});
+
+
+/** Structured-output schema for the research and follow-up memo. Mirrors memoSchema. */
+export const MEMO_JSON_SCHEMA = obj({
+  title: jstr("short cause title"),
+  causeTitle: jstr("Party v. Party (forum)"),
+  courtsConsulted: list(jstr()),
+  factsSummary: jstr("tight facts with dates"),
+  issues: list(obj({ issue: jstr(), framing: jstr("how the court would frame it") })),
+  statutes: list(obj({ name: jstr(), sections: jstr(), why: jstr(), url: jstr() })),
+  doctrines: list(obj({ name: jstr(), explanation: jstr(), leadingCase: jstr() })),
+  precedents: list(
+    obj({
+      title: jstr(),
+      citation: jstr(),
+      court: jstr(),
+      year: jstr(),
+      ratio: jstr("ratio decidendi from the judgment itself"),
+      factsOverlap: jstr("concrete facts shared with this matter"),
+      holding: jstr(),
+      howToUse: jstr("where and how to deploy it in the pleading or argument"),
+      url: jstr("exact URL of a page retrieved by web_search, or empty"),
+      binding: strEnum(["binding", "persuasive", "distinguishable"]),
+      verified: bool(),
+    }),
+  ),
+  pointsForCourt: list(
+    obj({ point: jstr(), likelyOutcome: jstr(), strength: strEnum(["strong", "moderate", "contested"]) }),
+  ),
+  argumentsFor: list(jstr()),
+  argumentsAgainst: list(jstr()),
+  counters: list(jstr("answer to the matching argumentsAgainst item")),
+  strategy: jstr(),
+  risks: list(jstr()),
+  fullMemo: jstr(),
+  sources: list(obj({ title: jstr(), url: jstr(), publisher: jstr() })),
+  unverified: list(jstr()),
 });

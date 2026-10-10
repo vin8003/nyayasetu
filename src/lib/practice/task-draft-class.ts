@@ -1,4 +1,6 @@
 import type { MatterBundle, Task } from "./types.ts";
+import { langRule, todayLine } from "../ai/context.ts";
+import { DRAFTING_CONVENTIONS } from "../ai/drafting.ts";
 
 export const TASK_DRAFT_KINDS = [
   "writtenStatement",
@@ -79,9 +81,9 @@ function partiesLine(bundle: MatterBundle): string {
   return parties.map((p) => `${p.role}: ${p.name}`).join("\n");
 }
 
-function lastOrderText(bundle: MatterBundle): string {
+function lastOrderText(bundle: MatterBundle, max = 1200): string {
   const order = bundle.orders.find((o) => o.confirmed) ?? bundle.orders[0];
-  return (order?.body ?? "").trim().slice(0, 1200);
+  return (order?.body ?? "").trim().slice(0, max);
 }
 
 export function draftFromBundle(
@@ -136,22 +138,7 @@ export function draftFromBundle(
 }
 
 export function kindInstruction(kind: TaskDraftKind): string {
-  switch (kind) {
-    case "writtenStatement":
-      return "Write a written statement: preliminary objections first, then a para-wise reply, then prayer and verification. Do not admit the claim.";
-    case "reply":
-      return "Write a without-prejudice reply to a notice. Para-wise. No demand. No verification.";
-    case "notice":
-      return "Write a legal notice: facts, demand, time to comply. No verification.";
-    case "petition":
-      return "Write a court petition: grounds, prayer, optional interim relief, verification. No invented citations.";
-    case "affidavit":
-      return "Write a sworn affidavit in the first person. Only facts the deponent can swear from this file. Dates and names from the papers.";
-    case "note":
-      return "Write a one-page court note / oral-argument brief. Issues, the authority to distinguish, the ask. No prayer clause required.";
-    default:
-      return "Write an interlocutory application: facts, the order being complied with, grounds, prayer.";
-  }
+  return DRAFTING_CONVENTIONS[kind];
 }
 
 export function filePrompt(
@@ -159,17 +146,21 @@ export function filePrompt(
   item: { title: string; sourceQuote: string; dueOn: string | null },
   kind: TaskDraftKind,
   lang: "en" | "hi",
+  now: Date = new Date(),
 ): string {
   const docs = (bundle.documents ?? [])
     .map((d) => `- ${d.title}`)
     .slice(0, 8)
     .join("\n");
-  const langLine =
-    lang === "hi"
-      ? "Output language: Hindi (keep case names, statutes and citations in English)."
-      : "Output language: English.";
+  const order = bundle.orders.find((o) => o.confirmed) ?? bundle.orders[0];
+  const directions = (order?.directions ?? [])
+    .map((d) => (typeof d === "string" ? d : d.text || d.quote || ""))
+    .filter(Boolean)
+    .map((d) => `- ${d}`)
+    .join("\n");
   return [
-    langLine,
+    langRule(lang),
+    todayLine(now),
     `Kind: ${kind}. ${kindInstruction(kind)}`,
     `Task: ${item.title}`,
     item.dueOn ? `Due: ${item.dueOn}` : "",
@@ -178,10 +169,12 @@ export function filePrompt(
     `Court: ${bundle.matter.courtName} ${bundle.matter.caseNumber}`,
     `Stage: ${bundle.matter.stage}. Our side: ${bundle.matter.ourSide}.`,
     `Parties:\n${partiesLine(bundle)}`,
-    `Notes:\n${(bundle.matter.notes ?? "").slice(0, 2500)}`,
-    `Last order:\n${lastOrderText(bundle) || "(none)"}`,
+    `Notes:\n${(bundle.matter.notes ?? "").slice(0, 5000)}`,
+    `Last order:\n${lastOrderText(bundle, 3000) || "(none)"}`,
+    directions ? `Directions in the last order:\n${directions}` : "",
     docs ? `Papers on file:\n${docs}` : "",
-    "Use only this file. Do not invent a citation, date, or party. If a fact is missing, say so in caveats.",
+    "Use only this file. Do not invent a citation, date, or party. Where the draft needs a fact the file does not have, put a bracketed placeholder like [date of service] in the draft and list it in caveats.",
+    "Draft the full document ready for the advocate to settle: numbered paragraphs, the matter's real names, dates and numbers, and the direction or task it responds to.",
     "This is research assistance, not legal advice.",
   ]
     .filter(Boolean)

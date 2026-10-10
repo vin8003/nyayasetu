@@ -4,7 +4,12 @@ import { authMiddleware } from "@/lib/auth/middleware";
 import { gateAi } from "@/lib/billing/store";
 import { looksLikeSample } from "./sample-ids";
 import { loadMatterBundle, saveAiDraftDocument } from "./store";
-import { pullJson } from "./hearing-brief";
+import { pullJson } from "@/lib/ai/json";
+import { INDIAN_LAW_CONTEXT } from "@/lib/ai/context";
+import { DEFAULT_FAST_MODEL, fastModel } from "@/lib/ai/models";
+import { sendWithFallback, withRepairTurn } from "@/lib/ai/retry";
+import { chatJsonFormat, list, obj, str } from "@/lib/ai/schema";
+import { XaiHttpError, chatText } from "@/lib/ai/xai-response";
 import {
   classifyTaskDraft,
   draftFromBundle,
@@ -24,8 +29,18 @@ export {
   type TaskDraftKind,
 } from "./task-draft-class";
 
-const MODEL = "grok-4.20-0309-non-reasoning";
-const DRAFT_TIMEOUT_MS = 45_000;
+const DRAFT_TIMEOUT_MS = 60_000;
+const DRAFT_MIN_RETRY_MS = 20_000;
+
+const DRAFT_JSON_SCHEMA = obj({
+  title: str(),
+  heading: str(),
+  parties: str(),
+  body: str(),
+  prayer: str(),
+  verification: str(),
+  caveats: list(str()),
+});
 
 const draftSchema = z.object({
   title: z.string().catch(""),
@@ -45,45 +60,58 @@ async function draftFromModel(
 ): Promise<TaskDraft | null> {
   const apiKey = process.env.XAI_API_KEY;
   if (!apiKey) return null;
+  const model = fastModel();
+  const messages = [
+    {
+      role: "system",
+      content: `You draft Indian court papers for an advocate from the case file. JSON only:
+{
+  "title": "short filing title",
+  "heading": "court, case number and cause title as on the file",
+  "parties": "role: name lines",
+  "body": "the full draft in numbered paragraphs",
+  "prayer": "prayer with lettered clauses, or empty",
+  "verification": "verification, or empty",
+  "caveats": ["what the advocate must check or fill in"]
+}
+${kindInstruction(kind)}
+Never invent a citation, URL, date, or party. Not legal advice.
+
+${INDIAN_LAW_CONTEXT}`,
+    },
+    { role: "user", content: filePrompt(bundle, item, kind, lang) },
+  ];
+  const deadline = Date.now() + DRAFT_TIMEOUT_MS;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), DRAFT_TIMEOUT_MS);
   try {
-    const res = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      signal: controller.signal,
-      body: JSON.stringify({
-        model: MODEL,
+    const send = async (body: object): Promise<string> => {
+      const res = await fetch("https://api.x.ai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        signal: controller.signal,
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new XaiHttpError(res.status, await res.text().catch(() => ""));
+      return chatText(await res.json());
+    };
+    const { value: parsed } = await sendWithFallback({
+      tag: "task-draft",
+      send,
+      build: ({ legacy, repair }) => ({
+        model: legacy ? DEFAULT_FAST_MODEL : model,
         temperature: 0.2,
-        max_tokens: 2500,
-        response_format: { type: "json_object" },
-        messages: [
-          {
-            role: "system",
-            content: `You draft Indian court papers for an advocate from the case file. JSON only:
-{
-  "title": "short filing title",
-  "heading": "court and cause title",
-  "parties": "role: name lines",
-  "body": "the draft, paragraphs",
-  "prayer": "prayer or empty",
-  "verification": "verification or empty",
-  "caveats": ["what to check"]
-}
-${kindInstruction(kind)}
-Never invent a citation or URL. Not legal advice.`,
-          },
-          { role: "user", content: filePrompt(bundle, item, kind, lang) },
-        ],
+        max_tokens: 4000,
+        response_format: legacy ? { type: "json_object" } : chatJsonFormat("task_draft", DRAFT_JSON_SCHEMA),
+        messages: withRepairTurn(messages, repair),
       }),
+      parse: (text) => draftSchema.parse(pullJson(text)),
+      deadline,
+      minRetryMs: DRAFT_MIN_RETRY_MS,
     });
-    if (!res.ok) return null;
-    const payload = await res.json();
-    const text = payload.choices?.[0]?.message?.content ?? "";
-    const parsed = draftSchema.parse(pullJson(text));
     if (!parsed.body.trim() && !parsed.heading.trim()) return null;
     return {
       kind,

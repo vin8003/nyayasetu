@@ -8,44 +8,20 @@ import { LETTER_KINDS, type Intake, type LegalLetter, type LegalMemo, type Lette
 import { assembleLetter } from "./letter-format.ts";
 import { parseLetterDraft } from "./letter-parse.ts";
 import {
+  LETTER_MIN_RETRY_MS,
   LETTER_SYSTEM,
   LETTER_TIMEOUT_MS,
   buildLetterUser,
   letterXaiBody,
 } from "./letter-prompt.ts";
-
-type XaiOutputItem = {
-  type?: string;
-  content?: Array<{
-    type?: string;
-    text?: string;
-  }>;
-};
-
-type XaiResponse = {
-  status?: string;
-  error?: { message?: string } | string | null;
-  output?: XaiOutputItem[];
-  output_text?: string;
-};
-
-function collectText(data: XaiResponse): string {
-  let text = data.output_text ?? "";
-  for (const item of data.output ?? []) {
-    if (item.type === "message" && Array.isArray(item.content)) {
-      for (const block of item.content) {
-        if (block.text) text += block.text;
-      }
-    }
-  }
-  return text;
-}
-
-function asErrorMessage(error: XaiResponse["error"]): string | null {
-  if (!error) return null;
-  if (typeof error === "string") return error;
-  return error.message ?? null;
-}
+import { fastModel } from "@/lib/ai/models";
+import { sendWithFallback } from "@/lib/ai/retry";
+import {
+  XaiHttpError,
+  asErrorMessage,
+  collectFromOutput,
+  type XaiResponse,
+} from "@/lib/ai/xai-response";
 
 const letterMemoSchema = memoSchema.extend({
   searchedQueries: z.array(z.string()).catch([]),
@@ -69,10 +45,11 @@ export const draftLetter = createServerFn({ method: "POST" })
       if (!apiKey) return { ok: false, error: "AI_UNAVAILABLE" };
 
       const user = buildLetterUser({ kind: data.kind, intake: data.intake, memo: data.memo });
+      const model = fastModel();
+      const deadline = Date.now() + LETTER_TIMEOUT_MS;
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), LETTER_TIMEOUT_MS);
-      let text = "";
-      try {
+      const post = async (body: object): Promise<string> => {
         const res = await fetch("https://api.x.ai/v1/responses", {
           method: "POST",
           headers: {
@@ -80,28 +57,31 @@ export const draftLetter = createServerFn({ method: "POST" })
             Authorization: `Bearer ${apiKey}`,
           },
           signal: controller.signal,
-          body: JSON.stringify(letterXaiBody(LETTER_SYSTEM, user)),
+          body: JSON.stringify(body),
         });
-        if (!res.ok) {
-          const body = await res.text().catch(() => "");
-          throw new Error(`xAI API error ${res.status}${body ? `: ${body.slice(0, 180)}` : ""}`);
-        }
+        if (!res.ok) throw new XaiHttpError(res.status, await res.text().catch(() => ""));
         const payload = (await res.json()) as XaiResponse;
         const err = asErrorMessage(payload.error);
         if (err) throw new Error(err);
-        text = collectText(payload);
-      } finally {
-        clearTimeout(timer);
-      }
+        return collectFromOutput(payload).text;
+      };
 
-      if (!text.trim()) return { ok: false, error: "PARSE" };
       let parsed;
       try {
-        parsed = parseLetterDraft(text);
+        ({ value: parsed } = await sendWithFallback({
+          tag: "letter",
+          send: post,
+          build: ({ legacy, repair }) => letterXaiBody(LETTER_SYSTEM, user, { model, legacy, repair }),
+          parse: parseLetterDraft,
+          deadline,
+          minRetryMs: LETTER_MIN_RETRY_MS,
+        }));
       } catch (err) {
         const message = err instanceof Error ? err.message : "";
         if (message === "PARSE") return { ok: false, error: "PARSE" };
         throw err;
+      } finally {
+        clearTimeout(timer);
       }
       const letter = assembleLetter({
         kind: data.kind,

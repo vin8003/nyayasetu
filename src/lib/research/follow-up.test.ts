@@ -77,6 +77,11 @@ describe("FOLLOWUP_SYSTEM", () => {
     for (const host of LEGAL_DOMAINS) assert.match(FOLLOWUP_SYSTEM, new RegExp(host.replace(/\./g, "\\.")));
   });
 
+  it("asks for a direct answer first and carries the 2024 criminal codes", () => {
+    assert.match(FOLLOWUP_SYSTEM, /first paragraph/);
+    assert.match(FOLLOWUP_SYSTEM, /BNSS/);
+  });
+
   it("pairs the same abort and token cap as a full research run", () => {
     assert.ok(FOLLOWUP_MAX_OUTPUT_TOKENS >= 8000);
     assert.ok(FOLLOWUP_TIMEOUT_MS >= 90_000);
@@ -105,6 +110,7 @@ describe("buildFollowUpUser", () => {
     assert.doesNotMatch(verifiedBlock, /Invented Case/);
     assert.match(user, /Unverified names[\s\S]*Invented Case/);
     assert.doesNotMatch(user, /web_search/);
+    assert.match(user, /Today's date \(India\)/);
   });
 
   it("followUpIntake keeps facts and court, and replaces the legal question", () => {

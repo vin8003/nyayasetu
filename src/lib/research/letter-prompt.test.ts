@@ -7,6 +7,8 @@ import {
   buildLetterUser,
   letterXaiBody,
 } from "./letter-prompt.ts";
+import { RESEARCH_MAX_OUTPUT_TOKENS, RESEARCH_TIMEOUT_MS } from "./prompt.ts";
+import { DEFAULT_FAST_MODEL } from "../ai/models.ts";
 import type { Intake, LegalMemo, Precedent } from "./types.ts";
 
 function caseRow(patch: Partial<Precedent> = {}): Precedent {
@@ -79,12 +81,28 @@ describe("LETTER_SYSTEM", () => {
 
 describe("letter budget and xAI body", () => {
   it("uses a shorter abort and token cap than research, with no tools key", () => {
-    assert.ok(LETTER_MAX_OUTPUT_TOKENS <= 4000);
-    assert.ok(LETTER_TIMEOUT_MS <= 45_000);
+    assert.ok(LETTER_MAX_OUTPUT_TOKENS < RESEARCH_MAX_OUTPUT_TOKENS);
+    assert.ok(LETTER_TIMEOUT_MS < RESEARCH_TIMEOUT_MS);
     const body = letterXaiBody(LETTER_SYSTEM, "user");
     assert.equal("tools" in body, false);
     assert.doesNotMatch(JSON.stringify(body), /web_search/);
     assert.equal(body.max_output_tokens, LETTER_MAX_OUTPUT_TOKENS);
+  });
+
+  it("asks for a strict JSON schema on the fast model, and falls back to json_object", () => {
+    const body = letterXaiBody(LETTER_SYSTEM, "user", { model: "grok-test" });
+    assert.equal(body.model, "grok-test");
+    assert.equal(body.text.format.type, "json_schema");
+    const legacy = letterXaiBody(LETTER_SYSTEM, "user", { model: "grok-test", legacy: true });
+    assert.equal(legacy.model, DEFAULT_FAST_MODEL);
+    assert.deepEqual(legacy.text, { format: { type: "json_object" } });
+  });
+
+  it("appends a repair turn with the previous reply when asked", () => {
+    const body = letterXaiBody(LETTER_SYSTEM, "user", { repair: { previous: "not json" } });
+    assert.equal(body.input.length, 3);
+    assert.equal(body.input[1].role, "assistant");
+    assert.match(body.input[2].content, /ONLY the JSON object/);
   });
 });
 
@@ -182,5 +200,32 @@ describe("buildLetterUser", () => {
     assert.doesNotMatch(user, /^- :/m);
     assert.doesNotMatch(user, /- {2,}482/);
     assert.match(user, /- BNSS 482: Anticipatory bail\./);
+  });
+});
+
+describe("letter drafting quality", () => {
+  it("carries Indian drafting conventions for the kind, the date, and the memo's counters", () => {
+    const ws = buildLetterUser({
+      kind: "writtenStatement",
+      intake,
+      memo: { ...memo, counters: ["Allegations are omnibus."] },
+      now: new Date("2026-03-01T06:00:00Z"),
+    });
+    assert.match(ws, /Order VIII/);
+    assert.match(ws, /Order VI Rule 15/);
+    assert.match(ws, /2026-03-01/);
+    assert.match(ws, /Allegations are omnibus\./);
+    const notice = buildLetterUser({ kind: "notice", intake, memo });
+    assert.match(notice, /s\.80 CPC/);
+  });
+
+  it("writes Hindi in Devanagari with citations kept in English", () => {
+    const user = buildLetterUser({ kind: "notice", intake: { ...intake, lang: "hi" }, memo });
+    assert.match(user, /Devanagari/);
+    assert.match(user, /citations/);
+  });
+
+  it("tells the model about the 2024 criminal codes", () => {
+    assert.match(LETTER_SYSTEM, /BNSS/);
   });
 });

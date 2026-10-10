@@ -191,6 +191,7 @@ export async function fetchIkCnrToInbox(
         proceeding: matter.proceeding,
         stage: matter.stage,
         orderText: order.body.slice(0, 40000),
+        orderDate: order.orderDate ?? null,
       });
       if (extracted?.ok && extracted.extract) {
         directions = extracted.extract.directions ?? [];

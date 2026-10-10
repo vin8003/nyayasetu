@@ -3,6 +3,10 @@ import { authMiddleware } from "@/lib/auth/middleware";
 import { gateAi } from "@/lib/billing/store";
 import { looksLikeSample } from "@/lib/practice/sample-ids";
 import { z } from "zod";
+import { fastModel } from "@/lib/ai/models";
+import { chatText, type ChatResponse } from "@/lib/ai/xai-response";
+
+const OCR_TIMEOUT_MS = 45_000;
 
 const uploadSchema = z.object({
   files: z
@@ -37,40 +41,52 @@ function isTextLike(mime: string, name: string) {
   );
 }
 
+export const OCR_PROMPT = `Transcribe this Indian legal document or photo exactly.
+- Copy every readable word in the original language and script (Devanagari stays Devanagari). Do not translate, summarise or correct.
+- Keep the layout: paragraph numbers, line breaks between paragraphs, headings, cause title, case number, dates and amounts exactly as written.
+- Tables: one row per line, cells separated by " | ".
+- Stamps, seals and handwriting: transcribe if legible, otherwise write [illegible].
+Return plain text only. No commentary.`;
+
 async function ocrImage(name: string, mime: string, base64: string): Promise<string> {
   const apiKey = process.env.XAI_API_KEY;
   if (!apiKey) return `[${name}: image attached, OCR unavailable]`;
-  const res = await fetch("https://api.x.ai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "grok-4.20-0309-non-reasoning",
-      max_tokens: 1200,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image_url",
-              image_url: { url: `data:${mime || "image/jpeg"};base64,${base64}` },
-            },
-            {
-              type: "text",
-              text: "Extract every readable word from this Indian legal document or photo. Return plain text only, in the original language. No commentary.",
-            },
-          ],
-        },
-      ],
-    }),
-  });
-  if (!res.ok) return `[${name}: could not read image]`;
-  const body = (await res.json()) as {
-    choices?: { message?: { content?: string } }[];
-  };
-  return body.choices?.[0]?.message?.content?.trim() || `[${name}: empty image text]`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), OCR_TIMEOUT_MS);
+  try {
+    const res = await fetch("https://api.x.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: fastModel(),
+        temperature: 0,
+        max_tokens: 4000,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "image_url",
+                image_url: { url: `data:${mime || "image/jpeg"};base64,${base64}`, detail: "high" },
+              },
+              { type: "text", text: OCR_PROMPT },
+            ],
+          },
+        ],
+      }),
+    });
+    if (!res.ok) return `[${name}: could not read image]`;
+    const body = (await res.json()) as ChatResponse;
+    return chatText(body).trim() || `[${name}: empty image text]`;
+  } catch {
+    return `[${name}: could not read image in time]`;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 async function pdfText(bytes: Uint8Array): Promise<string> {
@@ -103,7 +119,7 @@ export const extractUploads = createServerFn({ method: "POST" })
         }
         if (isImage(file.mime, file.name)) {
           const text = await ocrImage(file.name, file.mime, file.base64);
-          parts.push({ name: file.name, text: text.slice(0, 8000) });
+          parts.push({ name: file.name, text: text.slice(0, 12000) });
           continue;
         }
         parts.push({ name: file.name, text: `[${file.name}: unsupported type]` });

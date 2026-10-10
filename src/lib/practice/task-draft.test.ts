@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { classifyTaskDraft, draftFromBundle, formatTaskDraft } from "./task-draft-class.ts";
+import { classifyTaskDraft, draftFromBundle, filePrompt, formatTaskDraft, kindInstruction } from "./task-draft-class.ts";
 import { buildSampleChamber } from "./sample.ts";
 import { intakeFromMatter } from "./intake-from-matter.ts";
 import type { MatterBundle } from "./types.ts";
@@ -56,5 +56,33 @@ describe("draftFromBundle", () => {
     assert.match(text, /written statement|120/i);
     // intake still works on the same bundle so research and this draft share facts
     assert.match(intakeFromMatter(bundle, "en").facts, /Apex/);
+  });
+});
+
+describe("filePrompt", () => {
+  it("gives the model the date, the drafting conventions, and placeholders instead of invented facts", () => {
+    const pack = buildSampleChamber();
+    const matter = pack.matters.find((m) => m.title.includes("Apex"))!;
+    const bundle = {
+      matter,
+      hearings: [],
+      documents: [],
+      orders: (pack.orders ?? []).filter((o) => o.matterId === matter.id),
+      tasks: [],
+      deadlines: [],
+      timeline: [],
+    } as unknown as MatterBundle;
+    const item = { title: "Defendant WS", sourceQuote: "", dueOn: "2026-03-01" };
+    const prompt = filePrompt(bundle, item, "writtenStatement", "hi", new Date("2026-02-01T00:00:00Z"));
+    assert.match(prompt, /2026-02-01/);
+    assert.match(prompt, /Devanagari/);
+    assert.match(prompt, /Order VI Rule 15/);
+    assert.match(prompt, /bracketed placeholder/);
+  });
+
+  it("has a convention for every draft kind", () => {
+    for (const kind of ["writtenStatement", "reply", "notice", "petition", "application", "affidavit", "note"] as const) {
+      assert.ok(kindInstruction(kind).length > 60, kind);
+    }
   });
 });

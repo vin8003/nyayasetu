@@ -1,17 +1,22 @@
 import { z } from "zod";
 import type { LetterGround } from "./types.ts";
 
-const str = (max = 4000) => z.string().max(max).catch("");
+// Over-long fields are trimmed, not blanked: a thorough draft must not lose its facts section.
+const str = (max = 4000) =>
+  z
+    .string()
+    .catch("")
+    .transform((value) => value.slice(0, max));
 
 export const letterDraftSchema = z.object({
   heading: str(240),
   parties: str(4000),
-  facts: str(4000),
+  facts: str(8000),
   grounds: z
     .array(
       z.object({
         heading: str(240),
-        text: str(2000),
+        text: str(4000),
         citation: str(240),
         url: str(500),
       }),
