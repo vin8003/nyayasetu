@@ -16,7 +16,20 @@ import { stageDef } from "@/lib/practice/workflow";
 import { classifyTaskDraft } from "@/lib/practice/task-draft-class";
 import { readScroll } from "@/lib/scroll-memory";
 
-export const Route = createFileRoute("/")({ component: TodayPage });
+export const Route = createFileRoute("/")({
+  // Fetch on the server during SSR (the session cookie rides along) so the board
+  // is in the first HTML instead of waiting on hydration + a client round trip.
+  // Signed-out or failing loads resolve to null and fall back to the client fetch.
+  loader: async () => {
+    try {
+      return await getTodayBoard();
+    } catch {
+      return null;
+    }
+  },
+  staleTime: 30_000,
+  component: TodayPage,
+});
 
 const tileClass = "tile";
 const rowClass = "row";
@@ -36,7 +49,8 @@ export function TodayPage() {
   const { lang, onLang } = useChamberLang();
   const { user, isPending } = useCurrentUserState();
   const navigate = useNavigate();
-  const [board, setBoard] = useSwrState<TodayBoard | null>("today", user?.id, null);
+  const loaded = Route.useLoaderData() as TodayBoard | null;
+  const [board, setBoard] = useSwrState<TodayBoard | null>("today", user?.id, loaded);
   const [busy, setBusy] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
   const c = p(lang);
@@ -50,12 +64,17 @@ export function TodayPage() {
   }
 
   useEffect(() => {
+    if (loaded) setBoard(loaded);
+  }, [loaded]);
+
+  useEffect(() => {
+    if (isPending) return;
     if (!user) {
       setBoard(null);
       return;
     }
-    reload();
-  }, [user]);
+    if (!loaded) reload();
+  }, [user, isPending]);
 
   useEffect(() => {
     if (!board) return;
