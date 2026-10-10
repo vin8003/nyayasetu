@@ -1,12 +1,15 @@
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { BookOpen, CalendarDays, FolderOpen, Inbox, LayoutDashboard, MessageSquare, Search } from "lucide-react";
+import { BookOpen, CalendarDays, FolderOpen, Inbox, LayoutDashboard, Search, Shield } from "lucide-react";
 import { AuthChip } from "@/components/auth-chip";
 import { BillingBanner } from "@/components/billing-banner";
 import { CiteMark } from "@/components/cite-mark";
 import { CommandPalette, PaletteButton } from "@/components/command-palette";
 import { LangToggle } from "@/components/lang-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { adminNavFlag } from "@/lib/admin/store";
+import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { p } from "@/lib/practice/copy";
 import type { OutputLang } from "@/lib/research/types";
 import { cn } from "@/lib/utils";
@@ -16,7 +19,6 @@ const NAV = [
   { to: "/diary", key: "diary", icon: CalendarDays },
   { to: "/matters", key: "matters", icon: FolderOpen },
   { to: "/research", key: "research", icon: BookOpen },
-  { to: "/ask", key: "ask", icon: MessageSquare },
   { to: "/inbox", key: "inbox", icon: Inbox },
 ] as const;
 
@@ -32,13 +34,32 @@ export function AppShell({
   children: ReactNode;
 }) {
   const c = p(lang);
+  const { user } = useCurrentUserState();
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+    let cancel = false;
+    adminNavFlag()
+      .then((row) => {
+        if (!cancel) setIsAdmin(Boolean(row?.admin));
+      })
+      .catch(() => {
+        if (!cancel) setIsAdmin(false);
+      });
+    return () => {
+      cancel = true;
+    };
+  }, [user?.id]);
   const labels = {
     today: c.today,
     diary: c.diary,
     matters: c.matters,
     research: c.research,
-    ask: c.ask,
     inbox: c.inbox,
+    admin: c.admin,
   };
 
   return (
@@ -82,6 +103,14 @@ export function AppShell({
       </aside>
 
       <div className="shell-col">
+        {isAdmin ? (
+          <div className="desk-admin-bar no-print">
+            <Link to="/admin" className="top-admin">
+              <Shield className="size-4" aria-hidden />
+              {c.admin}
+            </Link>
+          </div>
+        ) : null}
         {/* Mobile: slim top bar. */}
         <header className="topbar no-print">
           <div className="topbar-inner">
@@ -90,6 +119,12 @@ export function AppShell({
               <span className="brand-word">{c.app}</span>
             </Link>
             <div className="topbar-actions">
+              {isAdmin ? (
+                <Link to="/admin" className="top-admin">
+                  <Shield className="size-4" aria-hidden />
+                  {c.admin}
+                </Link>
+              ) : null}
               <button
                 type="button"
                 className="icon-btn"

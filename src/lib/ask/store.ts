@@ -10,7 +10,7 @@ import { isSampleTitle } from "@/lib/practice/sample-ids";
 import { loadMatterBundle } from "@/lib/practice/store";
 import { hostAllowed } from "@/lib/research/verify";
 import { groundAskReply } from "./citations";
-import { ASK_TIMEOUT_MS, askResponsesBody, type AskCase } from "./prompt";
+import { ASK_TIMEOUT_MS, askResponsesBody, researchBrief, type AskCase } from "./prompt";
 import { chatTitle, type AskChatRow } from "./threads";
 
 const messageSchema = z.object({
@@ -22,6 +22,7 @@ const askInputSchema = z
   .object({
     matterId: z.string().trim().max(80).optional(),
     chatId: z.string().trim().max(80).optional(),
+    memoId: z.string().trim().max(80).optional(),
     lang: z.enum(["en", "hi"]),
     messages: z.array(messageSchema).min(1).max(12),
   })
@@ -114,7 +115,7 @@ async function openOwnedChat(
 async function saveTurn(
   sql: Awaited<ReturnType<typeof getSql>>,
   userId: string,
-  data: { matterId?: string; chatId?: string; messages: { role: string; content: string }[] },
+  data: { matterId?: string; chatId?: string; memoId?: string; messages: { role: string; content: string }[] },
   answer: string,
 ) {
   const latest = data.messages.at(-1);
@@ -128,8 +129,13 @@ async function saveTurn(
       matterTitle = String(matters[0]?.title ?? "");
     }
     await sql`
-      insert into ask_chats (id, user_id, matter_id, matter_title, title)
-      values (${chatId}, ${userId}, ${data.matterId ?? null}, ${matterTitle}, ${chatTitle(latest.content)})
+      insert into ask_chats (id, user_id, matter_id, matter_title, title, memo_id)
+      values (${chatId}, ${userId}, ${data.matterId ?? null}, ${matterTitle}, ${chatTitle(latest.content)}, ${data.memoId ?? ""})
+    `;
+  } else if (data.memoId) {
+    await sql`
+      update ask_chats set memo_id = ${data.memoId}
+      where id = ${chatId} and user_id = ${userId} and memo_id = ''
     `;
   }
   await sql`
@@ -168,7 +174,7 @@ export const openAskChat = createServerFn({ method: "GET" })
   .handler(async ({ context, data: id }) => {
     const sql = await getSql();
     const chats = await sql`
-      select id, matter_id, matter_title, title from ask_chats
+      select id, matter_id, matter_title, title, memo_id from ask_chats
       where id = ${id} and user_id = ${context.userId}
     `;
     const chat = chats[0];
@@ -183,6 +189,7 @@ export const openAskChat = createServerFn({ method: "GET" })
       matterId: chat.matter_id ? String(chat.matter_id) : null,
       matterTitle: String(chat.matter_title ?? ""),
       title: String(chat.title ?? ""),
+      memoId: String(chat.memo_id ?? ""),
       messages: messages
         .filter((row) => row.role === "user" || row.role === "assistant")
         .map((row) => ({ role: row.role as "user" | "assistant", content: String(row.content ?? "") })),
@@ -208,6 +215,28 @@ export const askChamber = createServerFn({ method: "POST" })
     const gated = await gateAi(context.userId, { demo });
     if (!gated.ok) return gated;
 
+    const sql = await getSql();
+    let memoId = data.memoId ?? "";
+    if (!memoId && data.chatId) {
+      const linked = await sql`select memo_id from ask_chats where id = ${data.chatId} and user_id = ${context.userId}`;
+      memoId = String(linked[0]?.memo_id ?? "");
+    }
+    let research = "";
+    const memoUrls: string[] = [];
+    if (memoId) {
+      const memos = await sql`select memo_json from memos where id = ${memoId} and user_id = ${context.userId}`;
+      const raw = memos[0]?.memo_json;
+      if (raw) {
+        try {
+          const brief = researchBrief(JSON.parse(String(raw)));
+          research = brief.text;
+          memoUrls.push(...brief.urls);
+        } catch {
+          research = "";
+        }
+      }
+    }
+
     const model = researchModel();
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), ASK_TIMEOUT_MS);
@@ -225,7 +254,8 @@ export const askChamber = createServerFn({ method: "POST" })
             lang: data.lang,
             file,
             messages: data.messages,
-            priorSources: priorSources(data.messages),
+            priorSources: [...priorSources(data.messages), ...memoUrls],
+            research,
           }),
         ),
       });
@@ -234,9 +264,10 @@ export const askChamber = createServerFn({ method: "POST" })
       const err = asErrorMessage(payload.error);
       if (err) return { ok: false, error: "ASK_FAILED" };
       const collected = collectFromOutput(payload);
-      const grounded = groundAskReply(collected.text, [...collected.urls, ...priorSources(data.messages)]);
+      const known = [...collected.urls, ...priorSources(data.messages), ...memoUrls];
+      const grounded = groundAskReply(collected.text, known);
       if (!grounded.text) return { ok: false, error: "ASK_FAILED" };
-      const chatId = await saveTurn(await getSql(), context.userId, data, grounded.text);
+      const chatId = await saveTurn(sql, context.userId, { ...data, memoId }, grounded.text);
       return { ok: true, text: grounded.text, chatId };
     } catch (err) {
       const message = err instanceof Error ? err.message : "";

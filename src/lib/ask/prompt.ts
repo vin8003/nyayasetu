@@ -94,17 +94,44 @@ export function askCaseContext(file: AskCase | null): string {
   return body.length <= ASK_MAX_CONTEXT ? body : `${body.slice(0, ASK_MAX_CONTEXT - 1)}…`;
 }
 
+export function researchBrief(memo: {
+  title?: string;
+  causeTitle?: string;
+  factsSummary?: string;
+  fullMemo?: string;
+  citationUrls?: string[];
+  sources?: { url?: string }[];
+}): { text: string; urls: string[] } {
+  const urls = [...(memo.citationUrls ?? []), ...(memo.sources ?? []).map((source) => source.url ?? "")]
+    .map((url) => url.trim())
+    .filter((url) => url.startsWith("http"));
+  const unique = [...new Set(urls)].slice(0, 12);
+  const text = [
+    "A research memo is already on this chat. Continue it. Do not restart the matter or contradict the memo.",
+    `Memo: ${clip(memo.title ?? "", 200)}`,
+    memo.causeTitle ? `Cause: ${clip(memo.causeTitle, 200)}` : "",
+    memo.factsSummary ? `Facts already found:\n${clip(memo.factsSummary, 900)}` : "",
+    memo.fullMemo ? `Memo:\n${clip(memo.fullMemo, 2400)}` : "",
+    unique.length ? `Retrieved for this memo. Reuse these URLs. Do not cite anything else unless you retrieve it now:\n${unique.join("\n")}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+  return { text, urls: unique };
+}
+
 export function askResponsesBody(opts: {
   model: string;
   lang: "en" | "hi";
   file: AskCase | null;
   messages: { role: "user" | "assistant"; content: string }[];
   priorSources?: string[];
+  research?: string;
 }) {
   const prior = (opts.priorSources ?? []).filter(Boolean);
   const preface = [
     todayLine(),
     askCaseContext(opts.file),
+    opts.research ?? "",
     prior.length
       ? `Already retrieved this chat. You may reuse these URLs. Do not cite anything else unless you retrieve it now:\n${prior.join("\n")}`
       : "",

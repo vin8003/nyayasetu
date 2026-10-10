@@ -98,6 +98,19 @@ export const adminSession = createServerFn({ method: "GET" })
     return { ok: true, email: admin.email, userId: admin.id };
   });
 
+/** Quiet flag for the chamber nav. Never throws for a signed-in non-admin. */
+export const adminNavFlag = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }): Promise<{ admin: boolean }> => {
+    try {
+      const { requireAdmin } = await import("./guard.server");
+      await requireAdmin(context.userId);
+      return { admin: true };
+    } catch {
+      return { admin: false };
+    }
+  });
+
 export const getAdminStats = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }): Promise<AdminStats> => {

@@ -12,7 +12,7 @@ import { CourtImportPanel, NewMatterModeToggle } from "@/components/court-import
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { p } from "@/lib/practice/copy";
 import { defaultStage, proceedingDef, stageDef } from "@/lib/practice/workflow";
-import { clearSampleChamber, listMatters, saveMatter, seedSampleChamber } from "@/lib/practice/store";
+import { clearSampleChamber, listMatters, saveMatter } from "@/lib/practice/store";
 import { isSampleTitle } from "@/lib/practice/sample-ids";
 import { PROCEEDINGS, OUR_SIDES, type Matter } from "@/lib/practice/types";
 import { useChamberLang } from "@/lib/practice/use-lang";
@@ -104,19 +104,6 @@ export function MattersIndexPage() {
 			setBusy(false);
 		}
 	}
-	async function loadSample() {
-		setBusy(true);
-		try {
-			const result = await seedSampleChamber();
-			setMatters(await listMatters());
-			toast.success(result?.replaced ? c.reloadedSample : c.sampleLoaded);
-		} catch (err) {
-			if (/unauthorized/i.test(String(err))) navigate({ to: "/login" });
-			else toast.error(c.sampleErr);
-		} finally {
-			setBusy(false);
-		}
-	}
 	const sampleOn = matters.some((m) => isSampleTitle(m.title));
 	const showDesk = Boolean(user) || isPending;
 	return jsxs(AppShell, {
@@ -177,26 +164,7 @@ export function MattersIndexPage() {
 							}, "exit")]
 						})
 					]
-				}) : jsxs("div", {
-					className: "panel panel-split stack-tight",
-					children: [
-						jsxs("div", {
-							children: [
-								jsx("div", { className: "text-sm font-medium", children: c.loadSample }),
-								jsx("p", { className: "row-meta", children: c.sampleHint })
-							]
-						}),
-						jsx("div", {
-							className: "panel-actions",
-							children: jsx(Button, {
-								type: "button",
-								disabled: busy,
-								onClick: () => void loadSample(),
-								children: c.loadSample
-							})
-						})
-					]
-				}),
+				}) : null,
 				open ? jsxs("div", {
 					className: "mt-8 grid gap-4 card card-pad",
 					children: [

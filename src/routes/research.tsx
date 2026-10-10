@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
 import { ResearchDesk } from "@/components/research-desk";
+import { ResearchModes } from "@/components/research-modes";
 import { useChamberLang } from "@/lib/practice/use-lang";
 
 export const Route = createFileRoute("/research")({
@@ -16,6 +17,7 @@ function ResearchPage() {
   const { matter, memo } = Route.useSearch();
   return (
     <AppShell lang={lang} onLang={onLang} active="research">
+      <ResearchModes lang={lang} mode="brief" matter={matter} memo={memo} />
       <ResearchDesk lang={lang} matterId={matter} memoId={memo} />
     </AppShell>
   );

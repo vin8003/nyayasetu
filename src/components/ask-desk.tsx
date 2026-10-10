@@ -35,6 +35,7 @@ const COPY = {
     chats: "Chats",
     newChat: "New chat",
     noChats: "No saved chats yet.",
+    continuing: "Continuing this research memo. Ask the next question here.",
   },
   hi: {
     title: "पूछें",
@@ -56,10 +57,21 @@ const COPY = {
     chats: "बातचीत",
     newChat: "नई बात",
     noChats: "अभी कोई सहेजी बात नहीं।",
+    continuing: "यह शोध मेमो जारी है। अगला सवाल यहीं पूछें।",
   },
 } as const;
 
-export function AskDesk({ lang, matterId, chatId }: { lang: OutputLang; matterId?: string; chatId?: string }) {
+export function AskDesk({
+  lang,
+  matterId,
+  chatId,
+  memoId,
+}: {
+  lang: OutputLang;
+  matterId?: string;
+  chatId?: string;
+  memoId?: string;
+}) {
   const c = COPY[lang];
   const navigate = useNavigate();
   const [matters, setMatters] = useState<MatterHit[]>([]);
@@ -70,7 +82,9 @@ export function AskDesk({ lang, matterId, chatId }: { lang: OutputLang; matterId
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const threadRef = useRef<HTMLDivElement>(null);
+  const [researchMemo, setResearchMemo] = useState(memoId ?? "");
   const savedId = useRef(chatId ?? "");
+  const linkedMemo = useRef(memoId ?? "");
   const groups = groupAskChats(chats, c.general);
 
   function refreshChats() {
@@ -91,6 +105,8 @@ export function AskDesk({ lang, matterId, chatId }: { lang: OutputLang; matterId
   }, [navigate]);
 
   useEffect(() => {
+    linkedMemo.current = memoId ?? "";
+    setResearchMemo(memoId ?? "");
     if (!chatId) {
       savedId.current = "";
       setMatter(matterId ?? "");
@@ -106,6 +122,10 @@ export function AskDesk({ lang, matterId, chatId }: { lang: OutputLang; matterId
         setMatter(chat.matterId ?? "");
         setTurns(chat.messages);
         setError("");
+        if (chat.memoId) {
+          linkedMemo.current = chat.memoId;
+          setResearchMemo(chat.memoId);
+        }
       })
       .catch((err) => {
         if (isUnauthorized(err)) navigate({ to: "/login" });
@@ -113,7 +133,7 @@ export function AskDesk({ lang, matterId, chatId }: { lang: OutputLang; matterId
     return () => {
       cancel = true;
     };
-  }, [chatId, matterId, navigate]);
+  }, [chatId, matterId, memoId, navigate]);
 
   useEffect(() => {
     const el = threadRef.current;
@@ -152,6 +172,7 @@ export function AskDesk({ lang, matterId, chatId }: { lang: OutputLang; matterId
         data: {
           matterId: matter || undefined,
           chatId: savedId.current || undefined,
+          memoId: linkedMemo.current || undefined,
           lang,
           messages: history,
         },
@@ -172,7 +193,10 @@ export function AskDesk({ lang, matterId, chatId }: { lang: OutputLang; matterId
       savedId.current = result.chatId;
       refreshChats();
       if (result.chatId && result.chatId !== chatId) {
-        navigate({ to: "/ask", search: { matter: matter || undefined, chat: result.chatId } });
+        navigate({
+          to: "/ask",
+          search: { matter: matter || undefined, chat: result.chatId, memo: linkedMemo.current || undefined },
+        });
       }
     } catch (err) {
       if (isUnauthorized(err)) {
@@ -237,6 +261,7 @@ export function AskDesk({ lang, matterId, chatId }: { lang: OutputLang; matterId
           <div>
             <h1>{sheetTitle}</h1>
             <p>{sheetMeta}</p>
+            {researchMemo ? <p>{c.continuing}</p> : null}
           </div>
         </header>
 

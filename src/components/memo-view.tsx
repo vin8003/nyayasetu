@@ -7,7 +7,6 @@ import { formatMemoBrief, formatMemoBriefHtml } from "@/lib/research/brief";
 import { httpHref } from "@/lib/research/verify";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Label, Textarea } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
 
 const TABS = ["brief", "issues", "cases", "law", "args", "sources"] as const;
@@ -85,7 +84,7 @@ export function MemoView({
   onBack,
   onSave,
   onDraft,
-  onFollowUp,
+  onContinue,
 }: {
   lang: OutputLang;
   memo: LegalMemo;
@@ -94,11 +93,10 @@ export function MemoView({
   onBack: () => void;
   onSave: () => void;
   onDraft: (kind: LetterKind) => void;
-  onFollowUp: (question: string) => void;
+  onContinue: () => void;
 }) {
   const c = t(lang);
   const [tab, setTab] = useState<Tab>("brief");
-  const [question, setQuestion] = useState("");
 
   const tabLabel: Record<Tab, string> = {
     brief: c.tabBrief,
@@ -411,35 +409,18 @@ export function MemoView({
         </div>
       ) : null}
 
-      <form
-        className="no-print card card-pad"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const next = question.trim();
-          if (next.length < 8) {
-            toast.error(c.followUpNeed);
-            return;
-          }
-          onFollowUp(next);
-          setQuestion("");
-        }}
-      >
-        <Label htmlFor="follow-up">{c.followUp}</Label>
-        <p className="mt-1 text-xs text-muted">{c.followUpHint}</p>
-        <Textarea
-          id="follow-up"
-          className="mt-3 min-h-24"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          maxLength={2000}
-          placeholder={lang === "hi" ? "अगर घायल डिस्चार्ज हो गया हो?" : "What if the injured has been discharged?"}
-        />
-        <div className="mt-3">
-          <Button type="submit" size="sm">
-            {c.followUpAsk}
+      <div className="no-print card card-pad">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-sm font-medium">{c.continueChat}</div>
+            <p className="mt-1 text-xs text-muted">{c.continueChatHint}</p>
+          </div>
+          <Button type="button" size="sm" onClick={onContinue}>
+            <MessageSquare className="size-4" aria-hidden />
+            {c.continueChat}
           </Button>
         </div>
-      </form>
+      </div>
 
       <article className="print-only print-paper rounded-xl bg-paper px-5 py-8 text-paper-ink">
         <pre className="whitespace-pre-wrap font-display text-[17px] leading-[1.65]">{formatMemoBrief(memo, lang)}</pre>

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { p } from "@/lib/practice/copy";
 import { useChamberLang } from "@/lib/practice/use-lang";
-import { clearSampleChamber, getTodayBoard, seedSampleChamber, setTaskStatus } from "@/lib/practice/store";
+import { clearSampleChamber, getTodayBoard, setTaskStatus } from "@/lib/practice/store";
 import type { TodayBoard } from "@/lib/practice/types";
 import { stageDef } from "@/lib/practice/workflow";
 import { classifyTaskDraft } from "@/lib/practice/task-draft-class";
@@ -84,21 +84,6 @@ export function TodayPage() {
     window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 40);
   }, [board]);
 
-  async function loadSample(refresh = false) {
-    setConfirmExit(false);
-    setBusy(true);
-    try {
-      const result = await seedSampleChamber();
-      await reload();
-      toast.success(refresh || result?.replaced ? c.reloadedSample : c.sampleLoaded);
-    } catch (err) {
-      if (isUnauthorized(err)) navigate({ to: "/login" });
-      else toast.error(c.sampleErr);
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function exitSample() {
     setBusy(true);
     try {
@@ -150,40 +135,13 @@ export function TodayPage() {
                     </Button>
                   </>
                 ) : (
-                  <>
-                    <Button
-                      variant="outline"
-                      onClick={() => void loadSample(true)}
-                      disabled={busy}
-                      type="button"
-                    >
-                      {c.reloadSample}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => setConfirmExit(true)}
-                      disabled={busy}
-                      type="button"
-                    >
-                      {c.clearSample}
-                    </Button>
-                  </>
+                  <Button variant="outline" onClick={() => setConfirmExit(true)} disabled={busy} type="button">
+                    {c.clearSample}
+                  </Button>
                 )}
               </div>
             </div>
-          ) : (
-            <div className="panel panel-split stack-tight">
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium">{c.loadSample}</div>
-                <p className="meta mt-1">{c.sampleHint}</p>
-              </div>
-              <div className="panel-actions">
-                <Button onClick={() => void loadSample()} disabled={busy} type="button">
-                  {c.loadSample}
-                </Button>
-              </div>
-            </div>
-          )}
+          ) : null}
 
           <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
             <button type="button" className={tileClass} onClick={() => scrollToId("hearings-today")}>

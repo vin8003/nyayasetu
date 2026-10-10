@@ -1416,6 +1416,33 @@
     min-width: 0;
   }
 
+  .top-admin {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    background: var(--color-fg);
+    padding: 0.35rem 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 650;
+    line-height: 1;
+    color: var(--color-bg);
+  }
+
+  .desk-admin-bar {
+    display: none;
+  }
+
+  @media (min-width: 900px) {
+    .desk-admin-bar {
+      display: flex;
+      justify-content: flex-end;
+      border-bottom: 1px solid var(--color-border);
+      background: color-mix(in oklab, var(--color-bg) 88%, transparent);
+      padding: 0.55rem 1.5rem;
+    }
+  }
+
   .topbar .seg {
     flex-shrink: 0;
   }
@@ -1554,7 +1581,7 @@
     margin-inline: auto;
     display: grid;
     max-width: 72rem;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .tab-link {
@@ -2428,6 +2455,11 @@
     background: white !important;
     color: black !important;
   }
+}
+
+.research-modes {
+  width: min(100%, 22rem);
+  margin-bottom: 1rem;
 }
 
 .ask-session {

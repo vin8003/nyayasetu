@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { askCaseContext, askResponsesBody, askSystem, clip, type AskCase } from "./prompt.ts";
+import { askCaseContext, askResponsesBody, askSystem, clip, researchBrief, type AskCase } from "./prompt.ts";
 
 const empty: AskCase = {
   title: "A v B",
@@ -31,6 +31,25 @@ test("ask searches the same legal domains as research", () => {
   assert.match(body.instructions, /Never invent a citation/);
   assert.match(askSystem("hi"), /Hindi/);
   assert.equal("temperature" in body, false);
+});
+
+test("a research memo is carried into the chat and its links stay reusable", () => {
+  const brief = researchBrief({
+    title: "Discharge",
+    fullMemo: "The injured person was discharged.",
+    citationUrls: ["https://indiankanoon.org/doc/123/"],
+  });
+  const body = askResponsesBody({
+    model: "grok-4.20-0309-reasoning",
+    lang: "en",
+    file: null,
+    research: brief.text,
+    priorSources: brief.urls,
+    messages: [{ role: "user", content: "What if custody is disputed?" }],
+  });
+  const preface = body.input[0]?.content ?? "";
+  assert.match(preface, /Continue it/);
+  assert.match(preface, /indiankanoon\.org\/doc\/123/);
 });
 
 test("unconfirmed orders stay labelled and notes are clipped", () => {

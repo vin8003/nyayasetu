@@ -85,7 +85,7 @@ export function CommandPalette({ lang }: { lang: OutputLang }) {
     { to: "/diary", label: c.diary, icon: CalendarDays },
     { to: "/matters", label: c.matterList, icon: FolderOpen },
     { to: "/research", label: c.research, icon: BookOpen },
-    { to: "/ask", label: c.ask, icon: MessageSquare },
+    { to: "/ask", label: `${c.research} · ${c.ask}`, icon: MessageSquare },
     { to: "/inbox", label: c.inbox, icon: Inbox },
   ];
 

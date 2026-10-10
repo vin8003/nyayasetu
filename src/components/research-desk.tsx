@@ -15,8 +15,6 @@ import { emptyIntake, type HistoryItem, type Intake, type LegalLetter, type Lega
 import { t } from "@/lib/research/copy";
 import { DRAFT_KEY } from "@/lib/research/draft";
 import { runResearch } from "@/lib/research/run";
-import { runFollowUp } from "@/lib/research/follow-up";
-import { followUpIntake } from "@/lib/research/follow-up-prompt";
 import { draftLetter } from "@/lib/research/letter";
 import { extractUploads } from "@/lib/research/files";
 import { deleteMemoRecord, getMemoRecord, listMemos, saveMemoRecord } from "@/lib/research/store";
@@ -270,54 +268,22 @@ export function ResearchDesk({ lang, matterId, memoId }) {
 			setView("desk");
 		}
 	}
-	async function startFollowUp(question) {
+	async function continueInChat() {
 		if (!memo) return;
 		if (!requireAccount()) return;
-		const q = String(question ?? "").trim();
-		if (q.length < 8) {
-			toast.error(c.followUpNeed);
-			return;
-		}
-		const token = ++runSeq.current;
-		setError(null);
-		setRunMode("followup");
-		setView("running");
 		try {
-			let parentId = savedId;
-			if (!parentId) {
-				const parent = await persist(intake, memo, null);
-				parentId = parent.id;
+			let id = savedId;
+			if (!id) {
+				const item = await persist(intake, memo);
+				id = item.id;
 			}
-			const result = await runFollowUp({ data: {
-				intake,
-				memo,
-				question: q
-			} });
-			if (token !== runSeq.current) return;
-			if (!result.ok) {
-				toast.error(mapAiError(result.error));
-				setView("memo");
-				return;
-			}
-			const priorTitle = memo.title;
-			const nextIntake = followUpIntake(intake, q);
-			try {
-				await persist(nextIntake, result.memo, parentId);
-			} catch (err) {
-				if (bounceIfUnauthorized(err)) return;
-			}
-			if (token !== runSeq.current) return;
-			setIntake(nextIntake);
-			setMemo(result.memo);
-			setMemoLang(nextIntake.lang);
-			setParentTitle(priorTitle);
-			setLetter(null);
-			setView("memo");
+			navigate({
+				to: "/ask",
+				search: { matter: matterId || undefined, memo: id }
+			});
 		} catch (err) {
-			if (token !== runSeq.current) return;
 			if (bounceIfUnauthorized(err)) return;
-			toast.error(err instanceof Error ? err.message : c.parseErr);
-			setView("memo");
+			toast.error(c.parseErr);
 		}
 	}
 	async function startDraft(kind) {
@@ -479,7 +445,7 @@ export function ResearchDesk({ lang, matterId, memoId }) {
 			},
 			onSave: () => void onSave(),
 			onDraft: (kind) => void startDraft(kind),
-			onFollowUp: (question) => void startFollowUp(question)
+			onContinue: () => void continueInChat()
 		}) : null,
 		view === "letter" && letter ? jsx(LetterView, {
 			lang,
