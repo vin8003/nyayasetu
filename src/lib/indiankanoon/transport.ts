@@ -7,6 +7,7 @@
  */
 import dns from "node:dns";
 import https from "node:https";
+import type { IkAttempt } from "./types.ts";
 
 const TIMEOUT_MS = 15000;
 const IK_HOST = "api.indiankanoon.org";
@@ -54,12 +55,14 @@ function errorCode(err: unknown): string {
   return "";
 }
 
+// Node 20+ (autoSelectFamily) calls lookup with { all: true } and expects an address array;
+// answering with a single string fails the socket with ERR_INVALID_IP_ADDRESS.
 function ipv4Lookup(
   hostname: string,
-  _options: unknown,
-  callback: (err: NodeJS.ErrnoException | null, address: string, family: number) => void,
+  options: { all?: boolean } | undefined,
+  callback: (...args: any[]) => void,
 ) {
-  dns.lookup(hostname, { family: 4, all: false }, callback);
+  dns.lookup(hostname, { family: 4, all: Boolean(options?.all) }, callback as never);
 }
 
 type Target = { hostname: string; servername: string };
@@ -137,7 +140,7 @@ function pause(ms: number) {
   });
 }
 
-export async function nodeHttpsFetch(input: string, init?: RequestInit): Promise<Response> {
+export async function nodeHttpsFetch(input: string, init?: RequestInit, trace?: IkAttempt[]): Promise<Response> {
   const url = new URL(input);
   if (url.protocol !== "https:" || url.hostname !== IK_HOST) {
     return Promise.reject(new Error("CiteBench only opens api.indiankanoon.org over HTTPS."));
@@ -148,24 +151,45 @@ export async function nodeHttpsFetch(input: string, init?: RequestInit): Promise
     targets.push({ hostname: ip, servername: IK_HOST });
   }
 
+  const attempts: IkAttempt[] = trace ?? [];
+  const record = (via: string, round: number, started: number, outcome: { status?: number; err?: unknown }) => {
+    const entry: IkAttempt = { via, round, ms: Date.now() - started };
+    if (outcome.status !== undefined) entry.status = outcome.status;
+    if (outcome.err !== undefined) entry.code = errorCode(outcome.err) || (outcome.err as Error)?.name || "ERROR";
+    attempts.push(entry);
+  };
+
   let last: unknown;
   for (let round = 0; round < 2; round += 1) {
     if (round > 0) await pause(400);
     for (const target of targets) {
+      const via = target.hostname === IK_HOST ? "host" : target.hostname;
+      const started = Date.now();
       try {
-        return await once(input, init, target);
+        const res = await once(input, init, target);
+        record(via, round, started, { status: res.status });
+        return res;
       } catch (err) {
+        record(via, round, started, { err });
         last = err;
       }
     }
   }
 
+  const started = Date.now();
   try {
     const headers = headerMap(init);
     headers["User-Agent"] = headers["User-Agent"] || UA;
     headers.Accept = headers.Accept || "application/json";
-    return await fetch(input, { ...init, headers, redirect: "follow" });
+    const res = await fetch(input, { ...init, headers, redirect: "follow" });
+    record("fetch", 2, started, { status: res.status });
+    return res;
   } catch (err) {
+    record("fetch", 2, started, { err });
+    // One line per total failure so hosting logs show where and how every attempt died.
+    console.warn(
+      `[ik] all attempts failed ${url.pathname}: ${attempts.map((a) => `${a.via}#${a.round}=${a.code ?? a.status}/${a.ms}ms`).join(" ")}`,
+    );
     const code = errorCode(last) || errorCode(err) || "ECONNRESET";
     const wrapped = new Error(`fetch failed ${code}`);
     (wrapped as Error & { cause: unknown }).cause = last ?? err;

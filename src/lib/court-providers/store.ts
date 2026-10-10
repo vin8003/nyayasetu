@@ -76,3 +76,23 @@ export const setActiveCourtProvider = createServerFn({ method: "POST" })
     await writeActiveProviderId(data.id, admin.id);
     return adminProviderStatus();
   });
+
+/** Admin-only live connection test. One billed search + at most one billed document. */
+export const diagnoseIndianKanoon = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((input: unknown) =>
+    z
+      .object({
+        cnr: z.string().trim().max(40),
+      })
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const { requireAdmin } = await import("@/lib/admin/guard.server");
+    await requireAdmin(context.userId);
+    const { isValidCnr, normalizeCnr } = await import("@/lib/eci-partner/cnr");
+    if (!isValidCnr(data.cnr)) throw new Error("CNR must be 16 letters and digits.");
+    const { resolveIkApiToken } = await import("@/lib/indiankanoon/key");
+    const { diagnoseIk } = await import("@/lib/indiankanoon/diagnose.server");
+    return diagnoseIk({ cnr: normalizeCnr(data.cnr), token: resolveIkApiToken() });
+  });
