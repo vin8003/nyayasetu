@@ -17,7 +17,7 @@ Uploads (`extractUploads`, max 3 files):
 
 | Kind | Behaviour |
 |---|---|
-| Image | xAI chat OCR (`grok-4.20-0309-non-reasoning`) |
+| Image | xAI chat OCR (fast model, layout-preserving transcription) |
 | PDF | `unpdf` text extract (text layer). Image-only scans usually come back empty |
 | Text-like | UTF-8 decode |
 
@@ -75,14 +75,23 @@ From a matter, these drafts also save as `matter_documents`. Standalone desk dra
 
 ## Models (as of this tree)
 
-| Job | API | Model |
+All calls stay on xAI (`https://api.x.ai/v1/responses` or `/v1/chat/completions`, `XAI_API_KEY` bearer). Model IDs live in `src/lib/ai/models.ts` and can be overridden per deploy.
+
+| Job | API | Model (env override) |
 |---|---|---|
-| Research memo | Responses + `web_search` | `grok-4.20-0309-non-reasoning` |
-| Follow-up memo | Responses + `web_search` | `grok-4.20-0309-non-reasoning` |
-| Notice / reply / petition / written statement | Responses, no tools | `grok-4.20-0309-non-reasoning` |
-| Image OCR | Chat Completions | `grok-4.20-0309-non-reasoning` |
-| Draft this (task / deadline) | Chat Completions, no search | `grok-4.20-0309-non-reasoning` |
-| Order extract, hearing brief | Chat Completions | `grok-4.5` |
+| Research memo | Responses + `web_search` (≤6 searches) | `grok-4.20-0309-reasoning` (`XAI_MODEL_RESEARCH`) |
+| Follow-up memo | Responses + `web_search` (≤6 searches) | `grok-4.20-0309-reasoning` (`XAI_MODEL_RESEARCH`) |
+| Notice / reply / petition / written statement | Responses, no tools | `grok-4.20-0309-non-reasoning` (`XAI_MODEL_FAST`) |
+| Image OCR | Chat Completions | `grok-4.20-0309-non-reasoning` (`XAI_MODEL_FAST`) |
+| Draft this (task / deadline) | Chat Completions, no search | `grok-4.20-0309-non-reasoning` (`XAI_MODEL_FAST`) |
+| Order extract, hearing brief, chronology | Chat Completions | `grok-4.20-0309-non-reasoning` (`XAI_MODEL_FAST`) |
+
+### Output quality and reliability (`src/lib/ai/`)
+
+- **Structured outputs.** Every JSON call asks for a strict `json_schema` (built with `ai/schema.ts`); zod still parses leniently behind it.
+- **Shared context.** `ai/context.ts` adds today's date (IST), the BNS/BNSS/BSA changeover and precedent rules, and one Hindi rule (Devanagari, citations in English). `ai/drafting.ts` holds the Indian drafting conventions used by both letters and task drafts.
+- **Fallback.** `sendWithFallback` (`ai/retry.ts`) wraps each call site's own `fetch`. If xAI rejects the upgraded request shape (400/404/422), it resends once with the pre-upgrade body (non-reasoning model, `json_object`). If the reply does not parse, it asks once more for only the JSON object, if the time budget allows.
+- **Eval.** `XAI_API_KEY=... node --experimental-strip-types scripts/ai-eval.mjs` runs the sample briefs through research and petition drafting, legacy vs current, and prints parse rate, retries, latency and verified precedents. It spends API credit.
 
 ## Error strings the UI maps
 
@@ -93,4 +102,4 @@ From a matter, these drafts also save as `matter_documents`. Standalone desk dra
 
 ## Tests
 
-`src/lib/research/*.test.ts` covers parse fail-closed, stamp, letter chrome (including written statement), cite filter, letter budget (no `tools` key), prompt kind-lines, follow-up intake/prompt, and history search grouping.
+`src/lib/ai/*.test.ts` covers model env fallback, JSON pulling, and the fallback/repair policy. `src/lib/research/*.test.ts` covers parse fail-closed, stamp, letter chrome (including written statement), cite filter, letter budget (no `tools` key), prompt kind-lines, follow-up intake/prompt, and history search grouping.

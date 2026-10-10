@@ -2,61 +2,26 @@ import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { gateAi } from "@/lib/billing/store";
 import { looksLikeSample } from "@/lib/practice/sample";
-import { courtById } from "./courts";
 import { intakeSchema } from "./schema";
 import type { Intake, LegalMemo } from "./types";
-import { LEGAL_DOMAINS } from "./legal-domains.ts";
 import { parseResearchMemo } from "./parse-memo.ts";
 import {
   RESEARCH_MAX_OUTPUT_TOKENS,
+  RESEARCH_MIN_RETRY_MS,
   RESEARCH_SYSTEM,
   RESEARCH_TIMEOUT_MS,
+  buildResearchUser,
+  webResearchXaiBody,
 } from "./prompt.ts";
 import { stampPrecedents } from "./verify.ts";
-
-type XaiOutputItem = {
-  type?: string;
-  action?: { query?: string; type?: string };
-  queries?: string[];
-  content?: Array<{
-    type?: string;
-    text?: string;
-    annotations?: Array<{ url?: string }>;
-  }>;
-};
-
-type XaiResponse = {
-  status?: string;
-  error?: { message?: string } | string | null;
-  output?: XaiOutputItem[];
-  citations?: string[];
-  output_text?: string;
-};
-
-function collectFromOutput(data: XaiResponse): { text: string; queries: string[]; urls: string[] } {
-  const queries: string[] = [];
-  const urls = new Set<string>(data.citations ?? []);
-  let text = data.output_text ?? "";
-  for (const item of data.output ?? []) {
-    if (item.action?.query) queries.push(item.action.query);
-    if (Array.isArray(item.queries)) queries.push(...item.queries);
-    if (item.type === "message" && Array.isArray(item.content)) {
-      for (const block of item.content) {
-        if (block.text) text += block.text;
-        for (const ann of block.annotations ?? []) {
-          if (ann.url) urls.add(ann.url);
-        }
-      }
-    }
-  }
-  return { text, queries: [...new Set(queries)], urls: [...urls] };
-}
-
-function asErrorMessage(error: XaiResponse["error"]): string | null {
-  if (!error) return null;
-  if (typeof error === "string") return error;
-  return error.message ?? null;
-}
+import { researchModel } from "@/lib/ai/models";
+import { sendWithFallback } from "@/lib/ai/retry";
+import {
+  XaiHttpError,
+  asErrorMessage,
+  collectFromOutput,
+  type XaiResponse,
+} from "@/lib/ai/xai-response";
 
 export const runResearch = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
@@ -68,21 +33,14 @@ export const runResearch = createServerFn({ method: "POST" })
       const apiKey = process.env.XAI_API_KEY;
       if (!apiKey) return { ok: false, error: "AI_UNAVAILABLE" };
 
-      const court = courtById(data.courtId);
-      const user = [
-        `Output language: ${data.lang === "hi" ? "Hindi (keep case names, citations and statutes in English)" : "English"}.`,
-        `Forum: ${court.name} / ${court.nameHi} (${court.kind}). Always search Supreme Court as well if the forum is not SC.`,
-        `Practice area: ${data.area}. Perspective: ${data.side}.`,
-        "",
-        `Legal question:\n${data.query.trim() || "(frame issues from the facts)"}`,
-        "",
-        `Facts:\n${data.facts.trim()}`,
-      ].join("\n");
-
+      const user = buildResearchUser(data);
+      const model = researchModel();
+      const deadline = Date.now() + RESEARCH_TIMEOUT_MS;
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), RESEARCH_TIMEOUT_MS);
-      let collected: { text: string; queries: string[]; urls: string[] };
-      try {
+      const queries: string[] = [];
+      const urls: string[] = [];
+      const post = async (body: object): Promise<string> => {
         const res = await fetch("https://api.x.ai/v1/responses", {
           method: "POST",
           headers: {
@@ -90,43 +48,44 @@ export const runResearch = createServerFn({ method: "POST" })
             Authorization: `Bearer ${apiKey}`,
           },
           signal: controller.signal,
-          body: JSON.stringify({
-            model: "grok-4.20-0309-non-reasoning",
-            instructions: RESEARCH_SYSTEM,
-            input: [{ role: "user", content: user }],
-            tools: [
-              {
-                type: "web_search",
-                filters: { allowed_domains: [...LEGAL_DOMAINS] },
-              },
-            ],
-            temperature: 0.2,
-            max_output_tokens: RESEARCH_MAX_OUTPUT_TOKENS,
-            max_tool_calls: 3,
-            text: { format: { type: "json_object" } },
-          }),
+          body: JSON.stringify(body),
         });
-        if (!res.ok) {
-          const body = await res.text().catch(() => "");
-          throw new Error(`xAI API error ${res.status}${body ? `: ${body.slice(0, 180)}` : ""}`);
-        }
+        if (!res.ok) throw new XaiHttpError(res.status, await res.text().catch(() => ""));
         const payload = (await res.json()) as XaiResponse;
         const err = asErrorMessage(payload.error);
         if (err) throw new Error(err);
-        collected = collectFromOutput(payload);
-      } finally {
-        clearTimeout(timer);
-      }
-
-      if (!collected.text.trim()) return { ok: false, error: "PARSE" };
+        const collected = collectFromOutput(payload);
+        queries.push(...collected.queries);
+        urls.push(...collected.urls);
+        return collected.text;
+      };
       let parsed;
       try {
-        parsed = parseResearchMemo(collected.text);
+        ({ value: parsed } = await sendWithFallback({
+          tag: "research",
+          send: post,
+          build: ({ legacy, repair }) =>
+            webResearchXaiBody({
+              model,
+              instructions: RESEARCH_SYSTEM,
+              user,
+              maxOutputTokens: RESEARCH_MAX_OUTPUT_TOKENS,
+              schemaName: "research_memo",
+              legacy,
+              repair,
+            }),
+          parse: parseResearchMemo,
+          deadline,
+          minRetryMs: RESEARCH_MIN_RETRY_MS,
+        }));
       } catch (err) {
         const message = err instanceof Error ? err.message : "";
         if (message === "PARSE") return { ok: false, error: "PARSE" };
         throw err;
+      } finally {
+        clearTimeout(timer);
       }
+      const collected = { queries: [...new Set(queries)], urls: [...new Set(urls)] };
       const stamped = stampPrecedents(parsed.precedents, collected.urls, parsed.unverified);
       const memo: LegalMemo = {
         ...parsed,

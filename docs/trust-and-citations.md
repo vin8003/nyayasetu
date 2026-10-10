@@ -12,7 +12,7 @@ CiteBench’s research value is **honest cites**, not a longer memo. A precedent
 - `judgments.ecourts.gov.in`
 - `sci.gov.in`
 
-Research `web_search` is filtered to these domains (`max_tool_calls: 3`). The app does **not** GET judgment HTML from Indian Kanoon (or anywhere else) to double-check a cite.
+Research `web_search` is filtered to these domains (`max_tool_calls: 6`; 3 on the legacy fallback request). The app does **not** GET judgment HTML from Indian Kanoon (or anywhere else) to double-check a cite.
 
 ## Stamp after the model
 
