@@ -64,23 +64,14 @@ export function AdminLayout() {
             <CiteMark className="size-7" />
             <span className="brand-word">Admin</span>
           </Link>
-          <nav className="flex items-center gap-1 text-sm">
-            <Link
-              to="/admin"
-              className={cn("link-quiet px-2 py-1", pathname === "/admin" && "text-accent")}
-            >
+          <nav className="admin-tabs" aria-label="Admin">
+            <Link to="/admin" className={cn("admin-tab", pathname === "/admin" && "is-on")}>
               Stats
             </Link>
-            <Link
-              to="/admin/users"
-              className={cn("link-quiet px-2 py-1", pathname.startsWith("/admin/users") && "text-accent")}
-            >
+            <Link to="/admin/users" className={cn("admin-tab", pathname.startsWith("/admin/users") && "is-on")}>
               Users
             </Link>
-            <Link
-              to="/admin/providers"
-              className={cn("link-quiet px-2 py-1", pathname.startsWith("/admin/providers") && "text-accent")}
-            >
+            <Link to="/admin/providers" className={cn("admin-tab", pathname.startsWith("/admin/providers") && "is-on")}>
               Providers
             </Link>
           </nav>
@@ -96,7 +87,7 @@ export function AdminLayout() {
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-5xl px-4 py-8">
+      <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
         <Outlet />
       </main>
     </div>

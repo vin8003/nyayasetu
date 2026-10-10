@@ -67,9 +67,11 @@ function ExternalLink({
   children: ReactNode;
 }) {
   const safe = httpHref(href);
-  if (!safe) return <span className={className}>{children}</span>;
+  // Long URLs have no natural break points; let them wrap instead of widening the page.
+  const wrap = cn("max-w-full [overflow-wrap:anywhere]", className);
+  if (!safe) return <span className={wrap}>{children}</span>;
   return (
-    <a href={safe} target="_blank" rel="noreferrer" className={className}>
+    <a href={safe} target="_blank" rel="noreferrer" className={wrap}>
       {children}
     </a>
   );
@@ -130,64 +132,84 @@ export function MemoView({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="no-print flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <button
-            type="button"
-            onClick={onBack}
-            className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted hover:text-fg"
-          >
-            <ArrowLeft className="size-4" />
-            {c.back}
-          </button>
-          <h1 className="section-title font-medium tracking-tight sm:text-3xl">{memo.title}</h1>
-          {memo.causeTitle ? <p className="mt-1 text-sm text-muted">{memo.causeTitle}</p> : null}
-          {parentTitle ? (
-            <p className="mt-2 text-xs text-accent">
-              {c.followUpOf} · {parentTitle}
-            </p>
-          ) : null}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={() => onDraft("notice")}>
-            <Scale className="size-3.5" />
-            {c.draftNotice}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => onDraft("reply")}>
-            <MessageSquare className="size-3.5" />
-            {c.draftReply}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => onDraft("petition")}>
-            <ScrollText className="size-3.5" />
-            {c.draftPetition}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => onDraft("writtenStatement")}>
-            <FileText className="size-3.5" />
-            {c.draftWrittenStatement}
-          </Button>
-          <Button variant="outline" size="sm" onClick={copyMemo}>
-            <Copy className="size-3.5" />
-            {c.copyMemo}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => window.print()}>
-            <Printer className="size-3.5" />
-            {c.print}
-          </Button>
-          <Button variant="outline" size="sm" onClick={downloadWord}>
-            <FileDown className="size-3.5" />
-            {c.wordBrief}
-          </Button>
-          <Button variant="paper" size="sm" onClick={onSave} disabled={saved}>
-            <Bookmark className="size-3.5" />
-            {saved ? c.saved : c.save}
-          </Button>
+      <div className="no-print">
+        <button
+          type="button"
+          onClick={onBack}
+          className="mb-3 inline-flex min-h-9 items-center gap-1.5 text-sm text-muted hover:text-fg"
+        >
+          <ArrowLeft className="size-4" />
+          {c.back}
+        </button>
+        <h1 className="page-title !mt-0 max-w-3xl !text-[clamp(1.75rem,3.4vw,2.5rem)]">{memo.title}</h1>
+        {memo.causeTitle ? <p className="mt-2 text-sm text-muted">{memo.causeTitle}</p> : null}
+        {parentTitle ? (
+          <p className="mt-2 text-xs text-accent">
+            {c.followUpOf} · {parentTitle}
+          </p>
+        ) : null}
+
+        <dl className="glance">
+          <div>
+            <dt>{lang === "hi" ? "मुद्दे" : "Issues"}</dt>
+            <dd>{memo.issues.length}</dd>
+          </div>
+          <div>
+            <dt>{lang === "hi" ? "नज़ीरें" : "Cases"}</dt>
+            <dd>{memo.precedents.length}</dd>
+          </div>
+          <div>
+            <dt>{lang === "hi" ? "सत्यापित" : "Verified"}</dt>
+            <dd className="text-ok">{memo.precedents.filter((p) => p.verified).length}</dd>
+          </div>
+          <div>
+            <dt>{lang === "hi" ? "जाँचें" : "To check"}</dt>
+            <dd className={memo.unverified.length > 0 ? "text-warn" : ""}>{memo.unverified.length}</dd>
+          </div>
+        </dl>
+
+        <div className="memo-toolbar">
+          <div className="toolbar-group" role="group" aria-label={lang === "hi" ? "ड्राफ्ट" : "Draft"}>
+            <span className="toolbar-label">{lang === "hi" ? "ड्राफ्ट" : "Draft"}</span>
+            <Button variant="outline" size="sm" onClick={() => onDraft("notice")}>
+              <Scale className="size-3.5" />
+              {c.draftNotice}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => onDraft("reply")}>
+              <MessageSquare className="size-3.5" />
+              {c.draftReply}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => onDraft("petition")}>
+              <ScrollText className="size-3.5" />
+              {c.draftPetition}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => onDraft("writtenStatement")}>
+              <FileText className="size-3.5" />
+              {c.draftWrittenStatement}
+            </Button>
+          </div>
+          <div className="toolbar-group toolbar-end">
+            <Button variant="ghost" size="sm" onClick={copyMemo} title={c.copyMemo}>
+              <Copy className="size-3.5" />
+              <span className="toolbar-text">{c.copyMemo}</span>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => window.print()} title={c.print}>
+              <Printer className="size-3.5" />
+              <span className="toolbar-text">{c.print}</span>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={downloadWord} title={c.wordBrief}>
+              <FileDown className="size-3.5" />
+              <span className="toolbar-text">{c.wordBrief}</span>
+            </Button>
+            <Button size="sm" onClick={onSave} disabled={saved}>
+              <Bookmark className="size-3.5" />
+              {saved ? c.saved : c.save}
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div
-        role="tablist"
-        className="no-print -mx-4 flex gap-1 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0"
-      >
+      <div role="tablist" className="tabs no-print">
         {TABS.map((id) => (
           <button
             key={id}
@@ -195,10 +217,7 @@ export function MemoView({
             role="tab"
             aria-selected={tab === id}
             onClick={() => setTab(id)}
-            className={cn(
-              "h-10 shrink-0 rounded-md px-3 text-sm font-medium transition-[background-color,color] duration-150",
-              tab === id ? "bg-elevated text-fg" : "text-muted hover:text-fg",
-            )}
+            className={cn("tab", tab === id && "is-on")}
           >
             {tabLabel[id]}
           </button>
@@ -360,7 +379,7 @@ export function MemoView({
                   <ExternalLink href={s.url} className="text-sm text-accent hover:text-fg">
                     {s.title || s.url}
                   </ExternalLink>
-                  <p className="mt-0.5 text-xs text-muted">
+                  <p className="mt-0.5 text-xs text-muted [overflow-wrap:anywhere]">
                     {s.publisher}
                     {s.url ? ` · ${s.url.replace(/^https?:\/\//, "")}` : ""}
                   </p>

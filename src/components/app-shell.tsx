@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { BookOpen, CalendarDays, FolderOpen, Inbox, LayoutDashboard } from "lucide-react";
+import { BookOpen, CalendarDays, FolderOpen, Inbox, LayoutDashboard, Search } from "lucide-react";
 import { AuthChip } from "@/components/auth-chip";
 import { BillingBanner } from "@/components/billing-banner";
 import { CiteMark } from "@/components/cite-mark";
+import { CommandPalette, PaletteButton } from "@/components/command-palette";
 import { LangToggle } from "@/components/lang-toggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { p } from "@/lib/practice/copy";
 import type { OutputLang } from "@/lib/research/types";
 import { cn } from "@/lib/utils";
@@ -39,36 +41,72 @@ export function AppShell({
 
   return (
     <div className="shell">
-      <header className="topbar no-print">
-        <div className="topbar-inner">
-          <Link to="/" className="brand" aria-label={c.app}>
-            <CiteMark className="size-7" />
-            <span className="brand-word hidden sm:inline">{c.app}</span>
-          </Link>
+      <CommandPalette lang={lang} />
 
-          <nav className="nav" aria-label={c.app}>
-            {NAV.map((item) => (
+      {/* Desktop: persistent sidebar. */}
+      <aside className="sidebar no-print">
+        <Link to="/" className="brand" aria-label={c.app}>
+          <CiteMark className="size-8" />
+          <span className="brand-word">{c.app}</span>
+        </Link>
+
+        <PaletteButton lang={lang} />
+
+        <nav className="side-nav" aria-label={c.app}>
+          {NAV.map((item) => {
+            const Icon = item.icon;
+            const on = active === item.key;
+            return (
               <Link
                 key={item.to}
                 to={item.to}
-                className={cn("nav-link", active === item.key && "is-on")}
-                aria-current={active === item.key ? "page" : undefined}
+                className={cn("side-link", on && "is-on")}
+                aria-current={on ? "page" : undefined}
               >
+                <Icon className="size-[1.1rem]" aria-hidden />
                 {labels[item.key]}
               </Link>
-            ))}
-          </nav>
+            );
+          })}
+        </nav>
 
-          <div className="topbar-actions">
+        <div className="side-foot">
+          <div className="side-tools">
             <LangToggle lang={lang} onLang={onLang} ariaLabel={c.langLabel} />
-            <AuthChip lang={lang} />
+            <ThemeToggle lang={lang} />
           </div>
+          <AuthChip lang={lang} />
         </div>
-      </header>
+      </aside>
 
-      <BillingBanner lang={lang} />
+      <div className="shell-col">
+        {/* Mobile: slim top bar. */}
+        <header className="topbar no-print">
+          <div className="topbar-inner">
+            <Link to="/" className="brand" aria-label={c.app}>
+              <CiteMark className="size-7" />
+              <span className="brand-word">{c.app}</span>
+            </Link>
+            <div className="topbar-actions">
+              <button
+                type="button"
+                className="icon-btn"
+                aria-label={lang === "hi" ? "खोजें" : "Search"}
+                onClick={() => window.dispatchEvent(new Event("cb:palette"))}
+              >
+                <Search className="size-4" aria-hidden />
+              </button>
+              <ThemeToggle lang={lang} />
+              <LangToggle lang={lang} onLang={onLang} ariaLabel={c.langLabel} />
+              <AuthChip lang={lang} />
+            </div>
+          </div>
+        </header>
 
-      <main className="shell-main">{children}</main>
+        <BillingBanner lang={lang} />
+
+        <main className="shell-main">{children}</main>
+      </div>
 
       <nav className="tabbar no-print" aria-label={c.app}>
         <div className="tabbar-inner">

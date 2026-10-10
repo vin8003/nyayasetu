@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useEffect, useState } from "react";
+import { useSwrState } from "@/lib/swr";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
@@ -15,7 +16,20 @@ import { stageDef } from "@/lib/practice/workflow";
 import { classifyTaskDraft } from "@/lib/practice/task-draft-class";
 import { readScroll } from "@/lib/scroll-memory";
 
-export const Route = createFileRoute("/")({ component: TodayPage });
+export const Route = createFileRoute("/")({
+  // Fetch on the server during SSR (the session cookie rides along) so the board
+  // is in the first HTML instead of waiting on hydration + a client round trip.
+  // Signed-out or failing loads resolve to null and fall back to the client fetch.
+  loader: async () => {
+    try {
+      return await getTodayBoard();
+    } catch {
+      return null;
+    }
+  },
+  staleTime: 0,
+  component: TodayPage,
+});
 
 const tileClass = "tile";
 const rowClass = "row";
@@ -35,7 +49,8 @@ export function TodayPage() {
   const { lang, onLang } = useChamberLang();
   const { user, isPending } = useCurrentUserState();
   const navigate = useNavigate();
-  const [board, setBoard] = useState<TodayBoard | null>(null);
+  const loaded = Route.useLoaderData() as TodayBoard | null;
+  const [board, setBoard] = useSwrState<TodayBoard | null>("today", user?.id, loaded);
   const [busy, setBusy] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
   const c = p(lang);
@@ -49,12 +64,17 @@ export function TodayPage() {
   }
 
   useEffect(() => {
+    if (loaded) setBoard(loaded);
+  }, [loaded]);
+
+  useEffect(() => {
+    if (isPending) return;
     if (!user) {
       setBoard(null);
       return;
     }
-    reload();
-  }, [user]);
+    if (!loaded) reload();
+  }, [user, isPending]);
 
   useEffect(() => {
     if (!board) return;
@@ -184,17 +204,33 @@ export function TodayPage() {
             </button>
           </div>
 
+          {!empty && board ? (
+            <div className="quick-actions">
+              <Button asChild>
+                <Link to="/matters">{c.newMatter}</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/inbox">{c.inbox}</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/research">{c.research}</Link>
+              </Button>
+            </div>
+          ) : null}
+
           {empty ? (
             <div className="empty stack-tight max-w-lg">
               <p className="empty-text">{c.emptyToday}</p>
               <div className="mt-4">
-                <Button asChild variant="outline">
+                <Button asChild>
                   <Link to="/matters">{c.newMatter}</Link>
                 </Button>
               </div>
             </div>
           ) : null}
 
+          {!empty ? (
+          <>
           <section id="hearings-today" className="stack">
             <h2 className="section-title">{c.hearingsToday}</h2>
             {board && board.hearingsToday.length > 0 ? (
@@ -318,6 +354,8 @@ export function TodayPage() {
               <p className="section-note">{c.openTasks}: 0</p>
             )}
           </section>
+          </>
+          ) : null}
 
           {board && board.unconfirmedOrders.length > 0 ? (
             <section id="orders" className="stack">
@@ -353,6 +391,8 @@ export function TodayPage() {
             </section>
           ) : null}
 
+          {!empty ? (
+          <>
           <section id="stale" className="stack">
             <h2 className="section-title">{c.stale}</h2>
             {board && board.staleMatters.length > 0 ? (
@@ -377,6 +417,8 @@ export function TodayPage() {
               <p className="section-note">{c.stale}: 0</p>
             )}
           </section>
+          </>
+          ) : null}
 
           <p className="fineprint mt-14 max-w-2xl">{c.disclaimer}</p>
         </div>

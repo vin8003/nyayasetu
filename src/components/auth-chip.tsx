@@ -26,11 +26,14 @@ export function AuthChip({ lang }: { lang: OutputLang }) {
   const label = user.displayName ?? user.primaryEmail ?? "Account";
   const signOutLabel = signingOut ? c.signingOut : c.signOut;
   return (
-    <div className="flex items-center gap-0.5">
-      <span className="hidden max-w-[7.5rem] truncate text-xs text-muted lg:inline">{label}</span>
+    <div className="auth-chip">
+      <span className="auth-name">
+        <span className="auth-avatar" aria-hidden>{label.trim().charAt(0).toUpperCase()}</span>
+        <span className="min-w-0 truncate">{label}</span>
+      </span>
       <Link
         to="/billing"
-        className="link-quiet hidden h-9 items-center px-2 text-xs sm:inline-flex"
+        className="link-quiet auth-link"
       >
         {b(lang).plan}
       </Link>
@@ -43,10 +46,10 @@ export function AuthChip({ lang }: { lang: OutputLang }) {
         }}
         aria-label={signOutLabel}
         title={signOutLabel}
-        className="link-quiet inline-flex size-11 items-center justify-center disabled:opacity-50 sm:h-9 sm:w-auto sm:px-2 sm:size-auto"
+        className="link-quiet auth-link auth-out disabled:opacity-50"
       >
-        <LogOut className="size-4 sm:hidden" aria-hidden />
-        <span className="hidden text-xs sm:inline">{signOutLabel}</span>
+        <LogOut className="size-4 shrink-0" aria-hidden />
+        <span className="auth-out-text">{signOutLabel}</span>
       </button>
     </div>
   );

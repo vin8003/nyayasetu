@@ -201,7 +201,7 @@ export function InboxPage() {
 		children: [
 			isPending ? jsx("div", { className: "skeleton h-40" }) : null,
 			!isPending && !user ? jsx(GuestPanel, { lang }) : null,
-			!isPending && user ? jsxs("div", { children: [
+			!isPending && user ? jsxs("div", { className: "stagger-in", children: [
 				jsx("h1", {
 					className: "page-title",
 					children: c.inbox
@@ -214,8 +214,13 @@ export function InboxPage() {
 					className: "mt-2 max-w-xl text-xs text-subtle",
 					children: c.trustNote
 				}),
+				jsxs("div", {
+					className: "inbox-grid",
+					children: [jsxs("div", {
+						className: "min-w-0 space-y-4",
+						children: [
 				matters.length > 0 ? jsx("div", {
-					className: "mt-6 max-w-xl",
+					className: "min-w-0",
 					children: jsx(EciCnrFetch, {
 						lang,
 						matterId,
@@ -247,7 +252,7 @@ export function InboxPage() {
 					]
 				}) : jsxs("form", {
 					onSubmit: onAnalyse,
-					className: "mt-8 space-y-4",
+					className: "card card-pad space-y-4",
 					children: [
 						jsxs(Field, { children: [jsx(Label, {
 							htmlFor: "m",
@@ -276,7 +281,7 @@ export function InboxPage() {
 							jsx(Hint, { children: c.inboxHint })
 						] }),
 						jsxs("label", {
-							className: "inline-flex h-10 cursor-pointer items-center text-sm text-accent hover:underline",
+							className: "dropzone",
 							children: [c.uploadPaper, jsx("input", {
 								type: "file",
 								className: "sr-only",
@@ -290,10 +295,49 @@ export function InboxPage() {
 						}),
 						jsx(Button, {
 							type: "submit",
+							size: "lg",
+							className: "w-full sm:w-auto",
 							disabled: busy,
 							children: busy ? c.analysing : c.analyseOrder
 						})
 					]
+				})
+						]
+					}), jsxs("aside", {
+						className: "min-w-0 space-y-4",
+						children: [
+							jsxs("section", {
+								className: "card card-pad",
+								children: [
+									jsx("h2", { className: "section-title text-lg", children: lang === "hi" ? "कैसे काम करता है" : "How it works" }),
+									jsx("ol", {
+										className: "steps",
+										children: (lang === "hi"
+											? ["आदेश पेस्ट करें या फ़ाइल डालें", "मॉडल निर्देश और अगली तारीख निकालता है", "आप जाँचकर पुष्टि करते हैं"]
+											: ["Paste an order or drop a file", "The model pulls out directions and the next date", "You review and confirm"]).map((t, i) => jsxs("li", { children: [jsx("span", { className: "step-num", children: i + 1 }), jsx("span", { children: t })] }, t))
+									})
+								]
+							}),
+							queue.length > 0 && !extract ? jsxs("section", {
+								className: "card card-pad",
+								children: [
+									jsxs("h2", {
+										className: "section-title text-lg",
+										children: [c.ordersAction, jsx("span", { className: "ml-2 rounded-full bg-accent/15 px-2 py-0.5 align-middle font-sans text-xs font-semibold text-accent", children: queue.length })]
+									}),
+									jsx("ul", {
+										className: "row-list",
+										children: queue.map((q) => jsx("li", { children: jsx("button", {
+											type: "button",
+											className: "row w-full text-left",
+											onClick: () => openPending(q),
+											children: q.matterTitle || c.orders
+										}) }, q.id))
+									})
+								]
+							}) : null
+						]
+					})]
 				}),
 				extract ? jsxs("section", {
 					className: "mt-10 space-y-4 card card-pad",
@@ -407,25 +451,6 @@ export function InboxPage() {
 							})]
 						})
 					]
-				}) : null,
-				queue.length > 0 && !extract ? jsxs("section", {
-					className: "mt-8",
-					children: [jsxs("p", {
-						className: "text-sm text-muted",
-						children: [
-							c.ordersAction,
-							": ",
-							queue.length
-						]
-					}), jsx("ul", {
-						className: "row-list",
-						children: queue.map((q) => jsx("li", { children: jsx("button", {
-							type: "button",
-							className: "row w-full text-left",
-							onClick: () => openPending(q),
-							children: q.matterTitle || c.orders
-						}) }, q.id))
-					})]
 				}) : null
 			] }) : null
 		]

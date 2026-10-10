@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useSwrState } from "@/lib/swr";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { jsx, jsxs } from "react/jsx-runtime";
 import { AppShell } from "@/components/app-shell";
@@ -11,17 +12,31 @@ import { listHearingsRange } from "@/lib/practice/store";
 import type { Hearing } from "@/lib/practice/types";
 import { useChamberLang } from "@/lib/practice/use-lang";
 
-export const Route = createFileRoute("/diary")({ component: DiaryPage });
+export const Route = createFileRoute("/diary")({
+	loader: async () => {
+		try {
+			return await listHearingsRange();
+		} catch {
+			return null;
+		}
+	},
+	staleTime: 0,
+	component: DiaryPage
+});
 
 export function DiaryPage() {
 	const { lang, onLang } = useChamberLang();
 	const { user, isPending } = useCurrentUserState();
 	const navigate = useNavigate();
-	const [hearings, setHearings] = useState<Hearing[]>([]);
+	const loaded = Route.useLoaderData();
+	const [hearings, setHearings] = useSwrState<Hearing[]>("diary", user?.id, loaded ?? []);
+	useEffect(() => {
+		if (loaded) setHearings(loaded);
+	}, [loaded]);
 	const c = p(lang);
 	const today = todayISO();
 	useEffect(() => {
-		if (!user) return;
+		if (!user || loaded) return;
 		listHearingsRange().then(setHearings).catch((err) => {
 			if (/unauthorized/i.test(String(err))) navigate({ to: "/login" });
 		});
@@ -33,7 +48,7 @@ export function DiaryPage() {
 		children: [
 			isPending ? jsx("div", { className: "skeleton h-40" }) : null,
 			!isPending && !user ? jsx(GuestPanel, { lang }) : null,
-			!isPending && user ? jsxs("div", { children: [
+			!isPending && user ? jsxs("div", { className: "stagger-in", children: [
 				jsx("h1", {
 					className: "page-title",
 					children: c.diary
@@ -46,7 +61,7 @@ export function DiaryPage() {
 					className: "section-note stack-tight",
 					children: c.emptyDiary
 				}) : jsxs("div", {
-					className: "space-y-10",
+					className: "mt-10 space-y-10",
 					children: [
 						["today", hearings.filter((h) => h.listedOn === today)],
 						["upcoming", hearings.filter((h) => h.listedOn > today)],

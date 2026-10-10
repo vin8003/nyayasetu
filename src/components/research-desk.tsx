@@ -404,15 +404,15 @@ export function ResearchDesk({ lang, matterId, memoId }) {
 					className: "flex flex-wrap items-end justify-between gap-3",
 					children: [jsxs("div", { children: [
 						jsx("p", {
-							className: "text-xs font-medium uppercase tracking-[0.2em] text-accent",
+							className: "eyebrow",
 							children: c.kicker
 						}),
 						jsx("h1", {
-							className: "mt-3 max-w-2xl font-display text-4xl font-medium tracking-tight sm:text-5xl",
+							className: "page-title max-w-2xl",
 							children: c.hero
 						}),
 						jsx("p", {
-							className: "mt-3 max-w-xl text-base text-muted sm:text-lg",
+							className: "page-lead",
 							children: c.tagline
 						})
 					] }), jsx(Button, {

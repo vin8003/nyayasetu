@@ -105,7 +105,7 @@ export function IntakeForm({
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] lg:gap-10">
       <form
-        className="flex flex-col gap-5"
+        className="card card-pad flex flex-col gap-6"
         onSubmit={(e) => {
           e.preventDefault();
           onSubmit();
@@ -123,7 +123,17 @@ export function IntakeForm({
             placeholder={c.factsPlaceholder}
             disabled={busy}
           />
-          <Hint>{c.factsHint}</Hint>
+          <div className="flex items-start justify-between gap-3">
+            <Hint>{c.factsHint}</Hint>
+            {files.length === 0 ? (
+              <span
+                className={"shrink-0 text-xs tabular-nums " + (intake.facts.trim().length >= 40 ? "text-ok" : "text-subtle")}
+                aria-live="polite"
+              >
+                {intake.facts.trim().length}/40
+              </span>
+            ) : null}
+          </div>
         </Field>
 
         <div className="lg:hidden">
@@ -134,7 +144,7 @@ export function IntakeForm({
           <span className="block text-sm font-medium tracking-tight text-fg/90">{c.files}</span>
           <label
             htmlFor="docs"
-            className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md bg-elevated px-3.5 text-sm text-muted shadow-hairline hover:text-fg"
+            className="dropzone gap-2"
           >
             <Paperclip className="size-4 shrink-0" />
             PDF · JPG · TXT
@@ -199,7 +209,7 @@ export function IntakeForm({
           />
         </Field>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 border-t border-border pt-6 sm:grid-cols-2">
           <Field>
             <Label htmlFor="court">{c.court}</Label>
             <Select
@@ -265,10 +275,12 @@ export function IntakeForm({
           </p>
         ) : null}
 
-        <Button type="submit" size="lg" disabled={busy} className="w-full touch-manipulation sm:w-auto sm:self-start">
-          <Search className="size-4" />
-          {busy ? c.researching : c.research}
-        </Button>
+        <div className="form-actions">
+          <Button type="submit" size="lg" disabled={busy} className="w-full touch-manipulation sm:w-auto">
+            <Search className="size-4" />
+            {busy ? c.researching : c.research}
+          </Button>
+        </div>
       </form>
 
       <aside className="flex flex-col gap-6">
