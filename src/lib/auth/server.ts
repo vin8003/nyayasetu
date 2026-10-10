@@ -36,6 +36,7 @@ import { getCookie } from "@tanstack/react-start/server";
 import { randomBytes } from "node:crypto";
 import { Pool } from "pg";
 import { ensureDbReady, getPglite } from "../db";
+import { resolveDatabaseUrl } from "../../../scripts/database-url.mjs";
 import { emailAndPasswordEnabled } from "./email-password";
 import { GATE_PROVIDER_ID, gateIdentitySessions } from "./gate-session.server";
 import { GROK_PROVIDERS } from "./providers";
@@ -162,7 +163,7 @@ const trustedOrigins: string[] = [
   ...extraPublicHosts.flatMap((host) => originsForHost(host)),
 ];
 
-const databaseUrl = env("DATABASE_URL");
+const databaseUrl = resolveDatabaseUrl();
 
 // Static broker OAuth endpoints (skip OIDC discovery on every sign-in / callback).
 // Discovery would cost an extra network hop to the broker before the popup can

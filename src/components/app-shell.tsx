@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { BookOpen, CalendarDays, FolderOpen, Inbox, LayoutDashboard, Search } from "lucide-react";
+import { BookOpen, CalendarDays, FolderOpen, Inbox, LayoutDashboard, MessageSquare, Search } from "lucide-react";
 import { AuthChip } from "@/components/auth-chip";
 import { BillingBanner } from "@/components/billing-banner";
 import { CiteMark } from "@/components/cite-mark";
@@ -16,6 +16,7 @@ const NAV = [
   { to: "/diary", key: "diary", icon: CalendarDays },
   { to: "/matters", key: "matters", icon: FolderOpen },
   { to: "/research", key: "research", icon: BookOpen },
+  { to: "/ask", key: "ask", icon: MessageSquare },
   { to: "/inbox", key: "inbox", icon: Inbox },
 ] as const;
 
@@ -36,6 +37,7 @@ export function AppShell({
     diary: c.diary,
     matters: c.matters,
     research: c.research,
+    ask: c.ask,
     inbox: c.inbox,
   };
 

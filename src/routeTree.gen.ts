@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AskRouteImport } from './routes/ask'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as DiaryRouteImport } from './routes/diary'
 import { Route as InboxRouteImport } from './routes/inbox'
@@ -39,6 +40,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AskRoute = AskRouteImport.update({
+  id: '/ask',
+  path: '/ask',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BillingRoute = BillingRouteImport.update({
@@ -140,6 +146,7 @@ const ApiBillingRazorpayRoute = ApiBillingRazorpayRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/ask': typeof AskRoute
   '/billing': typeof BillingRoute
   '/diary': typeof DiaryRoute
   '/inbox': typeof InboxRoute
@@ -162,6 +169,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ask': typeof AskRoute
   '/billing': typeof BillingRoute
   '/diary': typeof DiaryRoute
   '/inbox': typeof InboxRoute
@@ -184,6 +192,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/ask': typeof AskRoute
   '/billing': typeof BillingRoute
   '/diary': typeof DiaryRoute
   '/inbox': typeof InboxRoute
@@ -209,6 +218,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/ask'
     | '/billing'
     | '/diary'
     | '/inbox'
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/ask'
     | '/billing'
     | '/diary'
     | '/inbox'
@@ -252,6 +263,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/ask'
     | '/billing'
     | '/diary'
     | '/inbox'
@@ -276,6 +288,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  AskRoute: typeof AskRoute
   BillingRoute: typeof BillingRoute
   DiaryRoute: typeof DiaryRoute
   InboxRoute: typeof InboxRoute
@@ -303,6 +316,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ask': {
+      id: '/ask'
+      path: '/ask'
+      fullPath: '/ask'
+      preLoaderRoute: typeof AskRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/billing': {
@@ -487,6 +507,7 @@ const MattersRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  AskRoute: AskRoute,
   BillingRoute: BillingRoute,
   DiaryRoute: DiaryRoute,
   InboxRoute: InboxRoute,

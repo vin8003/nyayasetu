@@ -8,6 +8,7 @@ import {
 import { paymentsLive } from "./live";
 import { verifyOrderCheckoutSignature, verifyWebhookSignature } from "./signatures";
 import type { CheckoutSession } from "./types";
+import { resolveDatabaseUrl } from "../../../scripts/database-url.mjs";
 
 export { paymentsLive } from "./live";
 export type { CheckoutSession } from "./types";
@@ -54,7 +55,7 @@ function env(name: string): string {
  */
 export function subscribeMode(): SubscribeMode {
   if (paymentsLive()) return "razorpay";
-  if (!env("DATABASE_URL")) return "preview";
+  if (!resolveDatabaseUrl()) return "preview";
   return "unset";
 }
 

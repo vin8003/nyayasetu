@@ -171,9 +171,9 @@ export default defineConfig(({ command, isPreview }) => ({
           nitro({
             preset: "vercel",
             // Indian Kanoon resets connections from US datacenter IPs; run the
-            // function in Mumbai. Override with VERCEL_FUNCTION_REGION.
+            // function in Mumbai. Hard-pin Mumbai. Do not read VERCEL_FUNCTION_REGION.
             vercel: {
-              functions: { regions: [process.env.VERCEL_FUNCTION_REGION || "bom1"] },
+              functions: { regions: ["bom1"] },
             },
             serverDir: "./server",
             inlineDynamicImports: true,

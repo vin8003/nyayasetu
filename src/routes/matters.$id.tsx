@@ -386,6 +386,11 @@ export function MatterDetailPage() {
               {c.attachResearch}
             </Link>
           </Button>
+          <Button asChild variant="outline">
+            <Link to="/ask" search={{ matter: matter.id }}>
+              {c.askMatter}
+            </Link>
+          </Button>
           {isSampleTitle(matter.title) ? (
             confirmExit ? (
               <>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Command } from "cmdk";
-import { BookOpen, CalendarDays, FolderOpen, FolderPlus, Inbox, LayoutDashboard, Moon, Search } from "lucide-react";
+import { BookOpen, CalendarDays, FolderOpen, FolderPlus, Inbox, LayoutDashboard, MessageSquare, Moon, Search } from "lucide-react";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { listMatters } from "@/lib/practice/store";
 import type { OutputLang } from "@/lib/research/types";
@@ -21,6 +21,7 @@ const COPY = {
     diary: "Diary",
     matterList: "All matters",
     research: "Research",
+    ask: "Ask",
     inbox: "Inbox",
     newMatter: "New matter",
     theme: "Toggle light / dark theme",
@@ -36,6 +37,7 @@ const COPY = {
     diary: "डायरी",
     matterList: "सभी मामले",
     research: "शोध",
+    ask: "पूछें",
     inbox: "इनबॉक्स",
     newMatter: "नया मामला",
     theme: "लाइट / डार्क थीम बदलें",
@@ -83,6 +85,7 @@ export function CommandPalette({ lang }: { lang: OutputLang }) {
     { to: "/diary", label: c.diary, icon: CalendarDays },
     { to: "/matters", label: c.matterList, icon: FolderOpen },
     { to: "/research", label: c.research, icon: BookOpen },
+    { to: "/ask", label: c.ask, icon: MessageSquare },
     { to: "/inbox", label: c.inbox, icon: Inbox },
   ];
 
