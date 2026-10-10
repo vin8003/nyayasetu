@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useEffect, useState } from "react";
+import { useSwrState } from "@/lib/swr";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { jsx, jsxs } from "react/jsx-runtime";
@@ -40,7 +41,7 @@ export function MattersIndexPage() {
 	const { lang, onLang } = useChamberLang();
 	const { user, isPending } = useCurrentUserState();
 	const navigate = useNavigate();
-	const [matters, setMatters] = useState([]);
+	const [matters, setMatters] = useSwrState("matters", user?.id, []);
 	const [draft, setDraft] = useState(emptyDraft);
 	const [open, setOpen] = useState(false);
 	const [mode, setMode] = useState("manual");

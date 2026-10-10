@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useSwrState } from "@/lib/swr";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { jsx, jsxs } from "react/jsx-runtime";
 import { AppShell } from "@/components/app-shell";
@@ -17,7 +18,7 @@ export function DiaryPage() {
 	const { lang, onLang } = useChamberLang();
 	const { user, isPending } = useCurrentUserState();
 	const navigate = useNavigate();
-	const [hearings, setHearings] = useState<Hearing[]>([]);
+	const [hearings, setHearings] = useSwrState<Hearing[]>("diary", user?.id, []);
 	const c = p(lang);
 	const today = todayISO();
 	useEffect(() => {

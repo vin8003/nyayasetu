@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useEffect, useState } from "react";
+import { useSwrState } from "@/lib/swr";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
@@ -35,7 +36,7 @@ export function TodayPage() {
   const { lang, onLang } = useChamberLang();
   const { user, isPending } = useCurrentUserState();
   const navigate = useNavigate();
-  const [board, setBoard] = useState<TodayBoard | null>(null);
+  const [board, setBoard] = useSwrState<TodayBoard | null>("today", user?.id, null);
   const [busy, setBusy] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
   const c = p(lang);
