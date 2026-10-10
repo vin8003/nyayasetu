@@ -208,13 +208,15 @@ export function TodayPage() {
             <div className="empty stack-tight max-w-lg">
               <p className="empty-text">{c.emptyToday}</p>
               <div className="mt-4">
-                <Button asChild variant="outline">
+                <Button asChild>
                   <Link to="/matters">{c.newMatter}</Link>
                 </Button>
               </div>
             </div>
           ) : null}
 
+          {!empty ? (
+          <>
           <section id="hearings-today" className="stack">
             <h2 className="section-title">{c.hearingsToday}</h2>
             {board && board.hearingsToday.length > 0 ? (
@@ -338,6 +340,8 @@ export function TodayPage() {
               <p className="section-note">{c.openTasks}: 0</p>
             )}
           </section>
+          </>
+          ) : null}
 
           {board && board.unconfirmedOrders.length > 0 ? (
             <section id="orders" className="stack">
@@ -373,6 +377,8 @@ export function TodayPage() {
             </section>
           ) : null}
 
+          {!empty ? (
+          <>
           <section id="stale" className="stack">
             <h2 className="section-title">{c.stale}</h2>
             {board && board.staleMatters.length > 0 ? (
@@ -397,6 +403,8 @@ export function TodayPage() {
               <p className="section-note">{c.stale}: 0</p>
             )}
           </section>
+          </>
+          ) : null}
 
           <p className="fineprint mt-14 max-w-2xl">{c.disclaimer}</p>
         </div>
