@@ -139,10 +139,10 @@ function MemoRow({
   const extra = subtitle(item, lang);
   return (
     <div className={`flex items-stretch ${nested ? "bg-elevated/40 pl-4" : ""}`}>
-      <button type="button" onClick={() => onOpen(item)} className="min-w-0 flex-1 px-4 py-3 text-left">
+      <button type="button" onClick={() => onOpen(item)} className="min-w-0 flex-1 px-4 py-3 text-left transition-colors hover:bg-elevated">
         <div className="truncate font-medium">{item.title}</div>
         <div className="mt-1 truncate text-xs text-muted">
-          {new Date(item.createdAt).toLocaleString(locale)}
+          {new Date(item.createdAt).toLocaleString(locale, { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" })}
           {nested && followUpLabel ? ` · ${followUpLabel}` : ""}
           {!nested && followUpCount > 0 && followUpsLabel ? ` · ${followUpCount} ${followUpsLabel}` : ""}
           {extra ? ` · ${extra}` : ""}
