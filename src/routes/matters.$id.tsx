@@ -173,7 +173,9 @@ export function MatterDetailPage() {
   async function onTask(e) {
     e.preventDefault();
     if (!taskTitle.trim()) return;
-    await addTask({ data: { matterId: matter.id, title: taskTitle.trim() } });
+    await addTask({ data: { matterId: matter.id, title: taskTitle.trim() } }).then((result) => {
+      if (result?.duplicate) toast.message(c.alreadyOnFile);
+    });
     setTaskTitle("");
     await reload();
   }
@@ -185,7 +187,7 @@ export function MatterDetailPage() {
     }
     setPaperBusy(true);
     try {
-      await savePastedDocument({
+      const saved = await savePastedDocument({
         data: {
           matterId: matter.id,
           title: paper.title.trim() || paper.kind,
@@ -195,7 +197,7 @@ export function MatterDetailPage() {
         },
       });
       setPaper({ title: "", kind: paper.kind, body: "" });
-      toast.success(c.paperSaved);
+      toast.success(saved?.duplicate ? c.alreadyOnFile : c.paperSaved);
       await reload();
     } catch (err) {
       if (/unauthorized/i.test(String(err))) navigate({ to: "/login" });
@@ -229,7 +231,7 @@ export function MatterDetailPage() {
       for (const part of extracted.parts ?? []) {
         const text = String(part.text || "").trim();
         if (text.length < 20) continue;
-        await savePastedDocument({
+        const row = await savePastedDocument({
           data: {
             matterId: matter.id,
             title: String(part.name || paper.kind).slice(0, 240),
@@ -238,7 +240,7 @@ export function MatterDetailPage() {
             sourceKind: "upload",
           },
         });
-        saved += 1;
+        if (!row?.duplicate) saved += 1;
       }
       if (!saved) toast.error(c.parseErr);
       else toast.success(c.paperSaved);

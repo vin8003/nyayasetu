@@ -39,6 +39,7 @@ export const extractSchema = z.object({
 		reason: z.string().catch("")
 	})).catch([]),
 	stageHint: z.string().nullable().catch(null),
+	orderDate: z.string().nullable().catch(null),
 	caveats: z.array(z.string()).catch([])
 });
 export function pullJson(text) {
@@ -59,6 +60,7 @@ export function extractJsonSchema(stageIds) {
 		})),
 		suggestedTasks: list(obj({ title: str("lawyer follow-up"), reason: str() })),
 		stageHint: nullable(strEnum(stageIds)),
+		orderDate: nullable(str("YYYY-MM-DD")),
 		caveats: list(str())
 	});
 }
@@ -71,6 +73,7 @@ Return JSON only:
   "directions": [{ "text": "operative direction", "party": "who must comply", "deadline": "YYYY-MM-DD or null", "quote": "short verbatim quote from the order" }],
   "suggestedTasks": [{ "title": "lawyer follow-up", "reason": "why" }],
   "stageHint": "workflow stage id or null",
+  "orderDate": "YYYY-MM-DD printed on the order, or null",
   "caveats": ["anything inferred rather than explicit"]
 }
 Rules:
@@ -81,6 +84,7 @@ Rules:
 - nextHearing: the "List on / put up on / renotify on" date. null if none.
 - suggestedTasks[] are CiteBench suggestions for the advocate (draft, file, collect, brief client), never court directions.
 - stageHint: the stage the matter is at after this order, chosen from: ${stages.map((s) => `${s.id} (${s.label})`).join(", ")} — or null if the order does not move the stage.
+- orderDate: the date of this order as YYYY-MM-DD, or null if the order does not state one.
 - Do not give legal advice. Do not invent case law.
 
 ${INDIAN_LAW_CONTEXT}`;
@@ -146,6 +150,7 @@ export async function runExtractOrder(userId, data) {
 		});
 		const next = parsed.nextHearing && parsed.nextHearing.date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.nextHearing.date) ? parsed.nextHearing : null;
 		const stageHint = parsed.stageHint && stages.some((s) => s.id === parsed.stageHint) ? parsed.stageHint : null;
+		const orderDate = parsed.orderDate && /^\d{4}-\d{2}-\d{2}$/.test(parsed.orderDate) ? parsed.orderDate : null;
 		return {
 			ok: true,
 			extract: {
@@ -154,6 +159,7 @@ export async function runExtractOrder(userId, data) {
 				directions: parsed.directions.filter((d) => d.text.trim()),
 				suggestedTasks: parsed.suggestedTasks.filter((t) => t.title.trim()),
 				stageHint,
+				orderDate,
 				caveats: parsed.caveats
 			}
 		};

@@ -4,9 +4,18 @@ import { z } from "zod";
 import { dbSource, getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { PROCEEDINGS } from "./types";
-import { defaultStage, proceedingDef } from "./workflow";
+import { defaultStage, proceedingDef, stageDef } from "./workflow";
 import { addDaysISO, newId, parseParties, todayISO } from "./ids";
 import { SAMPLE_CASE_NUMBERS, SAMPLE_TITLES } from "./sample-ids";
+import {
+	findDuplicateDeadline,
+	findDuplicateDocument,
+	findDuplicateHearing,
+	findDuplicateOrder,
+	findDuplicateTask,
+	bodyHash,
+} from "./dedupe";
+import { wouldMoveReverse } from "./stage-direction";
 import type { Deadline, Hearing, Matter, MatterDocument, MatterOrder, Task, TimelineEvent } from "./types";
 
 export const proceedingZ = z.enum(PROCEEDINGS);
@@ -397,6 +406,12 @@ export const addHearing = createServerFn({ method: "POST" }).middleware([authMid
 }).parse(input)).handler(async ({ context, data }) => {
 	const sql = await getSql();
 	if (!(await sql`select id from matters where id = ${data.matterId} and user_id = ${context.userId}`)[0]) return { ok: false };
+	const existing = await sql`
+      select id, listed_on, purpose from hearings where matter_id = ${data.matterId} and user_id = ${context.userId}
+    `;
+	const listed = existing.map((row) => ({ id: row.id, listedOn: row.listed_on, purpose: row.purpose }));
+	const dup = findDuplicateHearing(data.listedOn, data.purpose ?? "", listed);
+	if (dup) return { ok: true, duplicate: true, id: dup.id };
 	const id = newId("hr");
 	await sql`
       insert into hearings (id, user_id, matter_id, listed_on, listed_at, purpose, court_room, bench, stage)
@@ -426,17 +441,29 @@ export const recordHearing = createServerFn({ method: "POST" }).middleware([auth
       where id = ${data.hearingId} and user_id = ${context.userId}
     `;
 	if (next) {
-		await sql`
+		const listed = await sql`
+        select id, listed_on, purpose from hearings where matter_id = ${rows[0].matter_id} and user_id = ${context.userId}
+      `;
+		const dup = findDuplicateHearing(next, "As directed", listed.map((row) => ({ listedOn: row.listed_on, purpose: row.purpose })));
+		if (!dup) {
+			await sql`
         insert into hearings (id, user_id, matter_id, listed_on, purpose, stage)
         values (${newId("hr")}, ${context.userId}, ${rows[0].matter_id}, ${next}, ${"As directed"}, ${"As directed"})
       `;
-		await touchMatter(sql, context.userId, rows[0].matter_id, { nextHearingOn: next });
+			await touchMatter(sql, context.userId, rows[0].matter_id, { nextHearingOn: next });
+		}
 	}
 	await addEvent(sql, context.userId, rows[0].matter_id, "hearing", "Hearing recorded", [data.outcome, data.courtSaid].filter(Boolean).join(" — "), "lawyer", data.hearingId);
-	if (data.courtSaid.trim()) await sql`
+	if (data.courtSaid.trim()) {
+		const follow = "Review what the court said and set follow-ups";
+		const tasks = await sql`select title, status from tasks where matter_id = ${rows[0].matter_id} and user_id = ${context.userId}`;
+		if (!findDuplicateTask(follow, tasks.map((row) => ({ title: row.title, status: row.status })))) {
+			await sql`
         insert into tasks (id, user_id, matter_id, title, origin, source_quote)
-        values (${newId("tk")}, ${context.userId}, ${rows[0].matter_id}, ${"Review what the court said and set follow-ups"}, ${"ai_suggestion"}, ${data.courtSaid.slice(0, 500)})
+        values (${newId("tk")}, ${context.userId}, ${rows[0].matter_id}, ${follow}, ${"ai_suggestion"}, ${data.courtSaid.slice(0, 500)})
       `;
+		}
+	}
 	return { ok: true };
 });
 export const addTask = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => z.object({
@@ -445,7 +472,12 @@ export const addTask = createServerFn({ method: "POST" }).middleware([authMiddle
 	dueOn: z.string().max(12).optional(),
 	origin: z.string().optional()
 }).parse(input)).handler(async ({ context, data }) => {
-	await (await getSql())`
+	const sql = await getSql();
+	const existing = await sql`select title, status from tasks where matter_id = ${data.matterId} and user_id = ${context.userId}`;
+	if (findDuplicateTask(data.title, existing.map((row) => ({ title: row.title, status: row.status })))) {
+		return { ok: true, duplicate: true };
+	}
+	await sql`
       insert into tasks (id, user_id, matter_id, title, origin, due_on)
       values (${newId("tk")}, ${context.userId}, ${data.matterId}, ${data.title}, ${data.origin ?? "lawyer"}, ${data.dueOn || null})
     `;
@@ -616,10 +648,31 @@ export const updateEvent = createServerFn({ method: "POST" }).middleware([authMi
 	return { ok: true };
 });
 export async function insertPastedDocument(sql, userId, data) {
+	const hash = bodyHash(data.body ?? "", data.contentHash);
+	const existing = await sql`
+      select id, title, body, content_hash, external_id from matter_documents
+      where user_id = ${userId} and matter_id = ${data.matterId}
+    `;
+	const dup = findDuplicateDocument(
+		{
+			title: data.title,
+			body: data.body,
+			contentHash: hash,
+			externalId: data.externalId,
+		},
+		existing.map((row) => ({
+			id: row.id,
+			title: row.title,
+			body: row.body,
+			contentHash: row.content_hash,
+			externalId: row.external_id,
+		})),
+	);
+	if (dup) return { id: dup.id, duplicate: true };
 	const id = newId("dc");
 	await sql`
       insert into matter_documents (id, user_id, matter_id, kind, title, body, source_kind, source_url, external_id, content_hash, retrieved_at)
-      values (${id}, ${userId}, ${data.matterId}, ${data.kind ?? "order"}, ${data.title}, ${data.body}, ${data.sourceKind ?? "paste"}, ${data.sourceUrl ?? ""}, ${data.externalId ?? ""}, ${data.contentHash ?? ""}, now())
+      values (${id}, ${userId}, ${data.matterId}, ${data.kind ?? "order"}, ${data.title}, ${data.body}, ${data.sourceKind ?? "paste"}, ${data.sourceUrl ?? ""}, ${data.externalId ?? ""}, ${hash}, now())
     `;
 	const origin = data.sourceKind === "eci_partner" || data.sourceKind === "indiankanoon" ? "system" : "lawyer";
 	const detail =
@@ -627,7 +680,7 @@ export async function insertPastedDocument(sql, userId, data) {
 			? "Fetched via the court-data API. Unconfirmed."
 			: "";
 	await addEvent(sql, userId, data.matterId, "document", data.title, detail, origin, id);
-	return { id };
+	return { id, duplicate: false };
 }
 export const savePastedDocument = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => z.object({
 	matterId: z.string().min(1),
@@ -643,6 +696,21 @@ export const savePastedDocument = createServerFn({ method: "POST" }).middleware(
 });
 export async function saveAiDraftDocument(userId, matterId, title, kind, body) {
 	const sql = await getSql();
+	const existing = await sql`
+      select id, title, body, content_hash, external_id from matter_documents
+      where user_id = ${userId} and matter_id = ${matterId}
+    `;
+	const dup = findDuplicateDocument(
+		{ title, body },
+		existing.map((row) => ({
+			id: row.id,
+			title: row.title,
+			body: row.body,
+			contentHash: row.content_hash,
+			externalId: row.external_id,
+		})),
+	);
+	if (dup) return dup.id;
 	const id = newId("dc");
 	await sql`
       insert into matter_documents (id, user_id, matter_id, kind, title, body, source_kind)
@@ -670,13 +738,27 @@ export const attachDraftToMatter = createServerFn({ method: "POST" }).middleware
 	return { id };
 });
 export async function insertUnconfirmedOrder(sql, userId, data) {
+	const existing = await sql`
+      select id, body, order_date, document_id from matter_orders
+      where user_id = ${userId} and matter_id = ${data.matterId}
+    `;
+	const dup = findDuplicateOrder(
+		{ body: data.body, orderDate: data.orderDate, documentId: data.documentId },
+		existing.map((row) => ({
+			id: row.id,
+			body: row.body,
+			orderDate: row.order_date,
+			documentId: row.document_id,
+		})),
+	);
+	if (dup) return { id: dup.id, duplicate: true };
 	const id = newId("or");
 	// confirmed is locked false — Partner fetch and Inbox paste share this path. confirmOrder is the only writer that flips it.
 	await sql`
       insert into matter_orders (id, user_id, matter_id, document_id, order_date, body, directions_json, confirmed)
       values (${id}, ${userId}, ${data.matterId}, ${data.documentId ?? null}, ${data.orderDate ?? null}, ${data.body}, ${JSON.stringify(data.directions ?? [])}, false)
     `;
-	return { id };
+	return { id, duplicate: false };
 }
 export const saveUnconfirmedOrder = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => z.object({
 	matterId: z.string().min(1),
@@ -695,7 +777,8 @@ export const saveUnconfirmedOrder = createServerFn({ method: "POST" }).middlewar
 export const confirmOrder = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((input) => z.object({
 	orderId: z.string().min(1),
 	applyStage: z.string().max(60).nullable().optional(),
-	includeSuggestions: z.boolean().optional()
+	includeSuggestions: z.boolean().optional(),
+	stageChoice: z.enum(["move", "keep"]).optional()
 }).parse(input)).handler(async ({ context, data }) => {
 	const sql = await getSql();
 	const rows = await sql`
@@ -703,21 +786,76 @@ export const confirmOrder = createServerFn({ method: "POST" }).middleware([authM
     `;
 	if (!rows[0]) return { ok: false };
 	const order = mapOrder(rows[0]);
-	await sql`update matter_orders set confirmed = true where id = ${data.orderId} and user_id = ${context.userId}`;
-	await touchMatter(sql, context.userId, order.matterId, { lastOrderOn: todayISO() });
-	for (const dir of order.directions) {
-		await sql`
-        insert into tasks (id, user_id, matter_id, title, origin, due_on, source_quote)
-        values (${newId("tk")}, ${context.userId}, ${order.matterId}, ${dir.text.slice(0, 240)}, ${"court_direction"}, ${dir.deadline}, ${dir.quote.slice(0, 500)})
-      `;
-		if (dir.deadline) await sql`
-          insert into deadlines (id, user_id, matter_id, title, due_on, origin, source_quote)
-          values (${newId("dl")}, ${context.userId}, ${order.matterId}, ${dir.text.slice(0, 240)}, ${dir.deadline}, ${"court_direction"}, ${dir.quote.slice(0, 500)})
-        `;
+	if (order.confirmed) return { ok: true, already: true };
+	const matters = await sql`
+      select proceeding, stage, last_order_on from matters where id = ${order.matterId} and user_id = ${context.userId}
+    `;
+	const matter = matters[0];
+	const dated = await sql`
+      select order_date from matter_orders
+      where user_id = ${context.userId} and matter_id = ${order.matterId} and confirmed = true and order_date is not null
+    `;
+	const latestDate = [matter?.last_order_on, ...dated.map((row) => row.order_date)]
+		.map((value) => String(value ?? "").slice(0, 10))
+		.filter((value) => /^\d{4}-\d{2}-\d{2}$/.test(value))
+		.sort()
+		.at(-1) ?? "";
+	const proposed = data.applyStage || null;
+	const reverse = matter
+		? wouldMoveReverse({
+			proceeding: matter.proceeding,
+			currentStage: matter.stage,
+			proposedStage: proposed,
+			orderDate: order.orderDate,
+			latestDate,
+		})
+		: false;
+	if (reverse && data.stageChoice !== "move" && data.stageChoice !== "keep") {
+		const from = stageDef(matter.proceeding, matter.stage);
+		const to = stageDef(matter.proceeding, proposed);
+		return {
+			ok: false,
+			needsConfirm: true,
+			reverse: {
+				from: matter.stage,
+				to: proposed,
+				fromLabel: from?.label ?? matter.stage,
+				toLabel: to?.label ?? proposed,
+				orderDate: order.orderDate ? String(order.orderDate).slice(0, 10) : "",
+				latestDate,
+			},
+		};
 	}
-	if (data.applyStage) await touchMatter(sql, context.userId, order.matterId, { stage: data.applyStage });
+	await sql`update matter_orders set confirmed = true where id = ${data.orderId} and user_id = ${context.userId}`;
+	const orderDay = order.orderDate ? String(order.orderDate).slice(0, 10) : "";
+	if (!latestDate || (orderDay && orderDay >= latestDate)) {
+		await touchMatter(sql, context.userId, order.matterId, { lastOrderOn: orderDay || todayISO() });
+	}
+	const tasks = await sql`select title, status from tasks where matter_id = ${order.matterId} and user_id = ${context.userId}`;
+	const deadlines = await sql`select title, due_on, status from deadlines where matter_id = ${order.matterId} and user_id = ${context.userId}`;
+	const taskRows = tasks.map((row) => ({ title: row.title, status: row.status }));
+	const deadlineRows = deadlines.map((row) => ({ title: row.title, dueOn: row.due_on, status: row.status }));
+	for (const dir of order.directions) {
+		const title = dir.text.slice(0, 240);
+		if (!findDuplicateTask(title, taskRows)) {
+			await sql`
+        insert into tasks (id, user_id, matter_id, title, origin, due_on, source_quote)
+        values (${newId("tk")}, ${context.userId}, ${order.matterId}, ${title}, ${"court_direction"}, ${dir.deadline}, ${dir.quote.slice(0, 500)})
+      `;
+			taskRows.push({ title, status: "open" });
+		}
+		if (dir.deadline && !findDuplicateDeadline(title, dir.deadline, deadlineRows)) {
+			await sql`
+          insert into deadlines (id, user_id, matter_id, title, due_on, origin, source_quote)
+          values (${newId("dl")}, ${context.userId}, ${order.matterId}, ${title}, ${dir.deadline}, ${"court_direction"}, ${dir.quote.slice(0, 500)})
+        `;
+			deadlineRows.push({ title, dueOn: dir.deadline, status: "open" });
+		}
+	}
+	const moveStage = Boolean(proposed) && data.stageChoice !== "keep" && (!reverse || data.stageChoice === "move");
+	if (moveStage) await touchMatter(sql, context.userId, order.matterId, { stage: proposed });
 	await addEvent(sql, context.userId, order.matterId, "order", "Order confirmed", order.directions.map((d) => d.text).join("; "), "court_direction", order.id);
-	return { ok: true };
+	return { ok: true, keptStage: reverse && data.stageChoice === "keep" };
 });
 export const discardOrder = createServerFn({ method: "POST" }).middleware([authMiddleware]).validator((id) => z.string().min(1).parse(id)).handler(async ({ context, data: id }) => {
 	await (await getSql())`delete from matter_orders where id = ${id} and user_id = ${context.userId} and confirmed = false`;
@@ -761,6 +899,7 @@ async function deleteOrphanPractice(sql, userId) {
 }
 
 async function wipeUserPractice(sql, userId) {
+	await sql`delete from ask_chats where user_id = ${userId}`;
 	await sql`delete from case_import_records where user_id = ${userId}`;
 	await sql`delete from case_imports where user_id = ${userId}`;
 	await sql`delete from timeline_events where user_id = ${userId}`;
@@ -789,6 +928,7 @@ async function purgeSampleMatters(sql, userId) {
 		await sql`delete from hearings where matter_id = ${row.id} and user_id = ${userId}`;
 		await sql`delete from tasks where matter_id = ${row.id} and user_id = ${userId}`;
 		await sql`delete from deadlines where matter_id = ${row.id} and user_id = ${userId}`;
+		await sql`delete from ask_chats where matter_id = ${row.id} and user_id = ${userId}`;
 		await sql`update memos set matter_id = null where user_id = ${userId} and matter_id = ${row.id}`;
 		await sql`delete from matters where id = ${row.id} and user_id = ${userId}`;
 	}

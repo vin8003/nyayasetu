@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { askChamber } from "@/lib/ask/store";
+import { askChamber, listAskChats, openAskChat } from "@/lib/ask/store";
+import { groupAskChats, type AskChatRow } from "@/lib/ask/threads";
 import { listMatters } from "@/lib/practice/store";
 import type { OutputLang } from "@/lib/research/types";
 import { AskMarkdown } from "@/components/ask-markdown";
@@ -31,6 +32,9 @@ const COPY = {
     missing: "That matter is not on this desk.",
     paywall: "The trial does not cover another answer.",
     upgrade: "See the plan",
+    chats: "Chats",
+    newChat: "New chat",
+    noChats: "No saved chats yet.",
   },
   hi: {
     title: "पूछें",
@@ -49,20 +53,33 @@ const COPY = {
     missing: "यह मामला इस डेस्क पर नहीं है।",
     paywall: "आज़माइश में और जवाब नहीं है।",
     upgrade: "योजना देखें",
+    chats: "बातचीत",
+    newChat: "नई बात",
+    noChats: "अभी कोई सहेजी बात नहीं।",
   },
 } as const;
 
-export function AskDesk({ lang, matterId }: { lang: OutputLang; matterId?: string }) {
+export function AskDesk({ lang, matterId, chatId }: { lang: OutputLang; matterId?: string; chatId?: string }) {
   const c = COPY[lang];
   const navigate = useNavigate();
   const [matters, setMatters] = useState<MatterHit[]>([]);
+  const [chats, setChats] = useState<AskChatRow[]>([]);
   const [matter, setMatter] = useState(matterId ?? "");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const threadRef = useRef<HTMLDivElement>(null);
-  const pinned = useRef(matterId ?? "");
+  const savedId = useRef(chatId ?? "");
+  const groups = groupAskChats(chats, c.general);
+
+  function refreshChats() {
+    listAskChats()
+      .then((rows) => setChats(rows))
+      .catch((err) => {
+        if (isUnauthorized(err)) navigate({ to: "/login" });
+      });
+  }
 
   useEffect(() => {
     listMatters()
@@ -70,15 +87,33 @@ export function AskDesk({ lang, matterId }: { lang: OutputLang; matterId?: strin
       .catch((err) => {
         if (isUnauthorized(err)) navigate({ to: "/login" });
       });
+    refreshChats();
   }, [navigate]);
 
   useEffect(() => {
-    if ((matterId ?? "") === pinned.current) return;
-    pinned.current = matterId ?? "";
-    setMatter(matterId ?? "");
-    setTurns([]);
-    setError("");
-  }, [matterId]);
+    if (!chatId) {
+      savedId.current = "";
+      setMatter(matterId ?? "");
+      setTurns([]);
+      setError("");
+      return;
+    }
+    savedId.current = chatId;
+    let cancel = false;
+    openAskChat({ data: chatId })
+      .then((chat) => {
+        if (cancel || !chat) return;
+        setMatter(chat.matterId ?? "");
+        setTurns(chat.messages);
+        setError("");
+      })
+      .catch((err) => {
+        if (isUnauthorized(err)) navigate({ to: "/login" });
+      });
+    return () => {
+      cancel = true;
+    };
+  }, [chatId, matterId, navigate]);
 
   useEffect(() => {
     const el = threadRef.current;
@@ -86,10 +121,22 @@ export function AskDesk({ lang, matterId }: { lang: OutputLang; matterId?: strin
   }, [turns, busy]);
 
   function onMatter(next: string) {
+    savedId.current = "";
     setMatter(next);
     setTurns([]);
     setError("");
     navigate({ to: "/ask", search: { matter: next || undefined } });
+  }
+
+  function onNewChat() {
+    savedId.current = "";
+    setTurns([]);
+    setError("");
+    navigate({ to: "/ask", search: { matter: matter || undefined } });
+  }
+
+  function onOpenChat(row: AskChatRow) {
+    navigate({ to: "/ask", search: { matter: row.matterId || undefined, chat: row.id } });
   }
 
   async function send() {
@@ -104,6 +151,7 @@ export function AskDesk({ lang, matterId }: { lang: OutputLang; matterId?: strin
       const result = await askChamber({
         data: {
           matterId: matter || undefined,
+          chatId: savedId.current || undefined,
           lang,
           messages: history,
         },
@@ -121,6 +169,11 @@ export function AskDesk({ lang, matterId }: { lang: OutputLang; matterId?: strin
         return;
       }
       setTurns([...history, { role: "assistant", content: result.text }]);
+      savedId.current = result.chatId;
+      refreshChats();
+      if (result.chatId && result.chatId !== chatId) {
+        navigate({ to: "/ask", search: { matter: matter || undefined, chat: result.chatId } });
+      }
     } catch (err) {
       if (isUnauthorized(err)) {
         navigate({ to: "/login" });
@@ -153,6 +206,33 @@ export function AskDesk({ lang, matterId }: { lang: OutputLang; matterId?: strin
         </label>
       </header>
 
+      <div className="ask-layout">
+        <aside className="ask-rail" aria-label={c.chats}>
+          <button type="button" className="ask-new" onClick={onNewChat}>
+            {c.newChat}
+          </button>
+          {groups.length === 0 ? <p className="ask-rail-empty">{c.noChats}</p> : null}
+          {groups.map((group) => (
+            <section key={group.key} className="ask-group">
+              <h2 className="ask-group-label">{group.label}</h2>
+              <ul>
+                {group.chats.map((row) => (
+                  <li key={row.id}>
+                    <button
+                      type="button"
+                      className={row.id === chatId ? "is-current" : ""}
+                      onClick={() => onOpenChat(row)}
+                    >
+                      {row.title}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </aside>
+
+        <div className="ask-main">
       <div className="ask-thread" ref={threadRef} aria-live="polite">
         {turns.length === 0 ? <p className="ask-empty">{c.empty}</p> : null}
         {turns.map((turn, i) => {
@@ -205,6 +285,8 @@ export function AskDesk({ lang, matterId }: { lang: OutputLang; matterId?: strin
         </Button>
       </form>
       <p className="ask-note">{c.disclaimer}</p>
+        </div>
+      </div>
     </div>
   );
 }

@@ -41,6 +41,7 @@ export function InboxPage() {
 	const [pendingId, setPendingId] = useState(null);
 	const [applyStage, setApplyStage] = useState(true);
 	const [includeSuggestions, setIncludeSuggestions] = useState(true);
+	const [reverse, setReverse] = useState(null);
 	const [queue, setQueue] = useState([]);
 	async function reloadQueue() {
 		const rows = await listUnconfirmedOrders();
@@ -132,10 +133,13 @@ export function InboxPage() {
 				matterId: matter.id,
 				body,
 				directions: result.extract.directions,
-				documentId: doc.id
+				documentId: doc.id,
+				orderDate: result.extract.orderDate || null
 			} });
+			if (doc.duplicate && saved.duplicate) toast.message(c.alreadyOnFile);
 			setPendingId(saved.id);
 			setExtract(result.extract);
+			setReverse(null);
 			await reloadQueue();
 		} catch (err) {
 			if (/unauthorized/i.test(String(err))) navigate({ to: "/login" });
@@ -144,14 +148,19 @@ export function InboxPage() {
 			setBusy(false);
 		}
 	}
-	async function onConfirm() {
+	async function onConfirm(stageChoice) {
 		if (!pendingId || !extract || !matter) return;
 		setBusy(true);
 		try {
-			await confirmOrder({ data: {
+			const result = await confirmOrder({ data: {
 				orderId: pendingId,
-				applyStage: applyStage ? extract.stageHint : null
+				applyStage: applyStage ? extract.stageHint : null,
+				stageChoice
 			} });
+			if (result?.needsConfirm) {
+				setReverse(result.reverse);
+				return;
+			}
 			if (extract.nextHearing?.date) await addHearing({ data: {
 				matterId: matter.id,
 				listedOn: extract.nextHearing.date,
@@ -162,9 +171,10 @@ export function InboxPage() {
 				title: t.title,
 				origin: "ai_suggestion"
 			} });
-			toast.success(c.confirm);
+			toast.success(result?.keptStage ? c.reverseKeep : c.confirm);
 			setExtract(null);
 			setPendingId(null);
+			setReverse(null);
 			setBody("");
 			await reloadQueue();
 			navigate({
@@ -179,6 +189,7 @@ export function InboxPage() {
 		if (pendingId) await discardOrder({ data: pendingId });
 		setExtract(null);
 		setPendingId(null);
+		setReverse(null);
 		await reloadQueue();
 	}
 	function openPending(row) {
@@ -191,6 +202,7 @@ export function InboxPage() {
 			directions: row.directions ?? [],
 			suggestedTasks: [],
 			stageHint: null,
+			orderDate: row.orderDate ? String(row.orderDate).slice(0, 10) : null,
 			caveats: []
 		});
 	}
@@ -438,11 +450,41 @@ export function InboxPage() {
 								onChange: (e) => setIncludeSuggestions(e.target.checked)
 							}), c.suggestedTasks]
 						}),
+						reverse ? jsxs("div", {
+							className: "rounded-md border border-warn/40 bg-warn/10 px-3 py-3 text-sm",
+							role: "alert",
+							children: [
+								jsx("p", { className: "font-medium", children: c.reverseTitle }),
+								jsx("p", { className: "mt-1 text-muted", children: c.reverseWarn }),
+								jsx("p", {
+									className: "mt-2",
+									children: `${reverse.fromLabel || reverse.from} → ${reverse.toLabel || reverse.to}${reverse.orderDate ? ` · ${reverse.orderDate}` : ""}${reverse.latestDate ? ` · ${c.lastOrder} ${reverse.latestDate}` : ""}`
+								}),
+								jsxs("div", {
+									className: "mt-3 flex flex-wrap gap-2",
+									children: [
+										jsx(Button, {
+											type: "button",
+											variant: "outline",
+											disabled: busy,
+											onClick: () => void onConfirm("keep"),
+											children: c.reverseKeep
+										}),
+										jsx(Button, {
+											type: "button",
+											disabled: busy,
+											onClick: () => void onConfirm("move"),
+											children: c.reverseMove
+										})
+									]
+								})
+							]
+						}) : null,
 						jsxs("div", {
 							className: "flex flex-wrap gap-2",
 							children: [jsx(Button, {
 								onClick: () => void onConfirm(),
-								disabled: busy,
+								disabled: busy || Boolean(reverse),
 								children: c.confirm
 							}), jsx(Button, {
 								variant: "ghost",

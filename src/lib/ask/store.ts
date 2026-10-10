@@ -3,13 +3,15 @@ import { z } from "zod";
 import { researchModel } from "@/lib/ai/models";
 import { asErrorMessage, collectFromOutput, XaiHttpError, type XaiResponse } from "@/lib/ai/xai-response";
 import { authMiddleware } from "@/lib/auth/middleware";
+import { getSql } from "@/lib/db";
 import { gateAi } from "@/lib/billing/store";
-import { formatParties } from "@/lib/practice/ids";
+import { formatParties, newId } from "@/lib/practice/ids";
 import { isSampleTitle } from "@/lib/practice/sample-ids";
 import { loadMatterBundle } from "@/lib/practice/store";
 import { hostAllowed } from "@/lib/research/verify";
 import { groundAskReply } from "./citations";
 import { ASK_TIMEOUT_MS, askResponsesBody, type AskCase } from "./prompt";
+import { chatTitle, type AskChatRow } from "./threads";
 
 const messageSchema = z.object({
   role: z.enum(["user", "assistant"]),
@@ -19,6 +21,7 @@ const messageSchema = z.object({
 const askInputSchema = z
   .object({
     matterId: z.string().trim().max(80).optional(),
+    chatId: z.string().trim().max(80).optional(),
     lang: z.enum(["en", "hi"]),
     messages: z.array(messageSchema).min(1).max(12),
   })
@@ -90,10 +93,106 @@ function fileFromBundle(bundle: {
   };
 }
 
+function stamp(value: unknown): string {
+  if (value instanceof Date) return value.toISOString();
+  return String(value ?? "");
+}
+
+async function openOwnedChat(
+  sql: Awaited<ReturnType<typeof getSql>>,
+  userId: string,
+  chatId: string,
+  matterId?: string,
+) {
+  const rows = await sql`select id, matter_id from ask_chats where id = ${chatId} and user_id = ${userId}`;
+  const row = rows[0];
+  if (!row) return null;
+  if ((row.matter_id ?? null) !== (matterId || null)) return null;
+  return String(row.id);
+}
+
+async function saveTurn(
+  sql: Awaited<ReturnType<typeof getSql>>,
+  userId: string,
+  data: { matterId?: string; chatId?: string; messages: { role: string; content: string }[] },
+  answer: string,
+) {
+  const latest = data.messages.at(-1);
+  if (!latest || latest.role !== "user") return data.chatId ?? "";
+  let chatId = data.chatId ? await openOwnedChat(sql, userId, data.chatId, data.matterId) : null;
+  if (!chatId) {
+    chatId = newId("ak");
+    let matterTitle = "";
+    if (data.matterId) {
+      const matters = await sql`select title from matters where id = ${data.matterId} and user_id = ${userId}`;
+      matterTitle = String(matters[0]?.title ?? "");
+    }
+    await sql`
+      insert into ask_chats (id, user_id, matter_id, matter_title, title)
+      values (${chatId}, ${userId}, ${data.matterId ?? null}, ${matterTitle}, ${chatTitle(latest.content)})
+    `;
+  }
+  await sql`
+    insert into ask_messages (id, chat_id, user_id, role, content)
+    values (${newId("am")}, ${chatId}, ${userId}, ${"user"}, ${latest.content})
+  `;
+  await sql`
+    insert into ask_messages (id, chat_id, user_id, role, content)
+    values (${newId("am")}, ${chatId}, ${userId}, ${"assistant"}, ${answer})
+  `;
+  await sql`update ask_chats set updated_at = now() where id = ${chatId} and user_id = ${userId}`;
+  return chatId;
+}
+
+export const listAskChats = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }): Promise<AskChatRow[]> => {
+    const sql = await getSql();
+    const rows = await sql`
+      select id, matter_id, matter_title, title, updated_at
+      from ask_chats where user_id = ${context.userId}
+      order by updated_at desc
+    `;
+    return rows.map((row) => ({
+      id: String(row.id),
+      matterId: row.matter_id ? String(row.matter_id) : null,
+      matterTitle: String(row.matter_title ?? ""),
+      title: String(row.title ?? ""),
+      updatedAt: stamp(row.updated_at),
+    }));
+  });
+
+export const openAskChat = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .validator((id: string) => z.string().trim().min(1).max(80).parse(id))
+  .handler(async ({ context, data: id }) => {
+    const sql = await getSql();
+    const chats = await sql`
+      select id, matter_id, matter_title, title from ask_chats
+      where id = ${id} and user_id = ${context.userId}
+    `;
+    const chat = chats[0];
+    if (!chat) return null;
+    const messages = await sql`
+      select role, content from ask_messages
+      where chat_id = ${id} and user_id = ${context.userId}
+      order by created_at asc
+    `;
+    return {
+      id: String(chat.id),
+      matterId: chat.matter_id ? String(chat.matter_id) : null,
+      matterTitle: String(chat.matter_title ?? ""),
+      title: String(chat.title ?? ""),
+      messages: messages
+        .filter((row) => row.role === "user" || row.role === "assistant")
+        .map((row) => ({ role: row.role as "user" | "assistant", content: String(row.content ?? "") })),
+    };
+  });
+
 export const askChamber = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator((input: AskInput) => askInputSchema.parse(input))
-  .handler(async ({ data, context }): Promise<{ ok: true; text: string } | { ok: false; error: string }> => {
+  .handler(async ({ data, context }): Promise<{ ok: true; text: string; chatId: string } | { ok: false; error: string }> => {
     const apiKey = process.env.XAI_API_KEY;
     if (!apiKey) return { ok: false, error: "AI_UNAVAILABLE" };
 
@@ -137,7 +236,8 @@ export const askChamber = createServerFn({ method: "POST" })
       const collected = collectFromOutput(payload);
       const grounded = groundAskReply(collected.text, [...collected.urls, ...priorSources(data.messages)]);
       if (!grounded.text) return { ok: false, error: "ASK_FAILED" };
-      return { ok: true, text: grounded.text };
+      const chatId = await saveTurn(await getSql(), context.userId, data, grounded.text);
+      return { ok: true, text: grounded.text, chatId };
     } catch (err) {
       const message = err instanceof Error ? err.message : "";
       if (err instanceof XaiHttpError || message.includes("abort")) return { ok: false, error: "ASK_FAILED" };

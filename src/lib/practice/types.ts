@@ -187,6 +187,7 @@ export type OrderExtract = {
   directions: OrderDirection[];
   suggestedTasks: { title: string; reason: string }[];
   stageHint: string | null;
+  orderDate?: string | null;
   caveats: string[];
 };
 
