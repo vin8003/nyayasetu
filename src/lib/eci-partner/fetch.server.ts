@@ -18,7 +18,7 @@ import { hydrateOrderMarkdown } from "./hydrate";
 import { isValidCnr, normalizeCnr, partnerCnrError } from "./cnr";
 import { resolveEciApiKey } from "./key";
 import { planInboxLand } from "./land";
-import { hasLandableBody, parsePartnerCase, pendingOrderPdfs } from "./parse";
+import { hasLandableBody, needsOrderTextRetry, parsePartnerCase, pendingOrderPdfs } from "./parse";
 import { shouldSkipSample } from "./skip";
 import { emptyParseResult, fetchErrorResult, missingKeyResult } from "./fail";
 import { ECI_SOURCE_KIND, type FetchCnrResult } from "./types";
@@ -173,14 +173,32 @@ export async function fetchCnrToInboxImpl(
     refresh = await hasPartnerDocs(sql, userId, data.matterId);
   }
 
-  const fetched = await fetchPartnerCase({ cnr, apiKey, refresh });
+  let fetched = await fetchPartnerCase({ cnr, apiKey, refresh });
   if (!fetched.ok) {
     return fetchErrorResult(fetched, cnr);
   }
 
-  const parsed = parsePartnerCase(fetched.json);
+  let parsed = parsePartnerCase(fetched.json);
   if (!hasLandableBody(parsed.orders) && pendingOrderPdfs(parsed.orders).length) {
     await hydrateOrderMarkdown({ cnr, apiKey, orders: parsed.orders });
+  }
+  // Cached case rows often list the PDF and leave files.files empty until a refresh.
+  if (needsOrderTextRetry(parsed.orders, fetched.refreshed)) {
+    const queued = await fetchPartnerCase({ cnr, apiKey, refresh: true });
+    if (queued.ok) {
+      if (!process.env.NODE_TEST_CONTEXT) await new Promise((resolve) => setTimeout(resolve, 6000));
+      const again = await fetchPartnerCase({ cnr, apiKey, refresh: false });
+      if (again.ok) {
+        const reparsed = parsePartnerCase(again.json);
+        if (!hasLandableBody(reparsed.orders) && pendingOrderPdfs(reparsed.orders).length) {
+          await hydrateOrderMarkdown({ cnr, apiKey, orders: reparsed.orders });
+        }
+        if (hasLandableBody(reparsed.orders)) {
+          parsed = reparsed;
+          fetched = again;
+        }
+      }
+    }
   }
   const preview = {
     ...parsed.preview,

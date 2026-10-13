@@ -18,8 +18,10 @@ function AskPage() {
   const { matter, chat, memo } = Route.useSearch();
   return (
     <AppShell lang={lang} onLang={onLang} active="research">
-      <ResearchModes lang={lang} mode="ask" matter={matter} memo={memo} />
-      <AskDesk lang={lang} matterId={matter} chatId={chat} memoId={memo} />
+      <div className="ask-page">
+        <ResearchModes lang={lang} mode="ask" matter={matter} memo={memo} />
+        <AskDesk lang={lang} matterId={matter} chatId={chat} memoId={memo} />
+      </div>
     </AppShell>
   );
 }

@@ -266,6 +266,7 @@ export function AskDesk({
         </header>
 
         <div className="ask-transcript" ref={threadRef} aria-live="polite">
+          <div className="ask-thread">
           {turns.length === 0 ? (
             <div className="ask-empty">
               <p className="ask-empty-mark">§</p>
@@ -287,6 +288,7 @@ export function AskDesk({
               {c.sending}
             </p>
           ) : null}
+          </div>
         </div>
 
         {error ? (
@@ -307,24 +309,26 @@ export function AskDesk({
             void send();
           }}
         >
-          <textarea
-            value={draft}
-            rows={2}
-            placeholder={c.placeholder}
-            disabled={busy}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                void send();
-              }
-            }}
-          />
-          <div className="ask-composer-row">
-            <p className="ask-note">{c.disclaimer}</p>
-            <Button type="submit" size="sm" disabled={busy || draft.trim().length < 2}>
-              {busy ? "…" : c.send}
-            </Button>
+          <div className="ask-composer-box">
+            <textarea
+              value={draft}
+              rows={2}
+              placeholder={c.placeholder}
+              disabled={busy}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  void send();
+                }
+              }}
+            />
+            <div className="ask-composer-row">
+              <p className="ask-note">{c.disclaimer}</p>
+              <Button type="submit" size="sm" disabled={busy || draft.trim().length < 2}>
+                {busy ? "…" : c.send}
+              </Button>
+            </div>
           </div>
         </form>
       </section>

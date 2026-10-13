@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { documentUrl, fetchIkCase, IK_BASE, searchBody, searchGetUrl, searchUrl } from "./client.ts";
+import { parseDocument } from "./parse.ts";
 import { IK_DOC_FIXTURE, IK_LIVE_CNR, IK_LIVE_CNR_KAMRAN, IK_SEARCH_FIXTURE, IK_SEARCH_FIXTURE_KAMRAN } from "./fixture.ts";
 
 const TOKEN = "9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b";
@@ -81,6 +82,21 @@ describe("indian kanoon client", () => {
     assert.equal(calls[1]?.url, documentUrl("99098448"));
     assert.equal(calls[1]?.method, "GET");
     assert.equal(calls.every((c) => c.auth === `Token ${TOKEN}`), true);
+  });
+
+  it("reads order HTML wrapped under data, and a raw HTML body", () => {
+    const hit = {
+      tid: "99098448",
+      title: "Spherion",
+      headline: "",
+      docsource: "Delhi High Court",
+      publishdate: "2026-09-03",
+    };
+    const wrapped = parseDocument({ data: { doc: `<pre>CNR No. ${CNR} Issue notice. List on 23.03.2026.</pre>` } }, hit);
+    assert.match(wrapped?.body ?? "", /Issue notice/);
+    const raw = parseDocument({ raw: `<pre>CNR No. ${CNR} The writ petition is disposed of.</pre>` }, hit);
+    assert.match(raw?.body ?? "", /disposed of/);
+    assert.equal(parseDocument({ data: { aiAnalysis: "not the order text at all here" } }, hit), null);
   });
 
   it("falls back to GET when POST is 405", async () => {

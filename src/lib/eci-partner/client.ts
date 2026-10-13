@@ -13,6 +13,7 @@
  */
 import { isForbiddenCourtUrl } from "../court-import/forbidden.ts";
 import { isValidCnr, normalizeCnr } from "./cnr.ts";
+import { readOrderMarkdown } from "./parse.ts";
 import { ECI_BASE, type EciHttpResult } from "./types.ts";
 
 const TIMEOUT_MS = 20000;
@@ -68,7 +69,7 @@ async function partnerFetch(
   url: string,
   method: "GET" | "POST",
   timeoutMs = TIMEOUT_MS,
-): Promise<{ response: Response; json: unknown } | { network: true; message: string }> {
+): Promise<{ response: Response; json: unknown; text: string } | { network: true; message: string }> {
   if (isForbiddenCourtUrl(url)) {
     return { network: true, message: "CiteBench does not fetch from the official eCourts site." };
   }
@@ -92,7 +93,7 @@ async function partnerFetch(
         json = { raw: text.slice(0, 200) };
       }
     }
-    return { response, json };
+    return { response, json, text: text.slice(0, 80000) };
   } catch (err) {
     const message = err instanceof Error ? err.message : "network";
     return { network: true, message };
@@ -160,6 +161,21 @@ export async function fetchPartnerCase(input: {
 
 const ORDER_MD_TIMEOUT_MS = 60000;
 
+export function orderAiUrl(cnr: string, file: string): string {
+  return orderMarkdownUrl(cnr, file).replace("/order-md/", "/order-ai/");
+}
+
+async function pullOrderMarkdown(
+  fetchImpl: FetchImpl,
+  apiKey: string,
+  url: string,
+): Promise<{ body: string; network?: string }> {
+  const got = await partnerFetch(fetchImpl, apiKey, url, "GET", ORDER_MD_TIMEOUT_MS);
+  if ("network" in got) return { body: "", network: got.message };
+  if (!got.response.ok) return { body: "" };
+  return { body: readOrderMarkdown(got.json, got.text) };
+}
+
 export async function fetchPartnerOrderMarkdown(input: {
   cnr: string;
   file: string;
@@ -174,14 +190,15 @@ export async function fetchPartnerOrderMarkdown(input: {
   if (!input.apiKey) {
     return { ok: false, message: "API key not configured" };
   }
-  const url = orderMarkdownUrl(cnr, file);
   const fetchImpl = input.fetchImpl ?? defaultFetch;
-  const got = await partnerFetch(fetchImpl, input.apiKey, url, "GET", ORDER_MD_TIMEOUT_MS);
-  if ("network" in got) return { ok: false, message: got.message };
-  if (!got.response.ok) return { ok: false, message: "Could not fetch order text." };
-  const root = got.json && typeof got.json === "object" ? (got.json as Record<string, unknown>) : {};
-  const data = root.data && typeof root.data === "object" ? (root.data as Record<string, unknown>) : root;
-  const body = typeof data.markdownContent === "string" ? data.markdownContent.trim() : "";
-  if (body.length < 20) return { ok: false, message: "empty markdown" };
-  return { ok: true, body: body.slice(0, 40000) };
+  const base = orderMarkdownUrl(cnr, file);
+  const first = await pullOrderMarkdown(fetchImpl, input.apiKey, base);
+  if (first.network) return { ok: false, message: first.network };
+  if (first.body) return { ok: true, body: first.body };
+  // Signed copies sometimes come back as a cover sheet. The unsigned markdown is the court text.
+  const unsigned = await pullOrderMarkdown(fetchImpl, input.apiKey, `${base}?signed=false`);
+  if (unsigned.body) return { ok: true, body: unsigned.body };
+  const ai = await pullOrderMarkdown(fetchImpl, input.apiKey, orderAiUrl(cnr, file));
+  if (ai.body) return { ok: true, body: ai.body };
+  return { ok: false, message: "empty markdown" };
 }

@@ -105,7 +105,7 @@ function fileList(value: unknown): unknown[] {
 }
 
 function fileBody(row: Record<string, unknown>): string {
-  return usableBody(str(row.markdownContent) || str(row.markdown) || str(row.ocrText));
+  return readOrderMarkdown(row);
 }
 
 function collectOrderRows(data: Record<string, unknown>, caseData: Record<string, unknown>): Array<Record<string, unknown> & { _kind: string }> {
@@ -215,6 +215,35 @@ export function parsePartnerCase(json: unknown): PartnerParseResult {
 
 export function hasLandableBody(orders: NormalizedOrder[]): boolean {
   return orders.some((order) => order.available && order.body.trim().length >= MIN_ORDER_BODY);
+}
+
+/** Stubs listed, text still missing, and we have not already asked the API to refresh. */
+export function needsOrderTextRetry(orders: NormalizedOrder[], alreadyRefreshed: boolean): boolean {
+  return !alreadyRefreshed && !hasLandableBody(orders) && pendingOrderPdfs(orders).length > 0;
+}
+
+/**
+ * Order text from an order-md / order-ai payload.
+ * Accepts markdownContent, a string `data` body, or raw markdown.
+ * AI analysis is never used as the order.
+ */
+export function readOrderMarkdown(json: unknown, rawText = ""): string {
+  const root = obj(json);
+  const data = root.data;
+  const bag = obj(typeof data === "object" && data ? data : json);
+  const candidates: string[] = [];
+  if (typeof data === "string") candidates.push(data);
+  for (const key of ["markdownContent", "markdown", "ocrText", "orderText", "content", "text"]) {
+    const value = bag[key];
+    if (typeof value === "string") candidates.push(value);
+  }
+  const raw = rawText.trim();
+  if (raw && !raw.startsWith("{") && !raw.startsWith("[")) candidates.push(raw);
+  for (const item of candidates) {
+    const text = item.replace(/\u0000/g, "").trim();
+    if (text.length >= MIN_ORDER_BODY && !isStubDescription(text)) return text.slice(0, 40000);
+  }
+  return "";
 }
 
 export function pendingOrderPdfs(orders: NormalizedOrder[]): string[] {

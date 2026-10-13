@@ -80,7 +80,15 @@ export function parseSearchHits(json: unknown): IkSearchHit[] {
 
 export function parseDocument(json: unknown, hit: IkSearchHit): IkDocument | null {
   const root = isRecord(json) ? json : {};
-  const raw = str(root.doc) || str(root.document) || str(root.text) || (typeof root.raw === "string" ? root.raw : "");
+  const data = isRecord(root.data) ? root.data : root;
+  const raw =
+    str(data.doc) ||
+    str(data.document) ||
+    str(data.dochtml) ||
+    str(data.html) ||
+    str(data.text) ||
+    str(root.doc) ||
+    (typeof root.raw === "string" ? root.raw : "");
   const body = stripHtml(raw).slice(0, 40000);
   if (body.length < IK_MIN_BODY) return null;
   const title = stripHtml(str(root.title)) || hit.title;

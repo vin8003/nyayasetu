@@ -118,7 +118,7 @@ async function callOnce(
       try {
         json = JSON.parse(text);
       } catch {
-        json = { raw: text.slice(0, 4000) };
+        json = { raw: text.slice(0, 40000) };
       }
     }
     if (!response.ok) {
