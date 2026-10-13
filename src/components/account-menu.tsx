@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { CreditCard, Languages, LogOut, Monitor, Moon, Shield, Sun } from "lucide-react";
+import { CreditCard, Keyboard, Languages, LogOut, Monitor, Moon, Shield, Sun } from "lucide-react";
+import { openShortcuts } from "@/components/shortcuts";
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuRadioGroup, MenuRadioItem, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
 import { signOut } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -12,6 +13,7 @@ const COPY = {
     account: "Account",
     plan: "Plan and billing",
     admin: "Admin desk",
+    shortcuts: "Keyboard shortcuts",
     language: "Language",
     theme: "Theme",
     system: "Match system",
@@ -25,6 +27,7 @@ const COPY = {
     account: "अकाउंट",
     plan: "प्लान और भुगतान",
     admin: "एडमिन डेस्क",
+    shortcuts: "कीबोर्ड शॉर्टकट",
     language: "भाषा",
     theme: "थीम",
     system: "सिस्टम जैसा",
@@ -106,6 +109,9 @@ export function AccountMenu({
             {c.admin}
           </MenuItem>
         ) : null}
+        <MenuItem icon={<Keyboard className="size-4" />} shortcut="?" onSelect={() => openShortcuts()}>
+          {c.shortcuts}
+        </MenuItem>
         <MenuSeparator />
         <MenuLabel>{c.language}</MenuLabel>
         <MenuRadioGroup value={lang} onValueChange={(next) => onLang(next as OutputLang)}>

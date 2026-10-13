@@ -10,11 +10,12 @@ import { LangToggle } from "@/components/lang-toggle";
 import { Button } from "@/components/ui/button";
 import { Field, Hint, Input, Label } from "@/components/ui/field";
 
-type LoginSearch = { desk?: "1" };
+type LoginSearch = { desk?: "1"; mode?: "register" };
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>): LoginSearch => ({
     desk: search.desk === "1" || search.desk === 1 || search.desk === true ? "1" : undefined,
+    mode: search.mode === "register" ? "register" : undefined,
   }),
   component: Login,
 });
@@ -36,7 +37,7 @@ function friendlyError(message: string, hi: boolean) {
       : "Username or password is wrong. New here? Register once.";
   }
   if (m.includes("already exists") || m.includes("already registered")) {
-    return hi ? "यह अकाउंट पहले से है — लॉगिन करें।" : "That account already exists — sign in.";
+    return hi ? "यह अकाउंट पहले से है। लॉगिन करें।" : "That account already exists. Sign in instead.";
   }
   if (m.includes("invalid origin")) {
     return hi
@@ -47,9 +48,9 @@ function friendlyError(message: string, hi: boolean) {
 }
 
 function Login() {
-  const { desk } = Route.useSearch();
+  const { desk, mode: startMode } = Route.useSearch();
   const { user, isPending } = useCurrentUserState();
-  const [mode, setMode] = useState<"in" | "up">("in");
+  const [mode, setMode] = useState<"in" | "up">(startMode === "register" ? "up" : "in");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -107,18 +108,18 @@ function Login() {
   const points = [
     {
       icon: CalendarDays,
-      title: hi ? "डायरी और समय-सीमाएँ" : "Diary and deadlines",
-      body: hi ? "हर पेशी और क्लॉक एक जगह — आज क्या करना है, साफ़ दिखता है।" : "Every hearing and limitation clock in one place, so today is never a surprise.",
+      title: hi ? "लाइव केस, अपडेट डायरी" : "Live cases, a current diary",
+      body: hi ? "CNR डालें; आदेश, अगली तारीख और समय-सीमा फ़ाइल पर आ जाते हैं।" : "Enter a CNR and the orders, next date and deadlines come onto the file.",
     },
     {
       icon: BookOpen,
       title: hi ? "स्रोत-सहित शोध" : "Research with sources",
-      body: hi ? "सुप्रीम कोर्ट और हाईकोर्ट के फ़ैसले, हर उद्धरण के लिंक के साथ।" : "Supreme Court and High Court rulings, every citation linked to its source.",
+      body: hi ? "सुप्रीम कोर्ट और हाईकोर्ट के फ़ैसले; जिस उद्धरण का स्रोत नहीं मिला, उस पर निशान।" : "Supreme Court and High Court rulings. Any citation without a retrieved source is flagged.",
     },
     {
       icon: Inbox,
-      title: hi ? "आदेश पढ़ना" : "Order reading",
-      body: hi ? "आदेश पेस्ट करें — मॉडल निकालता है, आप पुष्टि करते हैं।" : "Paste an order. The model extracts; you confirm.",
+      title: hi ? "आदेश पढ़ना" : "Orders, read for you",
+      body: hi ? "निर्देश और तारीखें निकलती हैं; आपकी पुष्टि के बिना फ़ाइल नहीं बदलती।" : "Directions and dates are pulled out. Nothing changes on the file until you confirm.",
     },
   ];
 
@@ -147,9 +148,11 @@ function Login() {
             ))}
           </ul>
         </div>
-        <Link to="/story" search={{ lang: hi ? "hi" : undefined }} className="auth-story-link">
-          {hi ? "पहले दिन की कहानी पढ़ें →" : "Read the first-day story →"}
-        </Link>
+        <p className="max-w-sm text-xs leading-relaxed text-subtle">
+          {hi
+            ? "CiteBench प्रैक्टिस सहायता है, कानूनी सलाह नहीं। फाइल करने से पहले तारीखें, निर्देश और साइटेशन जाँचें।"
+            : "CiteBench is practice assistance, not legal advice. Verify dates, directions and citations before you file."}
+        </p>
       </aside>
 
       <section className="auth-main">
@@ -167,11 +170,11 @@ function Login() {
             />
           </div>
 
-          <h1 className="font-display text-3xl font-medium tracking-tight">
+          <h1 className="page-title">
             {mode === "in" ? (hi ? "वापसी पर स्वागत" : "Welcome back") : hi ? "खाता बनाएँ" : "Create your account"}
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            {hi ? "30 दिन आज़माइश। कार्ड नहीं चाहिए।" : "30-day trial. No card required."}
+            {hi ? "30 दिन या 10 लाइव CNR मुफ़्त, जो पहले हो। कार्ड नहीं चाहिए।" : "30 days or 10 live CNR fetches free, whichever comes first. No card."}
           </p>
 
           <div role="tablist" className="seg seg-fill mt-6">
@@ -194,7 +197,7 @@ function Login() {
 
           <form className="mt-5 flex flex-col gap-4" onSubmit={onSubmit}>
             <Field>
-              <Label htmlFor="username">{hi ? "यूज़रनेम / ईमेल" : "Username / email"}</Label>
+              <Label htmlFor="username">{hi ? "ईमेल या यूज़रनेम" : "Email or username"}</Label>
               <Input
                 id="username"
                 name="username"
@@ -202,7 +205,8 @@ function Login() {
                 autoFocus
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder={hi ? "आपका ईमेल या यूज़रनेम" : "Your email or username"}
+                placeholder={hi ? "जैसे: advocate@example.com" : "e.g. advocate@example.com"}
+                spellCheck={false}
                 disabled={busy}
               />
             </Field>

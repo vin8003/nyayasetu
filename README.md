@@ -14,19 +14,23 @@ After you sign in you get a chamber with five surfaces:
 
 | Surface | Route | What you do there |
 |---|---|---|
-| **Today** | `/` | Hearings today, upcoming listings, deadlines, open tasks (Draft this when it is a filing), unconfirmed orders, stale matters |
-| **Diary** | `/diary` | Listings in today / upcoming / earlier. A row opens that listing on the file |
-| **Matters** | `/matters` | Client files: parties, stage, hearings, papers, timeline, hearing brief. A row is a sheet with Back |
-| **Research** | `/research` | Facts in → Indian case-law memo → follow-up Q&A → notice / reply / petition / written statement |
-| **Inbox** | `/inbox` | Paste an order; the model extracts directions; **you** confirm before the chamber updates |
+| **Today** | `/` | Welcome screen on a new desk; then an agenda: in court today, orders waiting, overdue and due-soon work (mark done with undo), coming up by day, files without a next date |
+| **Diary** | `/diary` | Listings grouped by day. Earlier listings that still need an outcome are flagged. A row opens that listing on the file |
+| **Matters** | `/matters` | Search and filter (Active / All / Closed). A matter opens in tabs: Overview, Hearings, Papers, Tasks, Research, Timeline |
+| **Research** | `/research` | Facts in → Indian case-law memo → court drafts. **Ask** (`/ask`) and **Past memos** sit beside it as tabs |
+| **Inbox** | `/inbox` | Fetch by CNR or paste an order; CiteBench reads out directions; **you** confirm before the file updates |
 
 On a phone the five surfaces are a tab bar. Opening a listing, paper or task does not hide **Back** under the header. Closing it leaves the diary (or Today) where you were.
 
-A **sample chamber** (three demo matters) is free and does **not** start the 30-day trial. The clock starts when you run AI on **your** matter.
+CiteBench works on **live cases only**. A new account lands on a welcome screen with two ways in: bring in a live case by CNR, or paste facts and start research. A three-step setup checklist stays on Today until it is done or hidden.
+
+Anything CiteBench writes (a memo, a court draft, an Ask answer) has **Add to case**: file it on a matter, save it as a paper, turn it into a task, send it to Inbox to be read as an order, or open a new matter from it.
+
+Keyboard: `N` new case by CNR, `R` research, `A` ask, `/` or `⌘K` search, `G` then `T/D/M/R/I/A` to jump, `?` for the full list.
 
 The first-day story is public at **`/story`** (no login). Hindi: `/story?lang=hi`.
 
-Plan: **30 days free** on your own work, then **₹500 / month**. Subscribe opens Razorpay Standard Checkout (UPI, card, netbanking) when keys are set. Each payment covers 30 days. See [docs/billing.md](docs/billing.md).
+Plan: **30 days or 10 live CNR fetches free** (whichever comes first, starting with your first AI task or live fetch), then **₹500 / month**. Subscribe opens Razorpay Standard Checkout (UPI, card, netbanking) when keys are set. Each payment covers 30 days. See [docs/billing.md](docs/billing.md).
 
 ---
 
@@ -72,7 +76,7 @@ Open [http://localhost:8080](http://localhost:8080).
 | Persistent Postgres (deploy) | `DATABASE_URL` |
 | Federated Google / X on a real domain | `VITE_AUTH_ENABLED`, `GROK_AUTH_*`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET` |
 
-Without `XAI_API_KEY`, AI calls fail closed with `AI_UNAVAILABLE` (the UI shows the existing error toast). You can still create matters, diary listings, and load the sample chamber.
+Without `XAI_API_KEY`, AI calls fail closed with `AI_UNAVAILABLE` (the UI shows the existing error toast). You can still create matters and diary listings.
 
 Details: [docs/local-development.md](docs/local-development.md).
 
@@ -135,10 +139,10 @@ More: [docs/architecture.md](docs/architecture.md).
 |---|---|
 | [docs/product.md](docs/product.md) | Screen-by-screen product tour |
 | [docs/architecture.md](docs/architecture.md) | Stack, design system, request paths, modules |
-| [docs/practice-chamber.md](docs/practice-chamber.md) | Diary, matters, sheet + Back, workflow stages, sample pack, inbox |
+| [docs/practice-chamber.md](docs/practice-chamber.md) | Diary, matters, record sheets, workflow stages, inbox |
 | [docs/research-and-drafts.md](docs/research-and-drafts.md) | Memo pipeline, follow-ups, court drafts |
 | [docs/trust-and-citations.md](docs/trust-and-citations.md) | Citation gate, scrub, `httpHref` |
-| [docs/billing.md](docs/billing.md) | Trial, ₹500 plan, paywall, sample exemption |
+| [docs/billing.md](docs/billing.md) | Trial, ₹500 plan, paywall |
 | [docs/data-model.md](docs/data-model.md) | Tables and JSON blobs |
 | [docs/local-development.md](docs/local-development.md) | Env, auth modes, tests, deploy notes |
 | [docs/from-desk-to-chamber.md](docs/from-desk-to-chamber.md) | Public first-day article at `/story` |

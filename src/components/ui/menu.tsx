@@ -26,10 +26,11 @@ export function MenuContent({
 export function MenuItem({
   icon,
   hint,
+  shortcut,
   children,
   className,
   ...props
-}: ComponentProps<typeof DropdownMenu.Item> & { icon?: ReactNode; hint?: ReactNode }) {
+}: ComponentProps<typeof DropdownMenu.Item> & { icon?: ReactNode; hint?: ReactNode; shortcut?: string }) {
   return (
     <DropdownMenu.Item className={cn("menu-item", className)} {...props}>
       {icon}
@@ -41,6 +42,11 @@ export function MenuItem({
       ) : (
         <span className="min-w-0 flex-1">{children}</span>
       )}
+      {shortcut ? (
+        <kbd className="kbd ml-auto shrink-0" aria-hidden>
+          {shortcut}
+        </kbd>
+      ) : null}
     </DropdownMenu.Item>
   );
 }

@@ -8,6 +8,7 @@ import { CiteMark } from "@/components/cite-mark";
 import { CommandPalette } from "@/components/command-palette";
 import { NewMatterPanel } from "@/components/new-matter";
 import { NewMenu } from "@/components/new-menu";
+import { KeyboardShortcuts } from "@/components/shortcuts";
 import { adminNavFlag } from "@/lib/admin/store";
 import { onCountsChanged, openPalette } from "@/lib/app-events";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -17,11 +18,11 @@ import type { OutputLang } from "@/lib/research/types";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { to: "/", key: "today", icon: LayoutDashboard },
-  { to: "/diary", key: "diary", icon: CalendarDays },
-  { to: "/matters", key: "matters", icon: FolderOpen },
-  { to: "/research", key: "research", icon: BookOpen },
-  { to: "/inbox", key: "inbox", icon: Inbox },
+  { to: "/", key: "today", icon: LayoutDashboard, keys: "G T" },
+  { to: "/diary", key: "diary", icon: CalendarDays, keys: "G D" },
+  { to: "/matters", key: "matters", icon: FolderOpen, keys: "G M" },
+  { to: "/research", key: "research", icon: BookOpen, keys: "G R" },
+  { to: "/inbox", key: "inbox", icon: Inbox, keys: "G I" },
 ] as const;
 
 type NavKey = (typeof NAV)[number]["key"];
@@ -108,6 +109,7 @@ export function AppShell({
         {lang === "hi" ? "मुख्य भाग पर जाएँ" : "Skip to content"}
       </a>
       <CommandPalette lang={lang} />
+      <KeyboardShortcuts lang={lang} enabled={Boolean(user)} />
       {user ? <NewMatterPanel lang={lang} /> : null}
 
       <aside className="sidebar no-print" aria-label={c.app}>
@@ -139,6 +141,7 @@ export function AppShell({
                 to={item.to}
                 className={cn("side-link", on && "is-on")}
                 aria-current={on ? "page" : undefined}
+                title={`${labels[item.key]} (${item.keys})`}
               >
                 <Icon className="size-4" aria-hidden />
                 {labels[item.key]}

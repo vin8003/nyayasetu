@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { GuestPanel } from "@/components/guest-panel";
@@ -109,14 +109,17 @@ export function BillingPage() {
   const live = Boolean(snap?.paymentsLive);
 
   return (
-    <AppShell lang={lang} onLang={onLang} active="today">
+    <AppShell lang={lang} onLang={onLang} active="none">
       {isPending ? <div className="skeleton h-40" /> : null}
       {!isPending && !user ? <GuestPanel lang={lang} /> : null}
       {!isPending && user && snap ? (
-        <div className="stagger-in">
-          <p className="eyebrow">{c.kicker}</p>
-          <h1 className="page-title">{c.title}</h1>
-          <p className="page-lead">{live ? c.leadLive : c.lead}</p>
+        <div>
+          <header className="page-head">
+            <div className="page-head-text">
+              <h1 className="page-title">{c.title}</h1>
+              <p className="page-lead">{live ? c.leadLive : c.lead}</p>
+            </div>
+          </header>
 
           <div className="plan-grid">
             <section className="card card-pad">
@@ -152,7 +155,7 @@ export function BillingPage() {
                 <p className="mt-6 text-sm text-muted">{c.trialIdle}</p>
               ) : (
                 <dl className="mt-6 text-sm">
-                  <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-subtle">{c.accessUntil}</dt>
+                  <dt className="label-sm">{c.accessUntil}</dt>
                   <dd className="mt-1.5 tabular-nums">{formatDay(snap.periodEnd)}</dd>
                 </dl>
               )}
@@ -178,7 +181,7 @@ export function BillingPage() {
             </section>
 
             <section className="card card-pad">
-              <h2 className="font-display text-xl font-medium">{c.includes}</h2>
+              <h2 className="section-title">{c.includes}</h2>
               <ul className="check-list mt-4 space-y-3.5">
                 {[c.itemTrial, c.itemResearch, c.itemChamber, c.itemOrders].map((item) => (
                   <li key={item}>
@@ -190,11 +193,6 @@ export function BillingPage() {
             </section>
           </div>
 
-          <p className="mt-8">
-            <Link to="/" className="link-quiet text-sm">
-              ← CiteBench
-            </Link>
-          </p>
         </div>
       ) : null}
     </AppShell>
@@ -214,8 +212,6 @@ function StatusPill({ snap, lang }: { snap: BillingSnapshot; lang: "hi" | "en" }
           ? c.cancelledOn
           : c.expired;
   return (
-    <div className="rounded-full bg-elevated px-3 py-1 text-xs font-medium text-fg shadow-hairline">
-      {label}
-    </div>
+    <span className={snap.status === "active" ? "chip !bg-accent-soft !text-accent" : "chip"}>{label}</span>
   );
 }

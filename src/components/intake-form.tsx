@@ -1,11 +1,12 @@
-import { Scale, Landmark, BookOpen, Search, Paperclip, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { BookOpen, ChevronRight, FolderOpen, Paperclip, Search, X } from "lucide-react";
 import { COURTS } from "@/lib/research/courts";
-import { PRACTICE_AREAS, type Intake, type OutputLang } from "@/lib/research/types";
+import { PRACTICE_AREAS, type HistoryItem, type Intake, type OutputLang } from "@/lib/research/types";
 import { t } from "@/lib/research/copy";
-import { SAMPLES, type SampleBrief } from "@/lib/research/samples";
+import { formatDay } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
-import { Field, Hint, Input, Label, Select, Textarea } from "@/components/ui/field";
-import { Segmented } from "@/components/segmented";
+import { Field, Input, Label, Select } from "@/components/ui/field";
+import { cn } from "@/lib/utils";
 
 const SOURCES = [
   { name: "Supreme Court of India", href: "https://www.sci.gov.in/" },
@@ -22,186 +23,134 @@ export type PendingFile = {
   file: File;
 };
 
-function applySampleToDesk(next: Intake, onSample: (next: Intake) => void) {
-  onSample(next);
-  window.setTimeout(() => {
-    const el = document.getElementById("facts");
-    if (!(el instanceof HTMLTextAreaElement)) return;
-    el.setCustomValidity("");
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-    try {
-      el.focus({ preventScroll: true });
-    } catch {
-      el.focus();
-    }
-  }, 50);
-}
-
-function SampleButtons({
-  lang,
-  busy,
-  compact,
-  onPick,
-}: {
-  lang: OutputLang;
-  busy: boolean;
-  compact?: boolean;
-  onPick: (sample: SampleBrief) => void;
-}) {
-  const c = t(lang);
-  return (
-    <section>
-      <h2 className="mb-3 text-sm font-medium text-muted">{c.samples}</h2>
-      <div className="flex flex-col gap-2">
-        {SAMPLES.map((sample) => (
-          <button
-            key={sample.id}
-            type="button"
-            disabled={busy}
-            onClick={() => onPick(sample)}
-            className="row touch-manipulation text-left disabled:opacity-50"
-          >
-            <div className="text-sm font-medium text-fg">{lang === "hi" ? sample.titleHi : sample.titleEn}</div>
-            {compact ? null : (
-              <p className="mt-1 text-xs leading-relaxed text-muted">
-                {lang === "hi" ? sample.blurbHi : sample.blurbEn}
-              </p>
-            )}
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export function IntakeForm({
   intake,
   lang,
   busy,
   error,
   files,
+  matter,
+  recent,
   onChange,
   onSubmit,
-  onSample,
   onFiles,
+  onOpenMemo,
 }: {
   intake: Intake;
   lang: OutputLang;
   busy: boolean;
   error: string | null;
   files: PendingFile[];
+  matter?: { id: string; title: string } | null;
+  recent: HistoryItem[];
   onChange: (next: Intake) => void;
   onSubmit: () => void;
-  onSample: (next: Intake) => void;
   onFiles: (next: PendingFile[]) => void;
+  onOpenMemo: (item: HistoryItem) => void;
 }) {
   const c = t(lang);
   const set = (patch: Partial<Intake>) => onChange({ ...intake, ...patch });
-
-  function pickSample(sample: SampleBrief) {
-    applySampleToDesk({ ...sample.intake, lang: intake.lang }, onSample);
-  }
+  const length = intake.facts.trim().length;
+  const ready = files.length > 0 || length >= 40;
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] lg:gap-10">
+    <div className="split">
       <form
-        className="card card-pad flex flex-col gap-6"
+        className="flex min-w-0 flex-col gap-5"
         onSubmit={(e) => {
           e.preventDefault();
           onSubmit();
         }}
       >
+        {matter ? (
+          <p className="callout !py-2 text-[0.8125rem]">
+            <FolderOpen className="size-4 text-muted" aria-hidden />
+            <span className="min-w-0 flex-1">
+              {c.forMatter}{" "}
+              <Link to="/matters/$id" params={{ id: matter.id }} className="font-medium text-fg hover:underline">
+                {matter.title}
+              </Link>
+              <span className="text-muted">
+                {" "}
+                · {lang === "hi" ? "तथ्य फ़ाइल से भरे गए हैं" : "facts filled in from the file"}
+              </span>
+            </span>
+          </p>
+        ) : null}
+
         <Field>
           <Label htmlFor="facts">{c.facts}</Label>
-          <Textarea
-            id="facts"
-            name="facts"
-            required={files.length === 0}
-            minLength={files.length === 0 ? 40 : undefined}
-            value={intake.facts}
-            onChange={(e) => set({ facts: e.target.value })}
-            placeholder={c.factsPlaceholder}
-            disabled={busy}
-          />
-          <div className="flex items-start justify-between gap-3">
-            <Hint>{c.factsHint}</Hint>
-            {files.length === 0 ? (
-              <span
-                className={"shrink-0 text-xs tabular-nums " + (intake.facts.trim().length >= 40 ? "text-ok" : "text-subtle")}
-                aria-live="polite"
-              >
-                {intake.facts.trim().length}/40
-              </span>
+          <div className="composer">
+            <textarea
+              id="facts"
+              name="facts"
+              value={intake.facts}
+              onChange={(e) => set({ facts: e.target.value })}
+              placeholder={c.factsPlaceholder}
+              disabled={busy}
+              aria-describedby="facts-hint"
+            />
+            {files.length > 0 ? (
+              <ul className="composer-files">
+                {files.map((f) => (
+                  <li key={f.name + f.size} className="file-pill">
+                    <Paperclip className="size-3.5 text-subtle" aria-hidden />
+                    <span className="max-w-48 truncate">{f.name}</span>
+                    <span className="text-xs text-subtle">{Math.ceil(f.size / 1024)} KB</span>
+                    <button
+                      type="button"
+                      className="grid size-6 place-items-center rounded text-muted hover:bg-raised hover:text-fg"
+                      onClick={() => onFiles(files.filter((x) => x !== f))}
+                      aria-label={`${c.removeFile}: ${f.name}`}
+                    >
+                      <X className="size-3.5" aria-hidden />
+                    </button>
+                  </li>
+                ))}
+              </ul>
             ) : null}
+            <div className="composer-bar">
+              <label className="inline-flex min-h-8 cursor-pointer items-center gap-1.5 rounded-md px-2 text-[0.8125rem] font-medium text-muted hover:bg-elevated hover:text-fg">
+                <Paperclip className="size-4" aria-hidden />
+                {c.attach}
+                <input
+                  type="file"
+                  className="sr-only"
+                  disabled={busy || files.length >= 3}
+                  multiple
+                  accept=".pdf,.txt,.md,.png,.jpg,.jpeg,.webp,.csv,application/pdf,image/*,text/plain"
+                  onChange={(e) => {
+                    const list = [...(e.target.files ?? [])];
+                    const next = [...files];
+                    for (const file of list) {
+                      if (next.length >= 3) break;
+                      if (file.size > 1_200_000) continue;
+                      if (next.some((f) => f.name === file.name && f.size === file.size)) continue;
+                      next.push({ name: file.name, mime: file.type || "application/octet-stream", size: file.size, file });
+                    }
+                    onFiles(next);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+              {files.length === 0 ? (
+                <span className={cn("text-xs tabular-nums", length >= 40 ? "text-muted" : "text-subtle")} aria-live="polite">
+                  {c.factsCount.replace("{n}", String(length))}
+                </span>
+              ) : null}
+            </div>
           </div>
-        </Field>
-
-        <div className="lg:hidden">
-          <SampleButtons lang={lang} busy={busy} compact onPick={pickSample} />
-        </div>
-
-        <Field>
-          <span className="block text-sm font-medium tracking-tight text-fg/90">{c.files}</span>
-          <label
-            htmlFor="docs"
-            className="dropzone gap-2"
-          >
-            <Paperclip className="size-4 shrink-0" />
-            PDF · JPG · TXT
-          </label>
-          <input
-            id="docs"
-            name="docs"
-            type="file"
-            className="sr-only"
-            disabled={busy}
-            multiple
-            accept=".pdf,.txt,.md,.png,.jpg,.jpeg,.webp,.csv,application/pdf,image/*,text/plain"
-            suppressHydrationWarning
-            onChange={(e) => {
-              const list = [...(e.target.files ?? [])];
-              const next = [...files];
-              for (const file of list) {
-                if (next.length >= 3) break;
-                if (file.size > 1_200_000) continue;
-                if (next.some((f) => f.name === file.name && f.size === file.size)) continue;
-                next.push({ name: file.name, mime: file.type || "application/octet-stream", size: file.size, file });
-              }
-              onFiles(next);
-              e.target.value = "";
-            }}
-          />
-          {files.length > 0 ? (
-            <ul className="space-y-1.5">
-              {files.map((f) => (
-                <li
-                  key={f.name + f.size}
-                  className="flex items-center justify-between gap-2 rounded-md bg-elevated px-3 py-2 text-sm shadow-hairline"
-                >
-                  <span className="min-w-0 truncate">
-                    {f.name}
-                    <span className="ml-2 text-xs text-subtle">{Math.ceil(f.size / 1024)} KB</span>
-                  </span>
-                  <button
-                    type="button"
-                    className="inline-flex size-8 items-center justify-center text-muted hover:text-fg"
-                    onClick={() => onFiles(files.filter((x) => x !== f))}
-                    aria-label={c.removeFile}
-                  >
-                    <X className="size-4" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          <Hint>{c.filesHint}</Hint>
+          <p id="facts-hint" className="text-[0.8125rem] leading-snug text-muted">
+            {c.factsHint} {c.filesHint}
+          </p>
         </Field>
 
         <Field>
-          <Label htmlFor="query">{c.query}</Label>
+          <Label htmlFor="query">{c.questionOptional}</Label>
           <Input
             id="query"
             name="query"
+            autoComplete="off"
             value={intake.query}
             onChange={(e) => set({ query: e.target.value })}
             placeholder={c.queryHint}
@@ -209,15 +158,10 @@ export function IntakeForm({
           />
         </Field>
 
-        <div className="grid gap-4 border-t border-border pt-6 sm:grid-cols-2">
+        <div className="settings-row">
           <Field>
             <Label htmlFor="court">{c.court}</Label>
-            <Select
-              id="court"
-              value={intake.courtId}
-              onChange={(e) => set({ courtId: e.target.value })}
-              disabled={busy}
-            >
+            <Select id="court" value={intake.courtId} onChange={(e) => set({ courtId: e.target.value })} disabled={busy}>
               {COURTS.map((court) => (
                 <option key={court.id} value={court.id}>
                   {lang === "hi" ? court.nameHi : court.name}
@@ -227,12 +171,7 @@ export function IntakeForm({
           </Field>
           <Field>
             <Label htmlFor="area">{c.area}</Label>
-            <Select
-              id="area"
-              value={intake.area}
-              onChange={(e) => set({ area: e.target.value as Intake["area"] })}
-              disabled={busy}
-            >
+            <Select id="area" value={intake.area} onChange={(e) => set({ area: e.target.value as Intake["area"] })} disabled={busy}>
               {PRACTICE_AREAS.map((area) => (
                 <option key={area} value={area}>
                   {c.areas[area]}
@@ -240,87 +179,82 @@ export function IntakeForm({
               ))}
             </Select>
           </Field>
+          <Field>
+            <Label htmlFor="side">{c.side}</Label>
+            <Select id="side" value={intake.side} onChange={(e) => set({ side: e.target.value as Intake["side"] })} disabled={busy}>
+              {(["petitioner", "respondent", "neutral"] as const).map((side) => (
+                <option key={side} value={side}>
+                  {c.sides[side]}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field>
+            <Label htmlFor="memo-lang">{c.memoLang}</Label>
+            <Select id="memo-lang" value={intake.lang} onChange={(e) => set({ lang: e.target.value as OutputLang })} disabled={busy}>
+              <option value="en">English</option>
+              <option value="hi">हिन्दी</option>
+            </Select>
+          </Field>
         </div>
 
-        <Field>
-          <Label>{c.side}</Label>
-          <Segmented
-            ariaLabel={c.side}
-            value={intake.side}
-            onChange={(side) => set({ side })}
-            options={[
-              { value: "petitioner", label: c.sides.petitioner },
-              { value: "respondent", label: c.sides.respondent },
-              { value: "neutral", label: c.sides.neutral },
-            ]}
-          />
-        </Field>
-
-        <Field>
-          <Label>{c.memoLang}</Label>
-          <Segmented
-            ariaLabel={c.memoLang}
-            value={intake.lang}
-            onChange={(next) => set({ lang: next })}
-            options={[
-              { value: "hi", label: "हिन्दी" },
-              { value: "en", label: "English" },
-            ]}
-          />
-        </Field>
-
         {error ? (
-          <p className="rounded-md bg-danger/10 px-3.5 py-3 text-sm text-danger" role="alert">
+          <p className="callout is-danger" role="alert">
             {error}
           </p>
         ) : null}
 
-        <div className="form-actions">
-          <Button type="submit" size="lg" disabled={busy} className="w-full touch-manipulation sm:w-auto">
-            <Search className="size-4" />
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <Button type="submit" size="lg" disabled={busy || !ready}>
+            <Search className="size-4" aria-hidden />
             {busy ? c.researching : c.research}
           </Button>
+          <p className="text-[0.8125rem] text-muted">{c.runHint}</p>
         </div>
       </form>
 
-      <aside className="flex flex-col gap-6">
-        <section className="card card-pad">
-          <h2 className="font-display text-lg font-medium tracking-tight">{c.how}</h2>
-          <ol className="mt-4 space-y-3 text-sm text-muted">
-            {[c.step1, c.step2, c.step3, c.step4].map((step, i) => (
-              <li key={step} className="flex gap-3">
-                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-elevated font-mono text-[11px] text-accent">
-                  {i + 1}
-                </span>
-                <span>{step}</span>
-              </li>
-            ))}
-          </ol>
+      <aside className="split-aside flex min-w-0 flex-col gap-6">
+        <section>
+          <div className="section-head">
+            <h2 className="section-title">{c.recentMemos}</h2>
+            {recent.length > 0 ? (
+              <Link to="/research" search={{ view: "history" }} className="link-quiet text-[0.8125rem]">
+                {c.tabHistory}
+              </Link>
+            ) : null}
+          </div>
+          {recent.length === 0 ? (
+            <p className="text-sm text-muted">{c.noRecent}</p>
+          ) : (
+            <ul className="list">
+              {recent.slice(0, 5).map((item) => (
+                <li key={item.id}>
+                  <button type="button" className="list-row !min-h-11 !py-2.5" onClick={() => onOpenMemo(item)}>
+                    <BookOpen className="size-4 shrink-0 text-subtle" aria-hidden />
+                    <span className="list-main">
+                      <span className="list-title block truncate !text-sm">{item.title}</span>
+                      <span className="list-meta !text-xs">
+                        <span>{formatDay(item.createdAt, lang)}</span>
+                      </span>
+                    </span>
+                    <ChevronRight className="size-4 text-subtle" aria-hidden />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
-        <div className="hidden lg:block">
-          <SampleButtons lang={lang} busy={busy} onPick={pickSample} />
-        </div>
-
         <section>
-          <h2 className="mb-2 text-sm font-medium text-muted">{c.sourcesLabel}</h2>
-          <ul>
-            {SOURCES.map((src, i) => {
-              const Icon = i === 0 ? Landmark : i === 2 ? BookOpen : Scale;
-              return (
-                <li key={src.href}>
-                  <a
-                    href={src.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="link-accent -mx-2 flex min-h-11 items-center gap-2 rounded-md px-2 text-sm"
-                  >
-                    <Icon className="size-3.5 shrink-0" />
-                    {src.name}
-                  </a>
-                </li>
-              );
-            })}
+          <h2 className="section-title mb-1.5">{c.sourcesLabel}</h2>
+          <ul className="flex flex-col">
+            {SOURCES.map((src) => (
+              <li key={src.href}>
+                <a href={src.href} target="_blank" rel="noreferrer" className="link-quiet inline-flex min-h-8 items-center text-[0.8125rem]">
+                  {src.name}
+                </a>
+              </li>
+            ))}
           </ul>
         </section>
       </aside>

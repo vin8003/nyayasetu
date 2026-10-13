@@ -19,7 +19,12 @@ function AskPage() {
   return (
     <AppShell lang={lang} onLang={onLang} active="research">
       <div className="ask-page">
-        <ResearchModes lang={lang} mode="ask" matter={matter} memo={memo} />
+        <header className="flex-none">
+          <h1 className="page-title max-[899px]:sr-only">{lang === "hi" ? "शोध" : "Research"}</h1>
+          <div className="min-[900px]:mt-3">
+            <ResearchModes lang={lang} mode="ask" matter={matter} memo={memo} />
+          </div>
+        </header>
         <AskDesk lang={lang} matterId={matter} chatId={chat} memoId={memo} />
       </div>
     </AppShell>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ChevronRight, FolderOpen, Plus, Search } from "lucide-react";
+import { BookOpen, ChevronRight, FolderOpen, MessageSquare, Plus, Search } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { EciCnrFetch } from "@/components/eci-cnr-fetch";
 import { GuestPanel } from "@/components/guest-panel";
@@ -181,8 +181,8 @@ function MatterRow({ m, lang, today }: { m: Matter; lang: OutputLang; today: str
         ? c.tomorrowLabel
         : formatDay(m.nextHearingOn, lang, today);
   return (
-    <li>
-      <Link to="/matters/$id" params={{ id: m.id }} className="list-row">
+    <li className="group flex items-center">
+      <Link to="/matters/$id" params={{ id: m.id }} className="list-row min-w-0 flex-1">
         <span className="list-main">
           <span className="flex flex-wrap items-center gap-2">
             <span className="list-title">{m.title}</span>
@@ -201,8 +201,28 @@ function MatterRow({ m, lang, today }: { m: Matter; lang: OutputLang; today: str
           </span>
         </span>
         <span className={cn("text-sm tabular-nums sm:hidden", upcoming ? "font-medium" : "text-subtle")}>{upcoming ? dateText : ""}</span>
-        <ChevronRight className="size-4 text-subtle" aria-hidden />
+        <ChevronRight className="size-4 text-subtle md:hidden" aria-hidden />
       </Link>
+      <span className="hidden shrink-0 items-center gap-0.5 pr-2 md:flex">
+        <Link
+          to="/research"
+          search={{ matter: m.id, memo: undefined, view: undefined }}
+          className="icon-btn opacity-60 group-hover:opacity-100 focus-visible:opacity-100"
+          title={`${c.attachResearch}: ${m.title}`}
+          aria-label={`${c.attachResearch}: ${m.title}`}
+        >
+          <BookOpen className="size-4" aria-hidden />
+        </Link>
+        <Link
+          to="/ask"
+          search={{ matter: m.id, chat: undefined, memo: undefined }}
+          className="icon-btn opacity-60 group-hover:opacity-100 focus-visible:opacity-100"
+          title={`${c.askMatter}: ${m.title}`}
+          aria-label={`${c.askMatter}: ${m.title}`}
+        >
+          <MessageSquare className="size-4" aria-hidden />
+        </Link>
+      </span>
     </li>
   );
 }

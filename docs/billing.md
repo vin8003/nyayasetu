@@ -12,7 +12,7 @@ CiteBench sells a **chamber**: diary + matters + research + order reading. There
 
 ## When the clock starts
 
-**Not** on sign-up. **Not** on loading the sample chamber.
+**Not** on sign-up.
 
 The first AI call on **non-sample** work calls `ensureTrial`, which inserts `entitlements` with `trial_ends_at = now() + trial_days`. Until that row exists, `readSnapshot` returns `unstartedSnapshot()`: status `trial`, `trialStarted: false`, `canUseAi: true`.
 
@@ -108,7 +108,7 @@ Test keys do not take real money. Live keys do. Test card: `4111 1111 1111 1111`
 
 ## Banner
 
-`BillingBanner` sits under the header. Idle trial (sample only) vs days left vs expired → link to `/billing`.
+The sidebar shows a plan card (`PlanStatus`): trial ready, days and live CNR fetches left, or ended. On a phone, `BillingBanner` appears under the header only when five or fewer days are left or the trial has ended.
 
 ## Tests
 

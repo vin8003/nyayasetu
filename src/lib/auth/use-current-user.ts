@@ -1,4 +1,16 @@
+import { useSyncExternalStore } from "react";
 import { authClient, authEnabled } from "./client";
+
+const noop = () => () => {};
+
+/** False while React hydrates server HTML, true afterwards and on client-side mounts. */
+function useHydrated() {
+  return useSyncExternalStore(
+    noop,
+    () => true,
+    () => false,
+  );
+}
 
 /** Normalized user shape used across the app, auth on or off. */
 export type AppUser = {
@@ -57,7 +69,11 @@ export type CurrentUserState = {
 export function useCurrentUserState(): CurrentUserState {
   if (!authEnabled) return { user: DEV_USER, isPending: false };
   // eslint-disable-next-line react-hooks/rules-of-hooks -- authEnabled is constant for the app's lifetime
+  const hydrated = useHydrated();
   const { data, isPending } = authClient.useSession();
+  // The server renders before the session is known. Report "pending" until
+  // hydration finishes so the first client render matches the server HTML.
+  if (!hydrated) return { user: null, isPending: true };
   const user = data?.user;
   return {
     user: user

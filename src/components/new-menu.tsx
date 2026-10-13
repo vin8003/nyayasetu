@@ -53,7 +53,7 @@ export function NewMenu({ lang, compact = false }: { lang: OutputLang; compact?:
         )}
       </MenuTrigger>
       <MenuContent align={compact ? "end" : "start"} className="w-72">
-        <MenuItem icon={<ScanSearch className="size-4" />} hint={c.cnrHint} onSelect={() => openNewMatter({ mode: "cnr" })}>
+        <MenuItem icon={<ScanSearch className="size-4" />} hint={c.cnrHint} shortcut="N" onSelect={() => openNewMatter({ mode: "cnr" })}>
           {c.cnr}
         </MenuItem>
         <MenuItem icon={<FilePlus2 className="size-4" />} hint={c.manualHint} onSelect={() => openNewMatter({ mode: "manual" })}>
@@ -63,6 +63,7 @@ export function NewMenu({ lang, compact = false }: { lang: OutputLang; compact?:
         <MenuItem
           icon={<BookOpen className="size-4" />}
           hint={c.researchHint}
+          shortcut="R"
           onSelect={() => navigate({ to: "/research", search: { matter: undefined, memo: undefined } })}
         >
           {c.research}
@@ -70,6 +71,7 @@ export function NewMenu({ lang, compact = false }: { lang: OutputLang; compact?:
         <MenuItem
           icon={<MessageSquare className="size-4" />}
           hint={c.askHint}
+          shortcut="A"
           onSelect={() => navigate({ to: "/ask", search: { matter: undefined, chat: undefined, memo: undefined } })}
         >
           {c.ask}

@@ -75,7 +75,7 @@ Open items on Today and on the matter record that look like a filing get **Draft
 |---|---|
 | written statement, reply, notice, petition, application, affidavit, court note | Gather / diary / appearance / “compile the papers” |
 
-The draft is built from the **file only** (notes, last order, parties, papers on file). No `web_search`. Chat Completions JSON, 45s abort, model `grok-4.20-0309-non-reasoning`. Saved as `matter_documents` with `source_kind = ai_draft` and a timeline event (`ai_suggestion`). Sample chamber uses `draftFromBundle` if the model is down. The lawyer still marks the task done — the draft does not close the item.
+The draft is built from the **file only** (notes, last order, parties, papers on file). No `web_search`. Chat Completions JSON, 45s abort, model `grok-4.20-0309-non-reasoning`. Saved as `matter_documents` with `source_kind = ai_draft` and a timeline event (`ai_suggestion`). The lawyer still marks the task done — the draft does not close the item.
 
 This is not `draftLetter`. Memo letters reuse stamped cites. From a matter they also save as papers. Standalone desk drafts stay on screen. Task drafts do not load a memo.
 
@@ -83,23 +83,13 @@ This is not `draftLetter`. Memo letters reuse stamped cites. From a matter they 
 
 Memos saved from `/research?matter=<id>` list on the matter. Their statutes are de-duplicated into a map on the same record. Notice / reply / petition / written statement drafted from that desk are stored as papers (`ai_draft`). Copy and Word work on those papers.
 
-## Sample chamber
+## Sample chamber (retired)
 
-`buildSampleChamber()` in `src/lib/practice/sample.ts` seeds three files:
-
-1. **Sharma v Apex Traders Pvt Ltd** — Delhi commercial recovery, WS / 120-day problem  
-2. **State v Rakesh Kumar** — criminal bail  
-3. **Mehta v State of Rajasthan** — writ  
-
-Detection (`looksLikeSample` / `isSampleMatter`): exact titles or case numbers `CS (COMM) 412/2026`, `Bail 88/2026`, `CWP 2104/2026`, or facts containing `Matter: <sample title>`.
-
-`gateAi(..., { demo: true })` when the work looks like sample — **no entitlement row**, trial stays idle.
-
-**Load sample** replaces the previous sample pack for that user. **Exit sample** deletes leftover demo rows. Own matters are not deleted.
+The seeded sample chamber is gone; CiteBench works on live cases. `buildSampleChamber()` in `src/lib/practice/sample.ts` remains only as a test fixture. Accounts that loaded the pack earlier still carry its three demo matters; `getTodayBoard` reports `sampleLoaded`, and Today offers a one-time **Remove demo matters** (`clearSampleChamber`, which never touches the user's own matters).
 
 ## Today board
 
-`getTodayBoard` aggregates for the user: hearings today, upcoming, open deadlines, open tasks, unconfirmed orders, stale matters, `sampleLoaded` flag, counts. The home page is this board plus Load sample. Draftable tasks and deadlines also show **Draft this**, which jumps to `/matters/$id#<itemId>`.
+`getTodayBoard` aggregates for the user: hearings today, upcoming, open deadlines, open tasks, unconfirmed orders, stale matters, `sampleLoaded` flag, counts. The home page is this board, or the welcome screen when the desk has no matters and no memos (`totals` on the board). Draftable tasks and deadlines also show **Draft this**, which jumps to `/matters/$id#<itemId>`.
 
 ## Diary buckets
 

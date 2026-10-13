@@ -24,9 +24,9 @@ The board for the logged-in user:
 - **Unconfirmed orders** (from Inbox; still waiting for a human)
 - **Stale matters** (active files that have gone quiet)
 
-Empty desk: create a matter, or **Load sample chamber**.
+A new desk (no matters, no memos) shows a **welcome screen** instead of an empty board: fetch a live case by CNR right there, or paste facts and start research (the desk runs it straight away). A **setup checklist** (add a case, run research, confirm an order) then stays on Today until it is done or hidden.
 
-The sample banner is explicit: the three demo files are **free** and **do not start the trial**. Exit sample purges those demo rows and leaves a Load control on Today.
+The sample chamber is retired. Accounts that loaded it earlier see a one-time prompt on Today to remove the three demo matters.
 
 ## Diary — `/diary`
 
@@ -64,7 +64,7 @@ The original NyayaSetu desk, now a chamber tab.
 5. **Follow-up** on the memo: another issue or “what if” — same facts and verified cites, saved as a new memo, not an overwrite.
 6. From the memo toolbar: **Notice**, **Reply**, **Petition**, or **Written statement**. Same language as the memo. Drafts reuse only verified cites. If the desk was opened from a matter, the draft is also saved on the papers.
 
-Sample-matter facts do not start the trial clock. Your own facts do.
+The memo toolbar has **Draft** (notice, reply, petition, written statement), **Add to case**, and **Ask a follow-up**. Add to case files the memo on a matter, saves it as a paper, makes a task, sends text to Inbox to read as an order, or opens a new matter from it. The same menu sits on court drafts and on every Ask answer.
 
 ## Inbox — `/inbox`
 
@@ -82,7 +82,7 @@ Nothing hits the diary until you **Confirm**. Reject discards the pending extrac
 
 ## Billing — `/billing`
 
-30 days on your own AI use, then ₹500 / month. Sample chamber does not count.
+30 days or 10 live CNR fetches, whichever comes first, starting with the first AI task or live fetch. Then ₹500 / month.
 
 On the **public chamber**, Subscribe opens Razorpay (UPI, card, netbanking) once the payment account is connected. The chamber turns on after payment succeeds, not on the click. Cancel stops the next charge; access runs to the period end.
 

@@ -7,11 +7,13 @@ import {
   FilePlus2,
   FolderOpen,
   Inbox,
+  Keyboard,
   LayoutDashboard,
   MessageSquare,
   ScanSearch,
   Search,
 } from "lucide-react";
+import { openShortcuts } from "@/components/shortcuts";
 import { onPalette, openNewMatter } from "@/lib/app-events";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { listMatters } from "@/lib/practice/store";
@@ -37,6 +39,7 @@ const COPY = {
     newMatter: "New matter by hand",
     newResearch: "New research memo",
     newAsk: "Ask a quick question",
+    shortcuts: "Keyboard shortcuts",
   },
   hi: {
     open: "खोजें",
@@ -55,6 +58,7 @@ const COPY = {
     newMatter: "हाथ से नया मामला",
     newResearch: "नया शोध मेमो",
     newAsk: "छोटा सवाल पूछें",
+    shortcuts: "कीबोर्ड शॉर्टकट",
   },
 } as const;
 
@@ -94,12 +98,12 @@ export function CommandPalette({ lang }: { lang: OutputLang }) {
   }
 
   const pages = [
-    { to: "/", label: c.today, icon: LayoutDashboard },
-    { to: "/diary", label: c.diary, icon: CalendarDays },
-    { to: "/matters", label: c.matterList, icon: FolderOpen },
-    { to: "/research", label: c.research, icon: BookOpen },
-    { to: "/ask", label: c.ask, icon: MessageSquare },
-    { to: "/inbox", label: c.inbox, icon: Inbox },
+    { to: "/", label: c.today, icon: LayoutDashboard, keys: "G T" },
+    { to: "/diary", label: c.diary, icon: CalendarDays, keys: "G D" },
+    { to: "/matters", label: c.matterList, icon: FolderOpen, keys: "G M" },
+    { to: "/research", label: c.research, icon: BookOpen, keys: "G R" },
+    { to: "/ask", label: c.ask, icon: MessageSquare, keys: "G A" },
+    { to: "/inbox", label: c.inbox, icon: Inbox, keys: "G I" },
   ];
 
   return (
@@ -144,7 +148,8 @@ export function CommandPalette({ lang }: { lang: OutputLang }) {
               }}
               className="cmdk-item"
             >
-              <ScanSearch className="size-4" aria-hidden /> {c.cnr}
+              <ScanSearch className="size-4" aria-hidden /> <span className="flex-1">{c.cnr}</span>
+              <kbd className="kbd">N</kbd>
             </Command.Item>
             <Command.Item
               value={`${c.newMatter} new matter`}
@@ -157,19 +162,33 @@ export function CommandPalette({ lang }: { lang: OutputLang }) {
               <FilePlus2 className="size-4" aria-hidden /> {c.newMatter}
             </Command.Item>
             <Command.Item value={`${c.newResearch} research memo`} onSelect={() => go("/research")} className="cmdk-item">
-              <BookOpen className="size-4" aria-hidden /> {c.newResearch}
+              <BookOpen className="size-4" aria-hidden /> <span className="flex-1">{c.newResearch}</span>
+              <kbd className="kbd">R</kbd>
             </Command.Item>
             <Command.Item value={`${c.newAsk} ask question chat`} onSelect={() => go("/ask")} className="cmdk-item">
-              <MessageSquare className="size-4" aria-hidden /> {c.newAsk}
+              <MessageSquare className="size-4" aria-hidden /> <span className="flex-1">{c.newAsk}</span>
+              <kbd className="kbd">A</kbd>
             </Command.Item>
           </Command.Group>
         ) : null}
         <Command.Group heading={c.go}>
           {pages.map((pg) => (
             <Command.Item key={pg.to} value={`${pg.label} ${pg.to}`} onSelect={() => go(pg.to)} className="cmdk-item">
-              <pg.icon className="size-4" aria-hidden /> {pg.label}
+              <pg.icon className="size-4" aria-hidden /> <span className="flex-1">{pg.label}</span>
+              <kbd className="kbd">{pg.keys}</kbd>
             </Command.Item>
           ))}
+          <Command.Item
+            value={`${c.shortcuts} keyboard shortcuts help`}
+            onSelect={() => {
+              setOpen(false);
+              openShortcuts();
+            }}
+            className="cmdk-item"
+          >
+            <Keyboard className="size-4" aria-hidden /> <span className="flex-1">{c.shortcuts}</span>
+            <kbd className="kbd">?</kbd>
+          </Command.Item>
         </Command.Group>
       </Command.List>
     </Command.Dialog>

@@ -75,7 +75,6 @@ Useful files: `src/lib/billing/plan.test.ts`, `src/lib/research/verify.test.ts`,
 You can still:
 
 - Sign in (local password)
-- Load / exit the sample chamber
 - Create matters and hearings
 - Open workflow copy on a matter record
 

@@ -48,7 +48,7 @@ import { fill, p, sideLabel, statusLabel } from "@/lib/practice/copy";
 import { prepareHearingBrief } from "@/lib/practice/hearing-brief";
 import { todayISO } from "@/lib/practice/ids";
 import { writeInboxDraft } from "@/lib/practice/inbox-draft";
-import { findInBundle, lastOrderId, nextHearingId, relatedIdForEvent } from "@/lib/practice/record-links";
+import { findInBundle, lastOrderId, relatedIdForEvent } from "@/lib/practice/record-links";
 import { statutesFromMemos } from "@/lib/practice/statute-map";
 import {
   addHearing,

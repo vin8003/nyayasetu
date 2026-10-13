@@ -4,6 +4,9 @@ import { askChamber, listAskChats, openAskChat } from "@/lib/ask/store";
 import { groupAskChats, type AskChatRow } from "@/lib/ask/threads";
 import { listMatters } from "@/lib/practice/store";
 import type { OutputLang } from "@/lib/research/types";
+import { Check, Copy, CornerDownLeft, FolderOpen, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import { AddToCase } from "@/components/add-to-case";
 import { AskMarkdown } from "@/components/ask-markdown";
 import { Button } from "@/components/ui/button";
 
@@ -18,14 +21,30 @@ const COPY = {
   en: {
     title: "Ask",
     hint: "A short answer, searched on the same sources as Research. Only a retrieved authority is cited.",
-    general: "General — no case file",
+    general: "General question",
     matter: "Case",
     placeholder: "What do you need before the next date?",
     you: "You",
     desk: "CiteBench",
     send: "Ask",
     sending: "Searching the authorities…",
-    empty: "Ask about limitation, the next step, or what is already on the file.",
+    empty: "Ask about limitation, the next step, or what is already on the file. Answers cite only authorities that were retrieved.",
+    emptyTitle: "Ask a question",
+    suggestMatter: [
+      "What is due before the next date?",
+      "Summarise the last order in three lines.",
+      "What should I prepare for the next hearing?",
+      "Which deadlines on this file are at risk?",
+    ],
+    suggestGeneral: [
+      "What is the limitation period for a suit on a dishonoured cheque?",
+      "When does anticipatory bail lie under section 482 BNSS?",
+      "Can a writ lie against a private unaided school?",
+    ],
+    copy: "Copy",
+    copied: "Copied",
+    openFile: "Open file",
+    enterHint: "Enter to send, Shift + Enter for a new line",
     disclaimer: "Verify before you file or appear. CiteBench does not confirm an order.",
     unavailable: "The assistant is not available right now.",
     failed: "That question did not come back. Try again.",
@@ -40,14 +59,30 @@ const COPY = {
   hi: {
     title: "पूछें",
     hint: "छोटा जवाब, उन्हीं स्रोतों पर खोज कर। केवल वही प्राधिकारी जिसका लिंक मिला।",
-    general: "सामान्य — कोई केस फ़ाइल नहीं",
+    general: "सामान्य सवाल",
     matter: "मामला",
     placeholder: "अगली तारीख से पहले क्या चाहिए?",
     you: "आप",
     desk: "CiteBench",
     send: "पूछें",
     sending: "प्राधिकारी खोज रहे हैं…",
-    empty: "limitation, अगला कदम, या फ़ाइल में जो पहले से है — पूछें।",
+    empty: "limitation, अगला कदम, या फ़ाइल में जो पहले से है, पूछें। जवाब में केवल वही प्राधिकारी होंगे जिनका स्रोत मिला।",
+    emptyTitle: "सवाल पूछें",
+    suggestMatter: [
+      "अगली तारीख से पहले क्या करना है?",
+      "पिछले आदेश का सार तीन पंक्तियों में दें।",
+      "अगली पेशी के लिए क्या तैयारी करूँ?",
+      "इस फ़ाइल की कौन-सी समय-सीमा जोखिम में है?",
+    ],
+    suggestGeneral: [
+      "चेक बाउंस पर वसूली के वाद की परिसीमा अवधि क्या है?",
+      "BNSS धारा 482 में अग्रिम ज़मानत कब मिलती है?",
+      "क्या निजी गैर-अनुदानित स्कूल के खिलाफ रिट चलेगी?",
+    ],
+    copy: "कॉपी",
+    copied: "कॉपी हो गया",
+    openFile: "फ़ाइल खोलें",
+    enterHint: "भेजने के लिए Enter, नई पंक्ति के लिए Shift + Enter",
     disclaimer: "फाइल करने या पेश होने से पहले जाँचें। CiteBench आदेश की पुष्टि नहीं करता।",
     unavailable: "अभी सहायक उपलब्ध नहीं है।",
     failed: "जवाब नहीं आया। फिर कोशिश करें।",
@@ -82,6 +117,7 @@ export function AskDesk({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const threadRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
   const [researchMemo, setResearchMemo] = useState(memoId ?? "");
   const savedId = useRef(chatId ?? "");
   const linkedMemo = useRef(memoId ?? "");
@@ -218,8 +254,7 @@ export function AskDesk({
       <aside className="ask-index" aria-label={c.chats}>
         <div className="ask-index-top">
           <div>
-            <p className="ask-kicker">{c.title}</p>
-            <p className="ask-index-note">{c.chats}</p>
+            <h2 className="section-title">{c.chats}</h2>
           </div>
           <button type="button" className="ask-new" onClick={onNewChat}>
             {c.newChat}
@@ -258,27 +293,70 @@ export function AskDesk({
 
       <section className="ask-sheet" aria-label={sheetTitle}>
         <header className="ask-sheet-bar">
-          <div>
+          <div className="flex-1">
             <h1>{sheetTitle}</h1>
-            <p>{sheetMeta}</p>
-            {researchMemo ? <p>{c.continuing}</p> : null}
+            <p>{researchMemo ? c.continuing : sheetMeta}</p>
           </div>
+          {active ? (
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/matters/$id" params={{ id: active.id }}>
+                <FolderOpen className="size-4" aria-hidden />
+                <span className="hidden sm:inline">{c.openFile}</span>
+              </Link>
+            </Button>
+          ) : null}
         </header>
 
         <div className="ask-transcript" ref={threadRef} aria-live="polite">
           <div className="ask-thread">
           {turns.length === 0 ? (
             <div className="ask-empty">
-              <p className="ask-empty-mark">§</p>
+              <p className="ask-empty-title">{c.emptyTitle}</p>
               <p>{c.empty}</p>
+              <ul className="ask-suggestions">
+                {(active ? c.suggestMatter : c.suggestGeneral).map((q) => (
+                  <li key={q}>
+                    <button
+                      type="button"
+                      className="ask-suggestion"
+                      disabled={busy}
+                      onClick={() => {
+                        setDraft(q);
+                        composerRef.current?.focus();
+                      }}
+                    >
+                      <Sparkles className="size-4" aria-hidden />
+                      <span>{q}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </div>
           ) : null}
           {turns.map((turn, i) => {
             const mine = turn.role === "user";
+            const question = !mine ? turns.slice(0, i).reverse().find((t) => t.role === "user")?.content ?? "" : "";
             return (
               <article key={`${turn.role}-${i}`} className={`ask-turn ${mine ? "is-user" : "is-note"}`}>
                 <span className="ask-who">{mine ? c.you : c.desk}</span>
                 <div className="ask-body">{mine ? turn.content : <AskMarkdown text={turn.content} />}</div>
+                {!mine ? (
+                  <div className="ask-actions no-print">
+                    <CopyButton text={turn.content} label={c.copy} done={c.copied} />
+                    <AddToCase
+                      lang={lang}
+                      variant="ghost"
+                      matterId={active?.id ?? null}
+                      source={{
+                        title: question.replace(/\s+/g, " ").slice(0, 120) || sheetTitle,
+                        body: turn.content,
+                        aiDraft: true,
+                        kind: "other",
+                        prefill: { title: question.replace(/\s+/g, " ").slice(0, 120) },
+                      }}
+                    />
+                  </div>
+                ) : null}
               </article>
             );
           })}
@@ -311,6 +389,8 @@ export function AskDesk({
         >
           <div className="ask-composer-box">
             <textarea
+              ref={composerRef}
+              aria-label={c.placeholder}
               value={draft}
               rows={2}
               placeholder={c.placeholder}
@@ -325,13 +405,33 @@ export function AskDesk({
             />
             <div className="ask-composer-row">
               <p className="ask-note">{c.disclaimer}</p>
-              <Button type="submit" size="sm" disabled={busy || draft.trim().length < 2}>
+              <Button type="submit" size="sm" disabled={busy || draft.trim().length < 2} title={c.enterHint}>
                 {busy ? "…" : c.send}
+                {busy ? null : <CornerDownLeft className="size-3.5 opacity-60" aria-hidden />}
               </Button>
             </div>
           </div>
         </form>
       </section>
     </div>
+  );
+}
+
+function CopyButton({ text, label, done }: { text: string; label: string; done: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={async () => {
+        await navigator.clipboard.writeText(text);
+        setCopied(true);
+        toast.success(done);
+        window.setTimeout(() => setCopied(false), 1600);
+      }}
+    >
+      {copied ? <Check className="size-3.5" aria-hidden /> : <Copy className="size-3.5" aria-hidden />}
+      {copied ? done : label}
+    </Button>
   );
 }
