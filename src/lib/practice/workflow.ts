@@ -1183,3 +1183,7 @@ export function possibleNext(proceeding: ProceedingId | string, stageId: string)
 	}));
 	return [...next, ...branches];
 }
+/** The stages of a proceeding, typed for components that render them. */
+export function stagesFor(proceeding: ProceedingId | string): StageDef[] {
+	return proceedingDef(proceeding).stages.filter(Boolean) as StageDef[];
+}

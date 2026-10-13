@@ -210,6 +210,26 @@ export const saveMemoRecord = createServerFn({ method: "POST" })
     return item;
   });
 
+/** Files a saved memo (and its follow-ups) on a matter the same user owns. */
+export const linkMemoToMatter = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((input: { memoId: string; matterId: string }) => ({
+    memoId: String(input?.memoId ?? "").trim().slice(0, 80),
+    matterId: String(input?.matterId ?? "").trim().slice(0, 80),
+  }))
+  .handler(async ({ context, data }) => {
+    if (!data.memoId || !data.matterId) return { ok: false as const };
+    await ensureMemoColumns();
+    const sql = await getSql();
+    const owned = await sql`select id from matters where id = ${data.matterId} and user_id = ${context.userId}`;
+    if (!owned[0]) return { ok: false as const };
+    await sql`
+      update memos set matter_id = ${data.matterId}
+      where user_id = ${context.userId} and (id = ${data.memoId} or parent_id = ${data.memoId})
+    `;
+    return { ok: true as const };
+  });
+
 export const deleteMemoRecord = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator((id: string) => id)

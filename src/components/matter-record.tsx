@@ -1,55 +1,23 @@
 import type { ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
-import { ChevronLeft } from "lucide-react";
-import { TrustChip } from "@/components/trust-chip";
-import { Button } from "@/components/ui/button";
-import { Field, Input, Label, Select, Textarea } from "@/components/ui/field";
+import { useEffect, useState } from "react";
+import { Copy, FileDown, Gavel } from "lucide-react";
 import { toast } from "sonner";
-import { p } from "@/lib/practice/copy";
+import { TrustChip } from "@/components/trust-chip";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Field, Hint, Input, Label, Select, Textarea } from "@/components/ui/field";
+import { SlideOver } from "@/components/ui/slide-over";
+import { formatDay } from "@/lib/dates";
+import { p, sideLabel } from "@/lib/practice/copy";
 import { formatParties } from "@/lib/practice/ids";
 import { classifyTaskDraft } from "@/lib/practice/task-draft-class";
 import { OUR_SIDES } from "@/lib/practice/types";
 import { downloadWordFile, slugFilename, textAsWordHtml } from "@/lib/research/word-file";
-import type { OutputLang } from "@/lib/research/types";
-import type { StatuteRef } from "@/lib/research/types";
-import type {
-  Deadline,
-  Hearing,
-  Matter,
-  MatterDocument,
-  MatterOrder,
-  Task,
-  TimelineEvent,
-} from "@/lib/practice/types";
+import type { OutputLang, StatuteRef } from "@/lib/research/types";
+import { httpHref } from "@/lib/research/verify";
+import type { Deadline, Hearing, Matter, MatterDocument, MatterOrder, Task, TimelineEvent } from "@/lib/practice/types";
 
-export const matterRowClass =
-  "row w-full cursor-pointer text-left";
-
-export function RecordButton({
-  id,
-  active,
-  onOpen,
-  children,
-  className = "",
-}: {
-  id: string;
-  active?: boolean;
-  onOpen: (id: string) => void;
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <button
-      type="button"
-      id={id}
-      className={`${matterRowClass} scroll-mt-24 ${active ? "ring-2 ring-accent/70" : ""} ${className}`}
-      onClick={() => onOpen(id)}
-    >
-      {children}
-    </button>
-  );
-}
-
+/** The record overlay: a slide-over on desktop, a bottom sheet on a phone. */
 export function MatterSheet({
   open,
   title,
@@ -70,162 +38,215 @@ export function MatterSheet({
   children: ReactNode;
 }) {
   const c = p(lang);
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
-  useEffect(() => {
-    if (!open) return;
-    const y = window.scrollY;
-    const body = document.body;
-    const prev = {
-      overflow: body.style.overflow,
-      position: body.style.position,
-      top: body.style.top,
-      width: body.style.width,
-    };
-    body.style.overflow = "hidden";
-    body.style.position = "fixed";
-    body.style.top = `-${y}px`;
-    body.style.width = "100%";
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onCloseRef.current();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => {
-      body.style.overflow = prev.overflow;
-      body.style.position = prev.position;
-      body.style.top = prev.top;
-      body.style.width = prev.width;
-      window.removeEventListener("keydown", onKey);
-      window.scrollTo(0, y);
-    };
-  }, [open]);
-  if (!open) return null;
   return (
-    <div className="sheet">
-      <button type="button" className="sheet-backdrop" aria-label={c.back} onClick={onClose} />
-      <aside role="dialog" aria-modal="true" aria-labelledby="sheet-title" className="sheet-panel">
-        <div className="sheet-head">
-          <button type="button" className="sheet-back" onClick={onClose}>
-            <ChevronLeft className="size-5 shrink-0" aria-hidden />
-            {c.back}
-          </button>
-          {kicker ? <p className="eyebrow mt-2">{kicker}</p> : null}
-          <h2 id="sheet-title" className="section-title mt-1 leading-tight text-pretty">
-            {title}
-          </h2>
-        </div>
-        <div className="sheet-body">{children}</div>
-        {linkedLabel && onOpenLinked ? (
-          <div className="sheet-foot">
-            <Button variant="outline" className="w-full" onClick={onOpenLinked}>
-              {c.openLinked}: {linkedLabel}
-            </Button>
-          </div>
-        ) : null}
-      </aside>
+    <SlideOver
+      open={open}
+      onClose={onClose}
+      title={title}
+      kicker={kicker}
+      closeLabel={c.close}
+      footer={
+        linkedLabel && onOpenLinked ? (
+          <Button variant="outline" className="w-full sm:w-auto" onClick={onOpenLinked}>
+            {c.openLinked}: {linkedLabel}
+          </Button>
+        ) : null
+      }
+    >
+      {children}
+    </SlideOver>
+  );
+}
+
+function CopyAndWord({ lang, title, text }: { lang: OutputLang; title: string; text: string }) {
+  const c = p(lang);
+  if (!text.trim()) return null;
+  return (
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={async () => {
+          await navigator.clipboard.writeText(text);
+          toast.success(c.draftCopied);
+        }}
+      >
+        <Copy className="size-3.5" aria-hidden />
+        {c.copyDoc}
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => downloadWordFile(`${slugFilename(title, "citebench-paper")}.doc`, textAsWordHtml(title, text))}
+      >
+        <FileDown className="size-3.5" aria-hidden />
+        {c.wordBrief}
+      </Button>
+    </>
+  );
+}
+
+type ListingPatch = { listedOn: string; listedAt: string; purpose: string; courtRoom: string; bench: string; outcome: string; notes: string; nextDate: string };
+type OutcomePatch = { outcome: string; courtSaid: string; nextDate: string };
+
+/**
+ * A listing. Once its date has come, the first thing asked is what happened;
+ * recording a next date there also lists that date in the diary.
+ */
+export function HearingBody({
+  h,
+  lang,
+  today,
+  onSaveListing,
+  onRecord,
+}: {
+  h: Hearing;
+  lang: OutputLang;
+  today: string;
+  onSaveListing: (patch: ListingPatch) => Promise<void>;
+  onRecord: (patch: OutcomePatch) => Promise<void>;
+}) {
+  const c = p(lang);
+  const [listing, setListing] = useState(() => listingFields(h));
+  const [outcome, setOutcome] = useState<OutcomePatch>({ outcome: h.outcome || "", courtSaid: h.notes || "", nextDate: h.nextDate || "" });
+  const [busy, setBusy] = useState<"" | "listing" | "outcome">("");
+  const due = h.listedOn <= today;
+
+  useEffect(() => {
+    setListing(listingFields(h));
+    setOutcome({ outcome: h.outcome || "", courtSaid: h.notes || "", nextDate: h.nextDate || "" });
+  }, [h.id, h.listedOn, h.listedAt, h.purpose, h.courtRoom, h.bench, h.outcome, h.notes, h.nextDate]);
+
+  const outcomeForm = (
+    <form
+      className="flex flex-col gap-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        setBusy("outcome");
+        void onRecord(outcome).finally(() => setBusy(""));
+      }}
+    >
+      <h3 className="section-title">{c.recordHearing}</h3>
+      <Field>
+        <Label htmlFor="h-out">{c.outcome}</Label>
+        <Textarea id="h-out" className="min-h-20" value={outcome.outcome} onChange={(e) => setOutcome({ ...outcome, outcome: e.target.value })} />
+      </Field>
+      <Field>
+        <Label htmlFor="h-said">{c.whatCourtSaid}</Label>
+        <Textarea id="h-said" className="min-h-24" value={outcome.courtSaid} onChange={(e) => setOutcome({ ...outcome, courtSaid: e.target.value })} />
+      </Field>
+      <Field>
+        <Label htmlFor="h-next">{c.nextDate}</Label>
+        <Input id="h-next" type="date" value={outcome.nextDate} onChange={(e) => setOutcome({ ...outcome, nextDate: e.target.value })} />
+        <Hint>{lang === "hi" ? "अगली तारीख डायरी में जुड़ जाएगी।" : "The next date is added to the diary."}</Hint>
+      </Field>
+      <div>
+        <Button type="submit" disabled={busy !== ""}>
+          {busy === "outcome" ? c.savingEntry : c.recordHearing}
+        </Button>
+      </div>
+    </form>
+  );
+
+  const listingForm = (
+    <form
+      className="flex flex-col gap-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        setBusy("listing");
+        void onSaveListing({ ...listing, outcome: outcome.outcome, notes: outcome.courtSaid, nextDate: outcome.nextDate }).finally(() => setBusy(""));
+      }}
+    >
+      <h3 className="section-title">{lang === "hi" ? "पेशी का विवरण" : "Listing"}</h3>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field>
+          <Label htmlFor="h-date">{c.date}</Label>
+          <Input id="h-date" type="date" value={listing.listedOn} onChange={(e) => setListing({ ...listing, listedOn: e.target.value })} />
+        </Field>
+        <Field>
+          <Label htmlFor="h-time">{c.listedAt}</Label>
+          <Input id="h-time" value={listing.listedAt} placeholder="10:30" onChange={(e) => setListing({ ...listing, listedAt: e.target.value })} />
+        </Field>
+      </div>
+      <Field>
+        <Label htmlFor="h-purpose">{c.purpose}</Label>
+        <Input id="h-purpose" value={listing.purpose} onChange={(e) => setListing({ ...listing, purpose: e.target.value })} />
+      </Field>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field>
+          <Label htmlFor="h-room">{c.courtroom}</Label>
+          <Input id="h-room" value={listing.courtRoom} onChange={(e) => setListing({ ...listing, courtRoom: e.target.value })} />
+        </Field>
+        <Field>
+          <Label htmlFor="h-bench">{lang === "hi" ? "बेंच" : "Bench"}</Label>
+          <Input id="h-bench" value={listing.bench} onChange={(e) => setListing({ ...listing, bench: e.target.value })} />
+        </Field>
+      </div>
+      <div>
+        <Button type="submit" variant="outline" disabled={busy !== ""}>
+          {busy === "listing" ? c.savingEntry : c.saveEntry}
+        </Button>
+      </div>
+    </form>
+  );
+
+  return (
+    <div className="flex flex-col gap-6">
+      {h.outcome || h.notes ? (
+        <dl className="guide rounded-lg bg-elevated px-4 py-3">
+          {h.outcome ? (
+            <>
+              <dt>{c.outcome}</dt>
+              <dd>{h.outcome}</dd>
+            </>
+          ) : null}
+          {h.notes ? (
+            <>
+              <dt>{c.whatCourtSaid}</dt>
+              <dd className="whitespace-pre-wrap">{h.notes}</dd>
+            </>
+          ) : null}
+        </dl>
+      ) : null}
+      {due ? outcomeForm : null}
+      {due ? <hr className="hairline" /> : null}
+      {listingForm}
+      {!due ? (
+        <>
+          <hr className="hairline" />
+          {outcomeForm}
+        </>
+      ) : null}
     </div>
   );
 }
 
-export function HearingBody({
-  h,
-  lang,
-  onSave,
-}: {
-  h: Hearing;
-  lang: OutputLang;
-  onSave?: (patch: {
-    listedOn: string;
-    listedAt: string;
-    purpose: string;
-    courtRoom: string;
-    bench: string;
-    outcome: string;
-    notes: string;
-    nextDate: string;
-  }) => Promise<void>;
-}) {
-  const c = p(lang);
-  const [form, setForm] = useState(() => hearingFields(h));
-  const [busy, setBusy] = useState(false);
-  useEffect(() => setForm(hearingFields(h)), [h.id, h.listedOn, h.listedAt, h.purpose, h.courtRoom, h.bench, h.outcome, h.notes, h.nextDate]);
-  if (!onSave) {
-    return (
-      <dl className="space-y-3 text-sm">
-        <Row label={c.date} value={`${h.listedOn} ${h.listedAt || ""}`} />
-        <Row label={c.courtroom} value={[h.courtRoom, h.bench].filter(Boolean).join(" · ")} />
-        <Row label={c.purpose} value={h.purpose} />
-        <Row label={c.stage} value={h.stage} />
-        <Row label={c.outcome} value={h.outcome} />
-        <Row label={c.whatCourtSaid} value={h.notes} />
-        <Row label={c.nextDate} value={h.nextDate ?? ""} />
-      </dl>
-    );
-  }
-  return (
-    <form
-      className="space-y-3"
-      onSubmit={(e) => {
-        e.preventDefault();
-        setBusy(true);
-        void onSave(form).finally(() => setBusy(false));
-      }}
-    >
-      <Field>
-        <Label htmlFor="h-date">{c.date}</Label>
-        <Input id="h-date" type="date" value={form.listedOn} onChange={(e) => setForm({ ...form, listedOn: e.target.value })} />
-      </Field>
-      <Field>
-        <Label htmlFor="h-time">{c.listedAt}</Label>
-        <Input id="h-time" value={form.listedAt} onChange={(e) => setForm({ ...form, listedAt: e.target.value })} />
-      </Field>
-      <Field>
-        <Label htmlFor="h-purpose">{c.purpose}</Label>
-        <Textarea
-          id="h-purpose"
-          className="min-h-20"
-          value={form.purpose}
-          onChange={(e) => setForm({ ...form, purpose: e.target.value })}
-        />
-      </Field>
-      <Field>
-        <Label htmlFor="h-room">{c.courtroom}</Label>
-        <Input id="h-room" value={form.courtRoom} onChange={(e) => setForm({ ...form, courtRoom: e.target.value })} />
-      </Field>
-      <Field>
-        <Label htmlFor="h-bench">{c.stage}</Label>
-        <Input id="h-bench" value={form.bench} onChange={(e) => setForm({ ...form, bench: e.target.value })} />
-      </Field>
-      <Field>
-        <Label htmlFor="h-out">{c.outcome}</Label>
-        <Textarea id="h-out" className="min-h-20" value={form.outcome} onChange={(e) => setForm({ ...form, outcome: e.target.value })} />
-      </Field>
-      <Field>
-        <Label htmlFor="h-said">{c.whatCourtSaid}</Label>
-        <Textarea id="h-said" className="min-h-20" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-      </Field>
-      <Field>
-        <Label htmlFor="h-next">{c.nextDate}</Label>
-        <Input id="h-next" type="date" value={form.nextDate} onChange={(e) => setForm({ ...form, nextDate: e.target.value })} />
-      </Field>
-      <Button type="submit" disabled={busy}>
-        {busy ? c.savingEntry : c.saveEntry}
-      </Button>
-    </form>
-  );
-}
-
-function hearingFields(h: Hearing) {
+function listingFields(h: Hearing) {
   return {
     listedOn: h.listedOn || "",
     listedAt: h.listedAt || "",
     purpose: h.purpose || "",
     courtRoom: h.courtRoom || "",
     bench: h.bench || "",
-    outcome: h.outcome || "",
-    notes: h.notes || "",
-    nextDate: h.nextDate || "",
   };
+}
+
+const KIND_KEYS = ["pleading", "order", "notice", "evidence", "other"] as const;
+
+export function kindLabel(lang: OutputLang, kind: string) {
+  const c = p(lang);
+  if (kind === "order") return c.kindOrder;
+  if (kind === "pleading") return c.kindPleading;
+  if (kind === "evidence") return c.kindEvidence;
+  if (kind === "notice") return c.kindNotice;
+  return c.kindOther;
+}
+
+export function sourceBadge(lang: OutputLang, sourceKind: string) {
+  const c = p(lang);
+  if (sourceKind === "ai_draft") return <Badge tone="warn">{c.aiDraftLabel}</Badge>;
+  if (sourceKind === "eci_partner" || sourceKind === "indiankanoon") return <Badge tone="accent">{c.fromCourt}</Badge>;
+  return null;
 }
 
 export function DocumentBody({
@@ -237,95 +258,67 @@ export function DocumentBody({
   d: MatterDocument;
   lang: OutputLang;
   onReadOrder?: () => void;
-  onSave?: (patch: { title: string; body: string; kind: string }) => Promise<void>;
+  onSave: (patch: { title: string; body: string; kind: string }) => Promise<void>;
 }) {
   const c = p(lang);
-  const text = d.text || "";
-  const [form, setForm] = useState({ title: d.title, body: text, kind: d.kind || "other" });
+  const [form, setForm] = useState({ title: d.title, body: d.text || "", kind: d.kind || "other" });
   const [busy, setBusy] = useState(false);
   useEffect(() => setForm({ title: d.title, body: d.text || "", kind: d.kind || "other" }), [d.id, d.title, d.text, d.kind]);
+  const source = httpHref(d.sourceUrl ?? "");
   return (
-    <div>
-      {onSave ? (
-        <form
-          className="space-y-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setBusy(true);
-            void onSave(form).finally(() => setBusy(false));
-          }}
-        >
-          <Field>
-            <Label htmlFor="d-title">{c.paperTitle}</Label>
-            <Input id="d-title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          </Field>
-          <Field>
-            <Label htmlFor="d-kind">{c.documents}</Label>
-            <Select id="d-kind" value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value })}>
-              <option value="order">{c.kindOrder}</option>
-              <option value="pleading">{c.kindPleading}</option>
-              <option value="evidence">{c.kindEvidence}</option>
-              <option value="notice">{c.kindNotice}</option>
-              <option value="other">{c.kindOther}</option>
-            </Select>
-          </Field>
-          <Textarea className="min-h-48" value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} />
-          <Button type="submit" disabled={busy}>
-            {busy ? c.savingEntry : c.saveEntry}
-          </Button>
-        </form>
-      ) : (
-        <>
-          <div className="text-xs uppercase tracking-wide text-muted">
-            {d.kind} · {d.sourceKind}
-          </div>
-          {d.sourceUrl ? (
-            <a
-              href={d.sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 inline-block text-xs text-accent hover:underline"
-            >
-              {d.sourceUrl.replace(/^https?:\/\//, "").slice(0, 64)}
-            </a>
-          ) : null}
-          <pre className="mt-4 whitespace-pre-wrap font-sans text-sm leading-relaxed text-fg/90">{text}</pre>
-        </>
-      )}
-      {text.trim().length > 0 ? (
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={async () => {
-              await navigator.clipboard.writeText(onSave ? form.body : text);
-              toast.success(c.draftCopied);
-            }}
-          >
-            {c.copyDoc}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() =>
-              downloadWordFile(
-                `${slugFilename(onSave ? form.title : d.title, "citebench-paper")}.doc`,
-                textAsWordHtml(onSave ? form.title : d.title, onSave ? form.body : text),
-              )
-            }
-          >
-            {c.wordBrief}
-          </Button>
-          {onReadOrder && (onSave ? form.body : text).trim().length >= 40 ? (
-            <Button type="button" size="sm" onClick={onReadOrder}>
-              {c.readAsOrder}
-            </Button>
-          ) : null}
-        </div>
+    <form
+      className="flex flex-col gap-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        setBusy(true);
+        void onSave(form).finally(() => setBusy(false));
+      }}
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        {sourceBadge(lang, d.sourceKind)}
+        {d.createdAt ? <span className="text-xs text-muted">{formatDay(d.createdAt, lang)}</span> : null}
+        {source ? (
+          <a href={source} target="_blank" rel="noopener noreferrer" className="link-accent truncate text-xs">
+            {source.replace(/^https?:\/\//, "").slice(0, 60)}
+          </a>
+        ) : null}
+      </div>
+      {d.sourceKind === "ai_draft" ? (
+        <p className="callout is-warn text-[0.8125rem]">{lang === "hi" ? "यह CiteBench का ड्राफ्ट है। फाइल करने से पहले हर तथ्य और साइटेशन जाँचें।" : "This is a CiteBench draft. Check every fact and citation before you file it."}</p>
       ) : null}
-    </div>
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_10rem]">
+        <Field>
+          <Label htmlFor="d-title">{c.paperTitle}</Label>
+          <Input id="d-title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+        </Field>
+        <Field>
+          <Label htmlFor="d-kind">{c.paperKind}</Label>
+          <Select id="d-kind" value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value })}>
+            {KIND_KEYS.map((k) => (
+              <option key={k} value={k}>
+                {kindLabel(lang, k)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      </div>
+      <Field>
+        <Label htmlFor="d-body">{c.paperBody}</Label>
+        <Textarea id="d-body" className="min-h-72 font-serif text-[0.9375rem] leading-relaxed" value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} />
+      </Field>
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" disabled={busy}>
+          {busy ? c.savingEntry : c.saveEntry}
+        </Button>
+        <CopyAndWord lang={lang} title={form.title} text={form.body} />
+        {onReadOrder && form.body.trim().length >= 40 ? (
+          <Button variant="outline" size="sm" onClick={onReadOrder}>
+            <Gavel className="size-3.5" aria-hidden />
+            {c.readAsOrder}
+          </Button>
+        ) : null}
+      </div>
+    </form>
   );
 }
 
@@ -333,251 +326,180 @@ export function OrderBody({
   o,
   lang,
   onSave,
+  onReview,
 }: {
   o: MatterOrder;
   lang: OutputLang;
-  onSave?: (patch: { orderDate: string; body: string }) => Promise<void>;
+  onSave: (patch: { orderDate: string; body: string }) => Promise<void>;
+  onReview?: () => void;
 }) {
   const c = p(lang);
   const [form, setForm] = useState({ orderDate: o.orderDate || "", body: o.body || "" });
   const [busy, setBusy] = useState(false);
   useEffect(() => setForm({ orderDate: o.orderDate || "", body: o.body || "" }), [o.id, o.orderDate, o.body]);
   return (
-    <div className="space-y-4 text-sm">
-      {onSave ? (
-        <form
-          className="space-y-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setBusy(true);
-            void onSave(form).finally(() => setBusy(false));
-          }}
-        >
-          <Field>
-            <Label htmlFor="o-date">{c.date}</Label>
-            <Input id="o-date" type="date" value={form.orderDate} onChange={(e) => setForm({ ...form, orderDate: e.target.value })} />
-          </Field>
-          <Textarea className="min-h-40" value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} />
-          <Button type="submit" disabled={busy}>
-            {busy ? c.savingEntry : c.saveEntry}
-          </Button>
-        </form>
-      ) : (
-        <>
-          <div className="text-xs tabular-nums text-muted">
-            {o.orderDate || "—"} {o.confirmed ? `· ${c.confirm}` : ""}
-          </div>
-          <pre className="whitespace-pre-wrap font-sans leading-relaxed text-fg/90">{o.body}</pre>
-        </>
-      )}
+    <div className="flex flex-col gap-5">
+      {!o.confirmed ? (
+        <div className="callout is-warn">
+          <span className="flex flex-1 flex-wrap items-center justify-between gap-2">
+            <span>{c.ordersPendingOne}</span>
+            {onReview ? (
+              <Button size="sm" onClick={onReview}>
+                {c.reviewInInbox}
+              </Button>
+            ) : null}
+          </span>
+        </div>
+      ) : null}
       {o.directions?.length ? (
-        <div>
-          <div className="text-xs uppercase tracking-wide text-muted">{c.courtDirected}</div>
-          <ul className="mt-2 space-y-2">
+        <section>
+          <h3 className="section-title mb-2">{c.extractedDirections}</h3>
+          <ul className="list">
             {o.directions.map((d, i) => (
-              <li key={i} className="rounded-md bg-elevated px-3 py-2">
-                <div>{d.text}</div>
-                {d.deadline ? <div className="mt-1 tabular-nums text-xs text-muted">{d.deadline}</div> : null}
-                {d.quote ? <div className="mt-1 text-xs text-subtle">“{d.quote}”</div> : null}
+              <li key={i} className="px-4 py-3 text-sm">
+                <div className="leading-relaxed">{d.text}</div>
+                <div className="list-meta mt-1">
+                  {d.party ? <span>{d.party}</span> : null}
+                  {d.deadline ? <span className="tabular-nums">{formatDay(d.deadline, lang)}</span> : null}
+                </div>
+                {d.quote ? <p className="mt-1.5 font-serif text-[0.8125rem] italic leading-relaxed text-muted">“{d.quote}”</p> : null}
               </li>
             ))}
           </ul>
-        </div>
+        </section>
       ) : null}
-    </div>
-  );
-}
-
-export function TaskBody({
-  t,
-  lang,
-  drafting = false,
-  draftText = "",
-  onDraft,
-  onMarkDone,
-  onSave,
-}: {
-  t: Task;
-  lang: OutputLang;
-  drafting?: boolean;
-  draftText?: string;
-  onDraft?: () => void;
-  onMarkDone?: () => void;
-  onSave?: (patch: { title: string; dueOn: string }) => Promise<void>;
-}) {
-  const c = p(lang);
-  const classified = classifyTaskDraft(t.title, t.sourceQuote);
-  const [form, setForm] = useState({ title: t.title, dueOn: t.dueOn || "" });
-  const [busy, setBusy] = useState(false);
-  useEffect(() => setForm({ title: t.title, dueOn: t.dueOn || "" }), [t.id, t.title, t.dueOn]);
-  return (
-    <div className="space-y-3 text-sm">
-      <TrustChip origin={t.origin} lang={lang} />
-      {onSave ? (
-        <form
-          className="space-y-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setBusy(true);
-            void onSave(form).finally(() => setBusy(false));
-          }}
-        >
-          <Field>
-            <Label htmlFor="t-title">{c.taskTitle}</Label>
-            <Input id="t-title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          </Field>
-          <Field>
-            <Label htmlFor="t-due">{c.due}</Label>
-            <Input id="t-due" type="date" value={form.dueOn} onChange={(e) => setForm({ ...form, dueOn: e.target.value })} />
-          </Field>
-          <Button type="submit" disabled={busy}>
+      <form
+        className="flex flex-col gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setBusy(true);
+          void onSave(form).finally(() => setBusy(false));
+        }}
+      >
+        <Field>
+          <Label htmlFor="o-date">{c.orderDate}</Label>
+          <Input id="o-date" type="date" value={form.orderDate} onChange={(e) => setForm({ ...form, orderDate: e.target.value })} className="sm:max-w-48" />
+        </Field>
+        <Field>
+          <Label htmlFor="o-body">{c.pasteOrder}</Label>
+          <Textarea id="o-body" className="min-h-64 font-serif text-[0.9375rem] leading-relaxed" value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} />
+        </Field>
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" variant="outline" disabled={busy}>
             {busy ? c.savingEntry : c.saveEntry}
           </Button>
-        </form>
-      ) : (
-        <Row label={c.due} value={t.dueOn ?? ""} />
-      )}
-      {t.sourceQuote ? <p className="leading-relaxed text-muted">{t.sourceQuote}</p> : null}
-      <WorkDraftActions
-        lang={lang}
-        draftable={classified.draftable}
-        drafting={drafting}
-        draftText={draftText}
-        showDone={t.status === "open" && Boolean(onMarkDone)}
-        onDraft={onDraft}
-        onMarkDone={onMarkDone}
-      />
+          <CopyAndWord lang={lang} title={`${c.orders} ${o.orderDate ?? ""}`.trim()} text={form.body} />
+        </div>
+      </form>
     </div>
   );
 }
 
-export function DeadlineBody({
-  d,
+function WorkBody({
+  item,
+  kind,
   lang,
-  drafting = false,
-  draftText = "",
-  onDraft,
-  onMarkDone,
-  onSave,
-}: {
-  d: Deadline;
-  lang: OutputLang;
-  drafting?: boolean;
-  draftText?: string;
-  onDraft?: () => void;
-  onMarkDone?: () => void;
-  onSave?: (patch: { title: string; dueOn: string }) => Promise<void>;
-}) {
-  const c = p(lang);
-  const classified = classifyTaskDraft(d.title, d.sourceQuote);
-  const [form, setForm] = useState({ title: d.title, dueOn: d.dueOn || "" });
-  const [busy, setBusy] = useState(false);
-  useEffect(() => setForm({ title: d.title, dueOn: d.dueOn || "" }), [d.id, d.title, d.dueOn]);
-  return (
-    <div className="space-y-3 text-sm">
-      <TrustChip origin={d.origin} lang={lang} />
-      {onSave ? (
-        <form
-          className="space-y-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setBusy(true);
-            void onSave(form).finally(() => setBusy(false));
-          }}
-        >
-          <Field>
-            <Label htmlFor="dl-title">{c.deadlines}</Label>
-            <Input id="dl-title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          </Field>
-          <Field>
-            <Label htmlFor="dl-due">{c.due}</Label>
-            <Input id="dl-due" type="date" value={form.dueOn} onChange={(e) => setForm({ ...form, dueOn: e.target.value })} />
-          </Field>
-          <Button type="submit" disabled={busy}>
-            {busy ? c.savingEntry : c.saveEntry}
-          </Button>
-        </form>
-      ) : (
-        <Row label={c.due} value={d.dueOn} />
-      )}
-      {d.sourceQuote ? <p className="leading-relaxed text-muted">{d.sourceQuote}</p> : null}
-      <WorkDraftActions
-        lang={lang}
-        draftable={classified.draftable}
-        drafting={drafting}
-        draftText={draftText}
-        showDone={d.status === "open" && Boolean(onMarkDone)}
-        onDraft={onDraft}
-        onMarkDone={onMarkDone}
-      />
-    </div>
-  );
-}
-
-function WorkDraftActions({
-  lang,
-  draftable,
   drafting,
   draftText,
-  showDone,
   onDraft,
   onMarkDone,
+  onSave,
 }: {
+  item: Task | Deadline;
+  kind: "task" | "deadline";
   lang: OutputLang;
-  draftable: boolean;
   drafting: boolean;
   draftText: string;
-  showDone: boolean;
   onDraft?: () => void;
   onMarkDone?: () => void;
+  onSave: (patch: { title: string; dueOn: string }) => Promise<void>;
 }) {
   const c = p(lang);
+  const classified = classifyTaskDraft(item.title, item.sourceQuote);
+  const [form, setForm] = useState({ title: item.title, dueOn: item.dueOn || "" });
+  const [busy, setBusy] = useState(false);
+  useEffect(() => setForm({ title: item.title, dueOn: item.dueOn || "" }), [item.id, item.title, item.dueOn]);
+  const open = item.status === "open";
   return (
-    <div className="space-y-3 pt-2">
-      {draftable && onDraft ? (
-        <Button type="button" size="sm" disabled={drafting} onClick={onDraft}>
-          {drafting ? c.draftingWork : c.draftForTask}
-        </Button>
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-center gap-2">
+        <TrustChip origin={item.origin} lang={lang} />
+        {!open ? <Badge>{c.markDone}</Badge> : null}
+      </div>
+      {item.sourceQuote ? (
+        <blockquote className="border-l border-hairline pl-3 font-serif text-[0.9375rem] italic leading-relaxed text-muted">
+          “{item.sourceQuote}”
+        </blockquote>
       ) : null}
-      {!draftable ? <p className="text-xs leading-relaxed text-muted">{c.cannotDraft}</p> : null}
-      {draftText ? (
-        <div className="space-y-2">
-          <p className="text-xs text-accent">{c.draftSaved}</p>
-          <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-md bg-elevated px-3 py-3 font-sans text-sm leading-relaxed">
-            {draftText}
-          </pre>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={async () => {
-                await navigator.clipboard.writeText(draftText);
-                toast.success(c.draftCopied);
-              }}
-            >
-              {c.copyDraft}
+      <form
+        className="flex flex-col gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setBusy(true);
+          void onSave(form).finally(() => setBusy(false));
+        }}
+      >
+        <Field>
+          <Label htmlFor="w-title">{kind === "task" ? c.taskTitle : c.deadline}</Label>
+          <Input id="w-title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+        </Field>
+        <Field>
+          <Label htmlFor="w-due">{c.due}</Label>
+          <Input id="w-due" type="date" value={form.dueOn} onChange={(e) => setForm({ ...form, dueOn: e.target.value })} className="sm:max-w-48" />
+        </Field>
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" variant="outline" disabled={busy}>
+            {busy ? c.savingEntry : c.saveEntry}
+          </Button>
+          {open && onMarkDone ? (
+            <Button variant="ghost" onClick={onMarkDone}>
+              {c.markDone}
             </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                downloadWordFile(`${slugFilename("citebench-draft")}.doc`, textAsWordHtml("CiteBench draft", draftText))
-              }
-            >
-              {c.wordBrief}
-            </Button>
-            {showDone && onMarkDone ? (
-              <Button type="button" size="sm" variant="ghost" onClick={onMarkDone}>
-                {c.markDone}
-              </Button>
-            ) : null}
-          </div>
+          ) : null}
         </div>
-      ) : null}
+      </form>
+
+      <section className="border-t border-border pt-5">
+        {classified.draftable && onDraft ? (
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-muted">
+              {lang === "hi"
+                ? "CiteBench फ़ाइल के तथ्यों से इसका ड्राफ्ट बना सकता है। ड्राफ्ट कागज़ात में सेव होगा।"
+                : "CiteBench can draft this from the facts on the file. The draft is saved to the papers."}
+            </p>
+            <div>
+              <Button disabled={drafting} onClick={onDraft}>
+                {drafting ? c.draftingWork : c.draftForTask}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted">{c.cannotDraft}</p>
+        )}
+        {draftText ? (
+          <div className="mt-4 flex flex-col gap-2">
+            <p className="text-xs font-medium text-accent">{c.draftSaved}</p>
+            <div className="paper max-h-96 overflow-auto px-4 py-3">
+              <p className="prose-plain doc !text-[0.9375rem]">{draftText}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <CopyAndWord lang={lang} title={item.title} text={draftText} />
+            </div>
+          </div>
+        ) : null}
+      </section>
     </div>
   );
+}
+
+export function TaskBody(props: Omit<Parameters<typeof WorkBody>[0], "item" | "kind"> & { t: Task }) {
+  const { t, ...rest } = props;
+  return <WorkBody item={t} kind="task" {...rest} />;
+}
+
+export function DeadlineBody(props: Omit<Parameters<typeof WorkBody>[0], "item" | "kind"> & { d: Deadline }) {
+  const { d, ...rest } = props;
+  return <WorkBody item={d} kind="deadline" {...rest} />;
 }
 
 export function EventBody({
@@ -588,16 +510,13 @@ export function EventBody({
 }: {
   e: TimelineEvent;
   lang: OutputLang;
-  onSave?: (patch: { happenedOn: string; title: string; detail: string }) => Promise<void>;
+  onSave: (patch: { happenedOn: string; title: string; detail: string }) => Promise<void>;
   onVerify?: () => Promise<void>;
 }) {
   const c = p(lang);
   const [form, setForm] = useState({ happenedOn: e.happenedOn || "", title: e.title, detail: e.detail || "" });
   const [busy, setBusy] = useState(false);
-  useEffect(
-    () => setForm({ happenedOn: e.happenedOn || "", title: e.title, detail: e.detail || "" }),
-    [e.id, e.happenedOn, e.title, e.detail],
-  );
+  useEffect(() => setForm({ happenedOn: e.happenedOn || "", title: e.title, detail: e.detail || "" }), [e.id, e.happenedOn, e.title, e.detail]);
   const verificationLabel =
     e.verification === "lawyer_verified"
       ? c.verified
@@ -606,47 +525,37 @@ export function EventBody({
         : e.verification === "ai_inferred"
           ? c.aiSuggestion
           : c.unreviewed;
-  const chips = (
-    <div className="flex flex-wrap items-center gap-2">
-      <TrustChip origin={e.origin} lang={lang} />
-      {e.verification ? <span className="text-[11px] uppercase tracking-wide text-muted">{verificationLabel}</span> : null}
-    </div>
-  );
-  if (!onSave) {
-    return (
-      <div className="space-y-3 text-sm">
-        <div className="text-xs tabular-nums text-accent">{e.happenedOn}</div>
-        {chips}
-        {e.detail ? <p className="leading-relaxed whitespace-pre-wrap">{e.detail}</p> : null}
-      </div>
-    );
-  }
   return (
     <form
-      className="space-y-3 text-sm"
+      className="flex flex-col gap-3"
       onSubmit={(ev) => {
         ev.preventDefault();
         setBusy(true);
         void onSave(form).finally(() => setBusy(false));
       }}
     >
-      {chips}
+      <div className="flex flex-wrap items-center gap-2">
+        <TrustChip origin={e.origin} lang={lang} />
+        {e.verification ? <Badge tone={e.verification === "lawyer_verified" ? "ok" : "muted"}>{verificationLabel}</Badge> : null}
+      </div>
       <Field>
         <Label htmlFor="e-on">{c.date}</Label>
-        <Input id="e-on" type="date" value={form.happenedOn} onChange={(ev) => setForm({ ...form, happenedOn: ev.target.value })} />
+        <Input id="e-on" type="date" value={form.happenedOn} onChange={(ev) => setForm({ ...form, happenedOn: ev.target.value })} className="sm:max-w-48" />
       </Field>
       <Field>
         <Label htmlFor="e-title">{c.paperTitle}</Label>
         <Input id="e-title" value={form.title} onChange={(ev) => setForm({ ...form, title: ev.target.value })} />
       </Field>
-      <Textarea className="min-h-28" value={form.detail} onChange={(ev) => setForm({ ...form, detail: ev.target.value })} />
+      <Field>
+        <Label htmlFor="e-detail">{c.notes}</Label>
+        <Textarea id="e-detail" className="min-h-28" value={form.detail} onChange={(ev) => setForm({ ...form, detail: ev.target.value })} />
+      </Field>
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={busy}>
           {busy ? c.savingEntry : c.saveEntry}
         </Button>
         {onVerify && e.verification !== "lawyer_verified" ? (
           <Button
-            type="button"
             variant="outline"
             disabled={busy}
             onClick={() => {
@@ -661,6 +570,8 @@ export function EventBody({
     </form>
   );
 }
+
+type MatterStatus = "active" | "stayed" | "dormant" | "closed";
 
 export function MatterFileBody({
   matter,
@@ -680,19 +591,17 @@ export function MatterFileBody({
     ourSide: string;
     partiesText: string;
     notes: string;
-    status: "active" | "stayed" | "dormant" | "closed";
+    status: MatterStatus;
   }) => Promise<void>;
 }) {
   const c = p(lang);
-  const status = (["active", "stayed", "dormant", "closed"] as const).includes(matter.status as "active")
-    ? (matter.status as "active" | "stayed" | "dormant" | "closed")
-    : "active";
-  const [form, setForm] = useState(() => matterFields(matter, status));
+  const [form, setForm] = useState(() => matterFields(matter));
   const [busy, setBusy] = useState(false);
-  useEffect(() => setForm(matterFields(matter, status)), [matter.id, matter.title, matter.notes, matter.status, matter.updatedAt]);
+  useEffect(() => setForm(matterFields(matter)), [matter.id, matter.updatedAt]);
   return (
     <form
-      className="space-y-3"
+      id="matter-file-form"
+      className="flex flex-col gap-4"
       onSubmit={(e) => {
         e.preventDefault();
         setBusy(true);
@@ -700,28 +609,45 @@ export function MatterFileBody({
       }}
     >
       <Field>
-        <Label htmlFor="m-title">{c.saveMatter}</Label>
+        <Label htmlFor="m-title">{c.matterTitle}</Label>
         <Input id="m-title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
       </Field>
-      <Field>
-        <Label htmlFor="m-client">{c.client}</Label>
-        <Input id="m-client" value={form.clientName} onChange={(e) => setForm({ ...form, clientName: e.target.value })} />
-      </Field>
-      <Field>
-        <Label htmlFor="m-court">{c.courtName}</Label>
-        <Input id="m-court" value={form.courtName} onChange={(e) => setForm({ ...form, courtName: e.target.value })} />
-      </Field>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field>
+          <Label htmlFor="m-court">{c.courtName}</Label>
+          <Input id="m-court" value={form.courtName} onChange={(e) => setForm({ ...form, courtName: e.target.value })} />
+        </Field>
         <Field>
           <Label htmlFor="m-case">{c.caseNo}</Label>
           <Input id="m-case" value={form.caseNumber} onChange={(e) => setForm({ ...form, caseNumber: e.target.value })} />
         </Field>
         <Field>
           <Label htmlFor="m-cnr">{c.cnr}</Label>
-          <Input id="m-cnr" value={form.cnr} onChange={(e) => setForm({ ...form, cnr: e.target.value })} />
+          <Input id="m-cnr" className="mono uppercase" spellCheck={false} value={form.cnr} onChange={(e) => setForm({ ...form, cnr: e.target.value })} />
         </Field>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
+        <Field>
+          <Label htmlFor="m-client">{c.client}</Label>
+          <Input id="m-client" value={form.clientName} onChange={(e) => setForm({ ...form, clientName: e.target.value })} />
+        </Field>
+        <Field>
+          <Label htmlFor="m-side">{c.ourSide}</Label>
+          <Select id="m-side" value={form.ourSide} onChange={(e) => setForm({ ...form, ourSide: e.target.value })}>
+            {OUR_SIDES.map((side) => (
+              <option key={side} value={side}>
+                {sideLabel(lang, side)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field>
+          <Label htmlFor="m-status">{c.status}</Label>
+          <Select id="m-status" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as MatterStatus })}>
+            <option value="active">{c.statusActive}</option>
+            <option value="stayed">{c.statusStayed}</option>
+            <option value="dormant">{c.statusDormant}</option>
+            <option value="closed">{c.statusClosed}</option>
+          </Select>
+        </Field>
         <Field>
           <Label htmlFor="m-type">{c.caseType}</Label>
           <Input id="m-type" value={form.caseType} onChange={(e) => setForm({ ...form, caseType: e.target.value })} />
@@ -732,40 +658,27 @@ export function MatterFileBody({
         </Field>
       </div>
       <Field>
-        <Label htmlFor="m-side">{c.ourSide}</Label>
-        <Select id="m-side" value={form.ourSide} onChange={(e) => setForm({ ...form, ourSide: e.target.value })}>
-          {OUR_SIDES.map((side) => (
-            <option key={side} value={side}>
-              {side}
-            </option>
-          ))}
-        </Select>
-      </Field>
-      <Field>
-        <Label htmlFor="m-status">{c.statusActive}</Label>
-        <Select id="m-status" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as typeof form.status })}>
-          <option value="active">{c.statusActive}</option>
-          <option value="stayed">{c.statusStayed}</option>
-          <option value="dormant">{c.statusDormant}</option>
-          <option value="closed">{c.statusClosed}</option>
-        </Select>
-      </Field>
-      <Field>
         <Label htmlFor="m-parties">{c.parties}</Label>
-        <Textarea id="m-parties" className="min-h-24" value={form.partiesText} onChange={(e) => setForm({ ...form, partiesText: e.target.value })} />
+        <Textarea id="m-parties" className="min-h-24" value={form.partiesText} placeholder={c.partiesPlaceholder} onChange={(e) => setForm({ ...form, partiesText: e.target.value })} />
+        <Hint>{c.partiesHint}</Hint>
       </Field>
       <Field>
         <Label htmlFor="m-notes">{c.notes}</Label>
-        <Textarea id="m-notes" className="min-h-32" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+        <Textarea id="m-notes" className="min-h-40" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
       </Field>
-      <Button type="submit" disabled={busy}>
-        {busy ? c.savingEntry : c.saveEntry}
-      </Button>
+      <div>
+        <Button type="submit" disabled={busy}>
+          {busy ? c.savingEntry : c.saveEntry}
+        </Button>
+      </div>
     </form>
   );
 }
 
-function matterFields(matter: Matter, status: "active" | "stayed" | "dormant" | "closed") {
+function matterFields(matter: Matter) {
+  const status = (["active", "stayed", "dormant", "closed"] as const).includes(matter.status as MatterStatus)
+    ? (matter.status as MatterStatus)
+    : "active";
   return {
     title: matter.title,
     clientName: matter.clientName || "",
@@ -782,61 +695,48 @@ function matterFields(matter: Matter, status: "active" | "stayed" | "dormant" | 
 }
 
 export function MemoFileBody({
-  title,
   createdAt,
   facts,
   issues,
   lang,
   onOpenFull,
 }: {
-  title: string;
   createdAt: string;
   facts: string;
   issues: string[];
   lang: OutputLang;
-  onOpenFull?: () => void;
+  onOpenFull: () => void;
 }) {
   const c = p(lang);
   return (
-    <div className="space-y-4 text-sm">
-      <div className="text-xs tabular-nums text-muted">{createdAt.slice(0, 10)}</div>
-      {facts ? <p className="leading-relaxed">{facts}</p> : <p className="text-muted">{title}</p>}
+    <div className="flex flex-col gap-4 text-sm">
+      <p className="text-xs text-muted">{formatDay(createdAt, lang)}</p>
+      {facts ? <p className="leading-relaxed">{facts}</p> : null}
       {issues.length ? (
-        <ol className="list-decimal space-y-1 pl-4">
+        <ol className="flex list-decimal flex-col gap-1.5 pl-4 font-serif text-[0.9375rem] leading-relaxed">
           {issues.map((issue) => (
             <li key={issue}>{issue}</li>
           ))}
         </ol>
       ) : null}
-      {onOpenFull ? (
-        <Button type="button" size="sm" onClick={onOpenFull}>
-          {c.openMemo}
-        </Button>
-      ) : null}
+      <div>
+        <Button onClick={onOpenFull}>{c.openMemo}</Button>
+      </div>
     </div>
   );
 }
 
 export function StatuteFileBody({ s }: { s: StatuteRef }) {
+  const href = httpHref(s.url);
   return (
-    <div className="space-y-3 text-sm">
-      {s.sections ? <div className="text-xs uppercase tracking-wide text-muted">{s.sections}</div> : null}
+    <div className="flex flex-col gap-3 text-sm">
+      {s.sections ? <p className="mono text-muted">{s.sections}</p> : null}
       {s.why ? <p className="leading-relaxed">{s.why}</p> : null}
-      {s.url ? (
-        <a href={s.url} target="_blank" rel="noreferrer" className="text-accent hover:underline">
-          {s.url}
+      {href ? (
+        <a href={href} target="_blank" rel="noreferrer" className="link-accent break-all">
+          {href.replace(/^https?:\/\//, "")}
         </a>
       ) : null}
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  if (!value?.trim()) return null;
-  return (
-    <div>
-      <dt className="text-xs uppercase tracking-wide text-muted">{label}</dt>
-      <dd className="mt-1 leading-relaxed">{value}</dd>
     </div>
   );
 }

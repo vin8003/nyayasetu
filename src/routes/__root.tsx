@@ -19,15 +19,18 @@ export const Route = createRootRoute({
         content:
           "CiteBench — the lawyer's practice assistant. Court diary, matters, orders and Indian case-law research.",
       },
-      { name: "theme-color", content: "#f5f3ee", media: "(prefers-color-scheme: light)" },
-      { name: "theme-color", content: "#0b0e13", media: "(prefers-color-scheme: dark)" },
+      { name: "theme-color", content: "#f8f7f3", media: "(prefers-color-scheme: light)" },
+      { name: "theme-color", content: "#1a1917", media: "(prefers-color-scheme: dark)" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
+        // Plex Sans and its Devanagari companion carry the UI in both languages;
+        // Source Serif sets legal documents. Unicode-range subsets mean Hindi
+        // glyphs only download when Hindi is on screen.
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Devanagari:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Serif+Devanagari:wght@400;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap",
       },
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
       { rel: "stylesheet", href: appCss },

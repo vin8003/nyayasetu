@@ -8,12 +8,7 @@ import type {
 import { cn } from "@/lib/utils";
 
 export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElement>) {
-  return (
-    <label
-      className={cn("block text-[0.8125rem] font-medium tracking-tight text-fg/90", className)}
-      {...props}
-    />
-  );
+  return <label className={cn("block text-[0.8125rem] font-medium text-fg", className)} {...props} />;
 }
 
 export function Hint({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {
@@ -21,20 +16,14 @@ export function Hint({ className, ...props }: HTMLAttributes<HTMLParagraphElemen
 }
 
 export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      suppressHydrationWarning
-      className={cn("control h-11 min-w-0 px-3.5 text-sm", className)}
-      {...props}
-    />
-  );
+  return <input suppressHydrationWarning className={cn("control h-9 px-3 text-sm pointer-coarse:h-11", className)} {...props} />;
 }
 
 export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea
       suppressHydrationWarning
-      className={cn("control min-h-44 resize-y px-3.5 py-3 text-sm leading-relaxed", className)}
+      className={cn("control min-h-32 resize-y px-3 py-2.5 text-sm leading-relaxed", className)}
       {...props}
     />
   );
@@ -43,7 +32,7 @@ export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTex
 export function Select({ className, children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select
-      className={cn("control cite-select h-11 appearance-none px-3.5 pr-10 text-sm", className)}
+      className={cn("control cite-select h-9 appearance-none pl-3 pr-9 text-sm pointer-coarse:h-11", className)}
       {...props}
     >
       {children}
@@ -52,5 +41,5 @@ export function Select({ className, children, ...props }: SelectHTMLAttributes<H
 }
 
 export function Field({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex flex-col gap-2", className)} {...props} />;
+  return <div className={cn("flex min-w-0 flex-col gap-1.5", className)} {...props} />;
 }

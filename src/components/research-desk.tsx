@@ -4,7 +4,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import { CiteMark } from "@/components/cite-mark";
-import { AuthChip } from "@/components/auth-chip";
 import { IntakeForm, type PendingFile } from "@/components/intake-form";
 import { ResearchStage } from "@/components/research-stage";
 import { MemoView } from "@/components/memo-view";

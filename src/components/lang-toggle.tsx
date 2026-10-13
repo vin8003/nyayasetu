@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import type { OutputLang } from "@/lib/research/types";
 
-const LABELS: Record<OutputLang, string> = { hi: "हि", en: "EN" };
+const LABELS: Record<OutputLang, string> = { hi: "हिन्दी", en: "English" };
 
 /** The one language switch. Used by the app shell, login, and the article. */
 export function LangToggle({
@@ -17,7 +17,7 @@ export function LangToggle({
 }) {
   return (
     <div role="radiogroup" aria-label={ariaLabel} className={cn("seg", className)}>
-      {(["hi", "en"] as const).map((code) => (
+      {(["en", "hi"] as const).map((code) => (
         <button
           key={code}
           type="button"

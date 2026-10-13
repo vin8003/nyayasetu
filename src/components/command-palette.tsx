@@ -1,50 +1,64 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Command } from "cmdk";
-import { BookOpen, CalendarDays, FolderOpen, FolderPlus, Inbox, LayoutDashboard, MessageSquare, Moon, Search } from "lucide-react";
+import {
+  BookOpen,
+  CalendarDays,
+  FilePlus2,
+  FolderOpen,
+  Inbox,
+  LayoutDashboard,
+  MessageSquare,
+  ScanSearch,
+  Search,
+} from "lucide-react";
+import { onPalette, openNewMatter } from "@/lib/app-events";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { listMatters } from "@/lib/practice/store";
 import type { OutputLang } from "@/lib/research/types";
-import { applyTheme, currentTheme } from "@/lib/theme";
 
-type MatterHit = { id: string; title: string; caseNumber?: string; courtName?: string };
+type MatterHit = { id: string; title: string; caseNumber?: string; courtName?: string; cnr?: string };
 
 const COPY = {
   en: {
-    open: "Search or jump to…",
-    placeholder: "Search matters, jump to a page, or run an action",
-    empty: "Nothing found.",
+    open: "Search",
+    placeholder: "Find a matter, or type a command…",
+    empty: "No matches.",
     go: "Go to",
-    actions: "Actions",
+    actions: "Start",
     matters: "Matters",
     today: "Today",
     diary: "Diary",
-    matterList: "All matters",
+    matterList: "Matters",
     research: "Research",
     ask: "Ask",
     inbox: "Inbox",
-    newMatter: "New matter",
-    theme: "Toggle light / dark theme",
+    cnr: "Bring in a case by CNR",
+    newMatter: "New matter by hand",
+    newResearch: "New research memo",
+    newAsk: "Ask a quick question",
   },
   hi: {
-    open: "खोजें या कहीं जाएँ…",
-    placeholder: "मामला खोजें, पेज पर जाएँ, या कार्रवाई चुनें",
+    open: "खोजें",
+    placeholder: "मामला खोजें या कमांड लिखें…",
     empty: "कुछ नहीं मिला।",
     go: "जाएँ",
-    actions: "कार्रवाई",
+    actions: "शुरू करें",
     matters: "मामले",
     today: "आज",
     diary: "डायरी",
-    matterList: "सभी मामले",
+    matterList: "मामले",
     research: "शोध",
     ask: "पूछें",
     inbox: "इनबॉक्स",
-    newMatter: "नया मामला",
-    theme: "लाइट / डार्क थीम बदलें",
+    cnr: "CNR से केस लाएँ",
+    newMatter: "हाथ से नया मामला",
+    newResearch: "नया शोध मेमो",
+    newAsk: "छोटा सवाल पूछें",
   },
 } as const;
 
-/** ⌘K / Ctrl+K — the fastest route to any matter or page. */
+/** ⌘K / Ctrl+K: the fastest route to any matter, page, or action. */
 export function CommandPalette({ lang }: { lang: OutputLang }) {
   const c = COPY[lang];
   const navigate = useNavigate();
@@ -59,12 +73,11 @@ export function CommandPalette({ lang }: { lang: OutputLang }) {
         setOpen((v) => !v);
       }
     };
-    const onOpen = () => setOpen(true);
     window.addEventListener("keydown", onKey);
-    window.addEventListener("cb:palette", onOpen);
+    const off = onPalette(() => setOpen(true));
     return () => {
       window.removeEventListener("keydown", onKey);
-      window.removeEventListener("cb:palette", onOpen);
+      off();
     };
   }, []);
 
@@ -85,33 +98,72 @@ export function CommandPalette({ lang }: { lang: OutputLang }) {
     { to: "/diary", label: c.diary, icon: CalendarDays },
     { to: "/matters", label: c.matterList, icon: FolderOpen },
     { to: "/research", label: c.research, icon: BookOpen },
-    { to: "/ask", label: `${c.research} · ${c.ask}`, icon: MessageSquare },
+    { to: "/ask", label: c.ask, icon: MessageSquare },
     { to: "/inbox", label: c.inbox, icon: Inbox },
   ];
 
   return (
-    <Command.Dialog open={open} onOpenChange={setOpen} label={c.open} className="cmdk" overlayClassName="cmdk-overlay" contentClassName="cmdk-content">
+    <Command.Dialog
+      open={open}
+      onOpenChange={setOpen}
+      label={c.open}
+      className="cmdk"
+      overlayClassName="cmdk-overlay"
+      contentClassName="cmdk-content"
+    >
       <div className="cmdk-input-wrap">
-        <Search className="size-4 text-muted" aria-hidden />
+        <Search className="size-4 text-subtle" aria-hidden />
         <Command.Input placeholder={c.placeholder} className="cmdk-input" />
+        <kbd className="kbd">Esc</kbd>
       </div>
       <Command.List className="cmdk-list">
         <Command.Empty className="cmdk-empty">{c.empty}</Command.Empty>
-        <Command.Group heading={c.actions}>
-          <Command.Item value={`${c.newMatter} new matter`} onSelect={() => go("/matters")} className="cmdk-item">
-            <FolderPlus className="size-4" aria-hidden /> {c.newMatter}
-          </Command.Item>
-          <Command.Item
-            value={c.theme}
-            onSelect={() => {
-              applyTheme(currentTheme() === "dark" ? "light" : "dark");
-              setOpen(false);
-            }}
-            className="cmdk-item"
-          >
-            <Moon className="size-4" aria-hidden /> {c.theme}
-          </Command.Item>
-        </Command.Group>
+        {matters.length > 0 ? (
+          <Command.Group heading={c.matters}>
+            {matters.map((m) => (
+              <Command.Item
+                key={m.id}
+                value={`${m.title} ${m.caseNumber ?? ""} ${m.courtName ?? ""} ${m.cnr ?? ""} ${m.id}`}
+                onSelect={() => go("/matters/$id", { id: m.id })}
+                className="cmdk-item"
+              >
+                <FolderOpen className="size-4" aria-hidden />
+                <span className="min-w-0 flex-1 truncate">{m.title}</span>
+                <span className="cmdk-hint truncate">{m.caseNumber || m.courtName}</span>
+              </Command.Item>
+            ))}
+          </Command.Group>
+        ) : null}
+        {user ? (
+          <Command.Group heading={c.actions}>
+            <Command.Item
+              value={`${c.cnr} cnr fetch case`}
+              onSelect={() => {
+                setOpen(false);
+                openNewMatter({ mode: "cnr" });
+              }}
+              className="cmdk-item"
+            >
+              <ScanSearch className="size-4" aria-hidden /> {c.cnr}
+            </Command.Item>
+            <Command.Item
+              value={`${c.newMatter} new matter`}
+              onSelect={() => {
+                setOpen(false);
+                openNewMatter({ mode: "manual" });
+              }}
+              className="cmdk-item"
+            >
+              <FilePlus2 className="size-4" aria-hidden /> {c.newMatter}
+            </Command.Item>
+            <Command.Item value={`${c.newResearch} research memo`} onSelect={() => go("/research")} className="cmdk-item">
+              <BookOpen className="size-4" aria-hidden /> {c.newResearch}
+            </Command.Item>
+            <Command.Item value={`${c.newAsk} ask question chat`} onSelect={() => go("/ask")} className="cmdk-item">
+              <MessageSquare className="size-4" aria-hidden /> {c.newAsk}
+            </Command.Item>
+          </Command.Group>
+        ) : null}
         <Command.Group heading={c.go}>
           {pages.map((pg) => (
             <Command.Item key={pg.to} value={`${pg.label} ${pg.to}`} onSelect={() => go(pg.to)} className="cmdk-item">
@@ -119,34 +171,7 @@ export function CommandPalette({ lang }: { lang: OutputLang }) {
             </Command.Item>
           ))}
         </Command.Group>
-        {matters.length > 0 ? (
-          <Command.Group heading={c.matters}>
-            {matters.map((m) => (
-              <Command.Item
-                key={m.id}
-                value={`${m.title} ${m.caseNumber ?? ""} ${m.courtName ?? ""} ${m.id}`}
-                onSelect={() => go("/matters/$id", { id: m.id })}
-                className="cmdk-item"
-              >
-                <FolderOpen className="size-4" aria-hidden />
-                <span className="min-w-0 flex-1 truncate">{m.title}</span>
-                <span className="cmdk-hint">{m.caseNumber || m.courtName}</span>
-              </Command.Item>
-            ))}
-          </Command.Group>
-        ) : null}
       </Command.List>
     </Command.Dialog>
-  );
-}
-
-export function PaletteButton({ lang, className }: { lang: OutputLang; className?: string }) {
-  const c = COPY[lang];
-  return (
-    <button type="button" onClick={() => window.dispatchEvent(new Event("cb:palette"))} className={className ?? "search-btn"}>
-      <Search className="size-4" aria-hidden />
-      <span className="search-btn-text">{c.open}</span>
-      <kbd className="kbd">⌘K</kbd>
-    </button>
   );
 }

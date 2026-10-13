@@ -1,30 +1,28 @@
 import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
+export type BadgeTone = "muted" | "accent" | "ok" | "warn" | "danger" | "paper";
+
+const TONES: Record<BadgeTone, string> = {
+  muted: "",
+  accent: "!bg-accent-soft !text-accent",
+  ok: "!bg-ok/12 !text-ok",
+  warn: "!bg-warn/14 !text-warn",
+  danger: "!bg-danger/12 !text-danger",
+  paper: "!bg-paper-ink/8 !text-paper-muted",
+};
+
 export function Badge({
   className,
   tone = "muted",
+  dot = false,
+  children,
   ...props
-}: HTMLAttributes<HTMLSpanElement> & {
-  tone?: "muted" | "accent" | "ok" | "warn" | "danger" | "paper";
-}) {
-  const tones = {
-    muted: "bg-elevated text-muted shadow-hairline",
-    accent: "bg-accent/15 text-accent",
-    ok: "bg-ok/15 text-ok",
-    warn: "bg-warn/15 text-warn",
-    danger: "bg-danger/15 text-danger",
-    paper: "bg-paper-ink/8 text-paper-muted",
-  } as const;
-
+}: HTMLAttributes<HTMLSpanElement> & { tone?: BadgeTone; dot?: boolean }) {
   return (
-    <span
-      className={cn(
-        "inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-[0.6875rem] font-medium tracking-wide",
-        tones[tone],
-        className,
-      )}
-      {...props}
-    />
+    <span className={cn("chip", TONES[tone], className)} {...props}>
+      {dot ? <span className="chip-dot" aria-hidden /> : null}
+      {children}
+    </span>
   );
 }

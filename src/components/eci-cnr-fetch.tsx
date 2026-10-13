@@ -1,20 +1,23 @@
-import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
-import { LoaderCircle } from "lucide-react";
+import { useEffect, useId, useState } from "react";
+import { CircleAlert, LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Field, Hint, Input, Label } from "@/components/ui/field";
+import { Hint, Input, Label } from "@/components/ui/field";
+import { refreshCounts } from "@/lib/app-events";
 import { eciPartnerConfigured, fetchCnrToInbox } from "@/lib/eci-partner/store";
 import type { FetchCnrResult } from "@/lib/eci-partner/types";
-import { isFirstStateCnr, partnerCnrError } from "@/lib/eci-partner/cnr";
+import { normalizeCnr, partnerCnrError } from "@/lib/eci-partner/cnr";
 import { p } from "@/lib/practice/copy";
 import type { OutputLang } from "@/lib/research/types";
+import { cn } from "@/lib/utils";
 
-function errorCopy(c: ReturnType<typeof p>, result: Extract<FetchCnrResult, { ok: false }>): string {
+type Landed = Extract<FetchCnrResult, { ok: true }>;
+
+export function cnrErrorCopy(c: ReturnType<typeof p>, result: Extract<FetchCnrResult, { ok: false }>): string {
   if (result.error === "TRIAL_LIMIT") return c.eciTrialLimit;
   if (result.error === "PROVIDER_DISABLED") return c.eciProviderOff;
   if (result.error === "API_KEY_MISSING") return c.eciKeyMissing;
-  if (result.error === "SAMPLE_SKIPPED") return c.eciSkipSample;
+  if (result.error === "SAMPLE_SKIPPED") return c.eciFetchError;
   if (result.error === "BLANK_CNR") return c.eciBlankCnr;
   if (result.error === "INVALID_CNR") return c.eciInvalidCnr;
   if (result.error === "EMPTY_PARSE") {
@@ -25,152 +28,144 @@ function errorCopy(c: ReturnType<typeof p>, result: Extract<FetchCnrResult, { ok
   return result.message || c.eciFetchError;
 }
 
-export function EciCnrFetch({
-  lang,
-  matterId,
-  defaultCnr = "",
-  compact = false,
-  sample = false,
-  onLanded,
-}: {
-  lang: OutputLang;
-  matterId?: string;
-  defaultCnr?: string;
-  compact?: boolean;
-  sample?: boolean;
-  onLanded?: (result: Extract<FetchCnrResult, { ok: true }>) => void;
-}) {
-  const c = p(lang);
-  const [cnr, setCnr] = useState(defaultCnr);
-  const [configured, setConfigured] = useState<boolean | null>(null);
-  const [providerName, setProviderName] = useState("");
-  const [providerId, setProviderId] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<FetchCnrResult | null>(null);
+let providerCache: { configured: boolean; providerId: string } | null = null;
 
-  useEffect(() => {
-    setCnr(defaultCnr);
-  }, [defaultCnr]);
-
+/** Whether live court data is connected, cached for the session. */
+export function useCourtDataStatus() {
+  const [status, setStatus] = useState(providerCache);
   useEffect(() => {
     let live = true;
     eciPartnerConfigured()
       .then((row) => {
-        if (live) {
-          setConfigured(Boolean(row?.configured));
-          setProviderName(String(row?.providerName ?? ""));
-          setProviderId(String(row?.providerId ?? ""));
-        }
+        providerCache = { configured: Boolean(row?.configured), providerId: String(row?.providerId ?? "") };
+        if (live) setStatus(providerCache);
       })
       .catch(() => {
-        if (live) setConfigured(false);
+        if (live) setStatus({ configured: false, providerId: "" });
       });
     return () => {
       live = false;
     };
   }, []);
+  return status;
+}
+
+/**
+ * Pull a live case by CNR. Without a matter it opens a new file from the court
+ * record; with one it syncs that file. Orders always land unconfirmed in Inbox.
+ */
+export function EciCnrFetch({
+  lang,
+  matterId,
+  defaultCnr = "",
+  size = "md",
+  submitLabel,
+  showLabel = true,
+  onLanded,
+}: {
+  lang: OutputLang;
+  matterId?: string;
+  defaultCnr?: string;
+  size?: "md" | "lg";
+  submitLabel?: string;
+  showLabel?: boolean;
+  onLanded?: (result: Landed) => void;
+}) {
+  const c = p(lang);
+  const id = useId();
+  const status = useCourtDataStatus();
+  const [cnr, setCnr] = useState(defaultCnr);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setCnr(defaultCnr);
+  }, [defaultCnr]);
+
+  const offline = status !== null && (!status.configured || status.providerId === "none");
+  const typed = normalizeCnr(cnr);
 
   async function onFetch() {
     const err = partnerCnrError(cnr);
-    if (err === "BLANK_CNR") {
-      toast.error(c.eciBlankCnr);
-      return;
-    }
-    if (err === "INVALID_CNR") {
-      toast.error(c.eciInvalidCnr);
+    if (err) {
+      setError(err === "BLANK_CNR" ? c.eciBlankCnr : c.eciInvalidCnr);
       return;
     }
     setBusy(true);
-    setResult(null);
+    setError("");
     try {
       const next = await fetchCnrToInbox({ data: { matterId, cnr } });
-      setResult(next);
       if (!next.ok) {
-        toast.error(errorCopy(c, next));
+        setError(cnrErrorCopy(c, next));
         return;
       }
+      refreshCounts();
       toast.success(
-        `${c.eciLanded}: ${next.landed}` + (next.duplicates ? ` · ${c.eciDuplicates}: ${next.duplicates}` : ""),
+        next.landed > 0
+          ? c.eciLandedCount.replace("{n}", String(next.landed))
+          : next.duplicates > 0
+            ? c.eciUpToDate
+            : c.eciLandedNone,
       );
       onLanded?.(next);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : c.eciFetchError);
+      setError(err instanceof Error && !/unauthorized/i.test(err.message) ? err.message : c.eciFetchError);
     } finally {
       setBusy(false);
     }
   }
 
-  if (sample) {
-    return <p className="text-sm text-muted">{c.eciSkipSample}</p>;
-  }
-
-  const providerOff = providerId === "none";
-  const keyMissing = configured === false && !providerOff;
-  const blocked = providerOff || keyMissing;
-  const outside = cnr.trim() && !partnerCnrError(cnr) && !isFirstStateCnr(cnr);
-
   return (
-    <div className={compact ? "space-y-3" : "space-y-3 rounded-lg bg-elevated p-4 shadow-hairline"}>
-      <div>
-        <h2 className="section-title">{c.eciFetchTitle}</h2>
-        <p className="mt-1 text-sm leading-relaxed text-muted">{c.eciFetchHint}</p>
-        {providerName ? <p className="mt-1 text-xs text-subtle">{providerName}</p> : null}
-        <p className="mt-1 text-xs text-subtle">{c.eciFetchScope}</p>
-      </div>
-      {providerOff ? (
-        <p className="text-sm text-warn" role="status">
-          {c.eciProviderOff}
-        </p>
-      ) : null}
-      {keyMissing ? (
-        <p className="text-sm text-warn" role="status">
-          {c.eciKeyMissing}
-        </p>
-      ) : null}
-      <Field>
-        <Label htmlFor={compact ? "eci-cnr-compact" : "eci-cnr"}>{c.eciFetchCnr}</Label>
+    <form
+      className="flex flex-col gap-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        void onFetch();
+      }}
+    >
+      {showLabel ? <Label htmlFor={id}>{c.cnr}</Label> : null}
+      <div className="flex flex-col gap-2 sm:flex-row">
         <Input
-          id={compact ? "eci-cnr-compact" : "eci-cnr"}
+          id={id}
+          name="cnr"
           value={cnr}
+          inputMode="text"
           autoCapitalize="characters"
           autoComplete="off"
           spellCheck={false}
-          placeholder="RJJP010000012025"
-          onChange={(e) => setCnr(e.target.value)}
-          disabled={busy || blocked}
+          maxLength={24}
+          placeholder="DLHC010012342024"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={`${id}-hint`}
+          onChange={(e) => {
+            setCnr(e.target.value);
+            if (error) setError("");
+          }}
+          disabled={busy || offline}
+          className={cn("mono uppercase tracking-wide placeholder:normal-case", size === "lg" && "h-11 text-[0.9375rem]")}
         />
-        <Hint>{c.eciUnconfirmedNote}</Hint>
-      </Field>
-      {outside ? <p className="text-xs text-muted">{c.eciFetchScope}</p> : null}
-      <Button type="button" onClick={() => void onFetch()} disabled={busy || blocked}>
-        {busy ? (
-          <>
-            <LoaderCircle className="size-4 animate-spin" aria-hidden />
-            {c.eciFetching}
-          </>
-        ) : (
-          c.eciFetchAction
-        )}
-      </Button>
-      {result?.ok ? (
-        <div className="space-y-1 text-sm">
-          <p>
-            {c.eciLanded}: {result.landed}
-            {result.duplicates ? ` · ${c.eciDuplicates}: ${result.duplicates}` : ""}
-            {result.failed ? ` · ${c.recordsUnavailable}: ${result.failed}` : ""}
-            {result.needsHuman ? ` · ${c.eciNeedsHuman}` : ""}
-          </p>
-          <p className="text-xs text-muted">{c.eciUnconfirmedNote}</p>
-          <Link to="/inbox" search={{ matter: result.matterId }} className="inline-flex min-h-11 items-center text-sm text-accent hover:underline">
-            {c.eciOpenInbox}
-          </Link>
+        <Button type="submit" size={size === "lg" ? "lg" : "md"} disabled={busy || offline} className={size === "lg" ? "sm:min-w-36" : ""}>
+          {busy ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : null}
+          {busy ? c.eciFetching : submitLabel ?? (matterId ? c.syncCase : c.eciFetchAction)}
+        </Button>
+      </div>
+      {error ? (
+        <p className="field-error" role="alert">
+          {error}
+        </p>
+      ) : (
+        <Hint id={`${id}-hint`}>
+          {typed.length > 0 && typed.length !== 16
+            ? c.eciCnrCount.replace("{n}", String(typed.length))
+            : c.eciCnrHint}
+        </Hint>
+      )}
+      {offline ? (
+        <div className="callout is-warn mt-1" role="status">
+          <CircleAlert className="size-4" aria-hidden />
+          <span>{status?.providerId === "none" ? c.eciProviderOff : c.eciKeyMissing}</span>
         </div>
       ) : null}
-      {result && !result.ok ? (
-        <p className="text-sm text-warn" role="status">
-          {errorCopy(c, result)}
-        </p>
-      ) : null}
-    </div>
+    </form>
   );
 }

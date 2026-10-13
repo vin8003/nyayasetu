@@ -238,6 +238,7 @@ export const getTodayBoard = createServerFn({ method: "GET" }).middleware([authM
 		unconfirmedOrders,
 		staleMatters,
 		sampleRow,
+		totalsRow,
 	] = await together([
 		() => sql`
       select h.*, m.title as matter_title, m.court_name
@@ -292,7 +293,16 @@ export const getTodayBoard = createServerFn({ method: "GET" }).middleware([authM
         )
       limit 1
     `,
+		// Drives the welcome screen and the setup checklist on Today.
+		() => sql`
+      select
+        (select count(*)::int from matters where user_id = ${context.userId}) as matters,
+        (select count(*)::int from memos where user_id = ${context.userId}) as memos,
+        (select count(*)::int from matter_orders where user_id = ${context.userId} and confirmed = true) as confirmed_orders,
+        (select count(*)::int from ask_chats where user_id = ${context.userId}) as chats
+    `,
 	]);
+	const totals = totalsRow[0] ?? {};
 	return {
 		hearingsToday: hearingsToday.map(mapHearing),
 		hearingsUpcoming: hearingsUpcoming.map(mapHearing),
@@ -301,6 +311,12 @@ export const getTodayBoard = createServerFn({ method: "GET" }).middleware([authM
 		unconfirmedOrders: unconfirmedOrders.map(mapOrder),
 		staleMatters: staleMatters.map(mapMatter),
 		sampleLoaded: sampleRow.length > 0,
+		totals: {
+			matters: Number(totals.matters ?? 0),
+			memos: Number(totals.memos ?? 0),
+			confirmedOrders: Number(totals.confirmed_orders ?? 0),
+			chats: Number(totals.chats ?? 0)
+		},
 		counts: {
 			hearingsToday: hearingsToday.length,
 			deadlines: deadlines.length,
@@ -309,6 +325,13 @@ export const getTodayBoard = createServerFn({ method: "GET" }).middleware([authM
 			staleMatters: staleMatters.length
 		}
 	};
+});
+/** Badge counts for the navigation. One cheap query, run on every page. */
+export const getNavCounts = createServerFn({ method: "GET" }).middleware([authMiddleware]).handler(async ({ context }) => {
+	const rows = await (await getSql())`
+      select count(*)::int as inbox from matter_orders where user_id = ${context.userId} and confirmed = false
+    `;
+	return { inbox: Number(rows[0]?.inbox ?? 0) };
 });
 export const listHearingsRange = createServerFn({ method: "GET" }).middleware([authMiddleware]).handler(async ({ context }) => {
 	const sql = await getSql();
@@ -936,59 +959,11 @@ async function purgeSampleMatters(sql, userId) {
 	return rows.length;
 }
 
-export const seedSampleChamber = createServerFn({ method: "POST" }).middleware([authMiddleware]).handler(async ({ context }) => {
-	const sql = await getSql();
-	const existing = await findSampleMatters(sql, context.userId);
-	const real = await countRealMatters(sql, context.userId);
-	if (existing.length === 0 && real > 0) return {
-		ok: true,
-		seeded: false
-	};
-	await purgeSampleMatters(sql, context.userId);
-	const { buildSampleChamber } = await import("./sample");
-	const pack = buildSampleChamber();
-	for (const client of pack.clients) await sql`insert into clients (id, user_id, name, notes) values (${client.id}, ${context.userId}, ${client.name}, ${client.notes})`;
-	for (const m of pack.matters) await sql`
-        insert into matters (
-          id, user_id, client_id, title, proceeding, stage, court_name, case_number, cnr,
-          case_type, jurisdiction, our_side, parties_json, status, next_hearing_on, last_order_on, notes
-        ) values (
-          ${m.id}, ${context.userId}, ${m.clientId}, ${m.title}, ${m.proceeding}, ${m.stage}, ${m.courtName},
-          ${m.caseNumber}, ${m.cnr}, ${m.caseType}, ${m.jurisdiction}, ${m.ourSide}, ${JSON.stringify(m.parties)},
-          ${m.status}, ${m.nextHearingOn}, ${m.lastOrderOn}, ${m.notes}
-        )
-      `;
-	for (const h of pack.hearings) await sql`
-        insert into hearings (id, user_id, matter_id, listed_on, listed_at, court_room, bench, purpose, stage, outcome, notes, next_date)
-        values (${h.id}, ${context.userId}, ${h.matterId}, ${h.listedOn}, ${h.listedAt ?? ""}, ${h.courtRoom ?? ""}, ${h.bench ?? ""}, ${h.purpose ?? ""}, ${h.stage ?? ""}, ${h.outcome ?? ""}, ${h.notes ?? ""}, ${h.nextDate ?? null})
-      `;
-	for (const t of pack.tasks) await sql`
-        insert into tasks (id, user_id, matter_id, title, origin, due_on, source_quote)
-        values (${t.id}, ${context.userId}, ${t.matterId}, ${t.title}, ${t.origin}, ${t.dueOn}, ${t.sourceQuote})
-      `;
-	for (const d of pack.deadlines) await sql`
-        insert into deadlines (id, user_id, matter_id, title, due_on, origin, source_quote)
-        values (${d.id}, ${context.userId}, ${d.matterId}, ${d.title}, ${d.dueOn}, ${d.origin}, ${d.sourceQuote})
-      `;
-	for (const e of pack.events) await sql`
-        insert into timeline_events (id, user_id, matter_id, happened_on, kind, title, detail, origin, ref_id)
-        values (${e.id}, ${context.userId}, ${e.matterId}, ${e.happenedOn}, ${e.kind}, ${e.title}, ${e.detail}, ${e.origin}, ${e.refId ?? null})
-      `;
-	for (const doc of pack.documents ?? []) await sql`
-        insert into matter_documents (id, user_id, matter_id, kind, title, body, source_kind)
-        values (${doc.id}, ${context.userId}, ${doc.matterId}, ${doc.kind}, ${doc.title}, ${doc.body}, ${doc.sourceKind ?? "paste"})
-      `;
-	for (const o of pack.orders ?? []) await sql`
-        insert into matter_orders (id, user_id, matter_id, document_id, order_date, body, directions_json, confirmed)
-        values (${o.id}, ${context.userId}, ${o.matterId}, ${o.documentId ?? null}, ${o.orderDate}, ${o.body}, ${JSON.stringify(o.directions ?? [])}, ${o.confirmed})
-      `;
-	return {
-		ok: true,
-		seeded: true,
-		replaced: existing.length > 0
-	};
-});
-
+/**
+ * The sample chamber is retired; CiteBench works on live cases only. Accounts that
+ * loaded it before still carry three demo matters, and Today offers this one-time
+ * cleanup for them.
+ */
 export const clearSampleChamber = createServerFn({ method: "POST" }).middleware([authMiddleware]).handler(async ({ context }) => {
 	const sql = await getSql();
 	const removed = await purgeSampleMatters(sql, context.userId);
